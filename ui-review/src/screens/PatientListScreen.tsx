@@ -20,10 +20,13 @@ import {
     UserCheck
 } from 'lucide-react';
 
+import AddPatientScreen from './AddPatientScreen';
+
 const PatientListScreen = () => {
     const [activeTab, setActiveTab] = useState('pending'); // 'pending' or 'completed'
     const [selectedRows, setSelectedRows] = useState<number[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [showAddModal, setShowAddModal] = useState(false);
 
     // 模拟患者列表数据
     const patientData = [
@@ -57,7 +60,7 @@ const PatientListScreen = () => {
         <div className="flex items-center justify-center min-h-screen bg-[#F0F4F9] p-2 text-[#37474F] font-sans select-none">
 
             {/* 主容器 1024x768 */}
-            <div className="flex flex-col w-[1024px] h-[768px] bg-[#EEF2F9] overflow-hidden rounded-md border border-[#B0C4DE] shadow-2xl">
+            <div className="flex flex-col w-[1024px] h-[768px] bg-[#EEF2F9] overflow-hidden rounded-md border border-[#B0C4DE] shadow-2xl relative">
 
                 {/* 1. Header (保持原风格) */}
                 <header className="flex items-center justify-between px-4 h-[80px] bg-[#E8EAF1] border-b border-[#B0C4DE] shrink-0 z-10">
@@ -144,7 +147,11 @@ const PatientListScreen = () => {
 
                                 {/* 功能按钮 */}
                                 <div className="flex gap-2">
-                                    <button title="新增" className="w-[36px] h-[36px] bg-[#4D94FF] text-white rounded-md flex items-center justify-center shadow-sm hover:bg-blue-600 active:scale-95 transition-all">
+                                    <button
+                                        title="新增"
+                                        onClick={() => setShowAddModal(true)}
+                                        className="w-[36px] h-[36px] bg-[#4D94FF] text-white rounded-md flex items-center justify-center shadow-sm hover:bg-blue-600 active:scale-95 transition-all"
+                                    >
                                         <Plus size={18} />
                                     </button>
                                     <button title="导出" className="w-[36px] h-[36px] bg-white border border-[#B0C4DE] text-[#546E7A] rounded-md flex items-center justify-center hover:bg-gray-50 active:scale-95 transition-all">
@@ -250,6 +257,9 @@ const PatientListScreen = () => {
                         </button>
                     </div>
                 </footer>
+
+                {/* Modal Integration - Constrained to this relative container */}
+                <AddPatientScreen isOpen={showAddModal} onClose={() => setShowAddModal(false)} />
             </div>
         </div>
     );
