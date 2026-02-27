@@ -28,12 +28,41 @@ const ProtocolSetupScreen = () => {
     const [positioning, setPositioning] = useState<"HFS" | "FFS" | "HFP" | "FFP">("HFS");
     const [planListOpen, setPlanListOpen] = useState(true);
 
-    // 新增状态：选中序列ID和重建方案索引
+    // 选中序列ID和重建方案索引
     const [selectedSeqId, setSelectedSeqId] = useState("seq-2");
     const [selectedReconIndex, setSelectedReconIndex] = useState(0);
     const [swipedPlanId, setSwipedPlanId] = useState<string | null>(null);
 
-    const scanPlans = [
+    // 多选删除相关
+    const [checkedSeqIds, setCheckedSeqIds] = useState<string[]>([]);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+    const toggleCheckSeq = (seqId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setCheckedSeqIds(prev =>
+            prev.includes(seqId) ? prev.filter(id => id !== seqId) : [...prev, seqId]
+        );
+    };
+
+    const handleDeleteClick = () => {
+        if (checkedSeqIds.length === 0) return;
+        setShowDeleteConfirm(true);
+    };
+
+    const handleConfirmDelete = () => {
+        setScanPlans(prev => prev
+            .map(plan => ({
+                ...plan,
+                sequences: plan.sequences.filter(s => !checkedSeqIds.includes(s.id))
+            }))
+            .filter(plan => plan.sequences.length > 0)
+        );
+        setCheckedSeqIds([]);
+        setShowDeleteConfirm(false);
+        setSelectedSeqId("");
+    };
+
+    const [scanPlans, setScanPlans] = useState([
         {
             id: "plan-1",
             title: "HEAD_ROUTINE_01",
@@ -139,7 +168,7 @@ const ProtocolSetupScreen = () => {
                 },
             ],
         },
-    ];
+    ]);
 
     // 获取当前选中的序列对象
     const allSequences = scanPlans.flatMap((p) => p.sequences);
@@ -242,10 +271,19 @@ const ProtocolSetupScreen = () => {
                                     </button>
                                     {/* 删除序列 */}
                                     <button
-                                        title="删除序列"
-                                        className="w-[44px] h-[44px] flex items-center justify-center rounded-md text-[#D32F2F] hover:bg-[#FFEBEE] active:bg-[#FFCDD2] transition-colors"
+                                        title="删除已选序列"
+                                        onClick={handleDeleteClick}
+                                        className={`w-[44px] h-[44px] flex items-center justify-center rounded-md transition-colors ${checkedSeqIds.length > 0
+                                            ? 'text-[#D32F2F] hover:bg-[#FFEBEE] active:bg-[#FFCDD2]'
+                                            : 'text-[#B0C4DE] cursor-not-allowed'
+                                            }`}
                                     >
                                         <Trash2 size={18} />
+                                        {checkedSeqIds.length > 0 && (
+                                            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#D32F2F] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                                {checkedSeqIds.length}
+                                            </span>
+                                        )}
                                     </button>
                                 </div>
                             </div>
@@ -302,16 +340,33 @@ const ProtocolSetupScreen = () => {
                                                         setSelectedSeqId(seq.id);
                                                         setSelectedReconIndex(0);
                                                     }}
-                                                    className={`h-[36px] flex items-center px-8 gap-3 cursor-pointer relative ${selectedSeqId === seq.id
-                                                        ? "bg-[#E3F2FD] border-l-4 border-[#4D94FF]"
-                                                        : "hover:bg-gray-50"
+                                                    className={`h-[36px] flex items-center px-8 gap-3 cursor-pointer relative ${checkedSeqIds.includes(seq.id)
+                                                        ? 'bg-[#FFF3E0]'
+                                                        : selectedSeqId === seq.id
+                                                            ? 'bg-[#E3F2FD] border-l-4 border-[#4D94FF]'
+                                                            : 'hover:bg-gray-50'
                                                         }`}
                                                 >
                                                     <div className="absolute left-5 top-0 bottom-0 w-[1px] bg-gray-100"></div>
                                                     <div className="absolute left-5 top-1/2 w-2 h-[1px] bg-gray-100"></div>
 
+                                                    {/* Checkbox */}
+                                                    <div
+                                                        onClick={(e) => toggleCheckSeq(seq.id, e)}
+                                                        className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all ${checkedSeqIds.includes(seq.id)
+                                                            ? 'bg-[#D32F2F] border-[#D32F2F]'
+                                                            : 'bg-white border-[#B0C4DE] hover:border-[#D32F2F]'
+                                                            }`}
+                                                    >
+                                                        {checkedSeqIds.includes(seq.id) && <Check size={10} className="text-white stroke-[3]" />}
+                                                    </div>
+
                                                     <span
-                                                        className={`text-[12px] font-bold ${selectedSeqId === seq.id ? "text-[#1E88E5]" : "text-[#546E7A]"
+                                                        className={`text-[12px] font-bold ${checkedSeqIds.includes(seq.id)
+                                                            ? 'text-[#D32F2F] line-through opacity-60'
+                                                            : selectedSeqId === seq.id
+                                                                ? 'text-[#1E88E5]'
+                                                                : 'text-[#546E7A]'
                                                             }`}
                                                     >
                                                         {seq.name}
@@ -495,17 +550,62 @@ const ProtocolSetupScreen = () => {
                             <ChevronLeft size={20} /> 上一步
                         </button>
                     </div>
-                    <div className="flex-1 flex justify-center">
-                        <button className="flex items-center gap-3 px-10 h-[52px] bg-white text-[#D32F2F] font-bold rounded-md border-2 border-[#D32F2F] hover:bg-red-50 transition-all uppercase text-[13px] shadow-sm active:scale-95">
-                            <AlertTriangle size={20} /> 紧急终止
-                        </button>
-                    </div>
                     <div className="flex-1 flex justify-end">
-                        <button className="flex items-center gap-4 px-14 h-[52px] bg-[#4D94FF] text-white font-bold rounded-md shadow-lg hover:bg-blue-600 transition-all uppercase text-[13px] tracking-widest active:scale-95">
+                        <button className="flex items-center gap-2 px-10 h-[52px] bg-[#4D94FF] text-white font-bold rounded-md shadow-lg hover:bg-blue-600 transition-all uppercase text-[13px] active:scale-95">
                             下一步 <ChevronRight size={20} />
                         </button>
                     </div>
                 </footer >
+
+                {/* Delete Confirmation Dialog */}
+                {showDeleteConfirm && (
+                    <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] flex items-center justify-center z-50">
+                        <div className="bg-white rounded-xl shadow-2xl border border-[#B0C4DE] w-[360px] overflow-hidden">
+                            {/* Dialog Header */}
+                            <div className="flex items-center gap-3 px-5 py-4 bg-[#FFF8E1] border-b border-[#FFE082]">
+                                <div className="w-9 h-9 rounded-full bg-[#F57C00]/10 flex items-center justify-center shrink-0">
+                                    <AlertTriangle size={18} className="text-[#F57C00]" />
+                                </div>
+                                <div>
+                                    <div className="text-[14px] font-black text-[#37474F]">确认删除序列</div>
+                                    <div className="text-[11px] text-[#78909C] mt-0.5">此操作不可恢复</div>
+                                </div>
+                            </div>
+                            {/* Dialog Body */}
+                            <div className="px-5 py-4">
+                                <p className="text-[13px] text-[#546E7A] leading-relaxed">
+                                    即将删除以下 <span className="font-black text-[#D32F2F]">{checkedSeqIds.length}</span> 个序列：
+                                </p>
+                                <ul className="mt-2 flex flex-col gap-1.5">
+                                    {checkedSeqIds.map(id => {
+                                        const seq = scanPlans.flatMap(p => p.sequences).find(s => s.id === id);
+                                        return seq ? (
+                                            <li key={id} className="flex items-center gap-2 text-[12px] text-[#37474F] font-bold">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#D32F2F] shrink-0" />
+                                                {seq.name}
+                                            </li>
+                                        ) : null;
+                                    })}
+                                </ul>
+                            </div>
+                            {/* Dialog Footer */}
+                            <div className="flex gap-2 px-5 pb-5">
+                                <button
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    className="flex-1 h-[40px] bg-white border-2 border-[#B0C4DE] text-[#546E7A] font-bold rounded-lg text-[13px] hover:bg-gray-50 transition-all active:scale-95"
+                                >
+                                    取消
+                                </button>
+                                <button
+                                    onClick={handleConfirmDelete}
+                                    className="flex-1 h-[40px] bg-[#D32F2F] text-white font-bold rounded-lg text-[13px] hover:bg-red-700 shadow-md transition-all active:scale-95"
+                                >
+                                    确认删除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div >
         </div >
     );

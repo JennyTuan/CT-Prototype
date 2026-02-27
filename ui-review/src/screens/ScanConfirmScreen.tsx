@@ -12,7 +12,14 @@ import {
     FilePlus,
     Trash2,
     CheckCircle,
-    StretchHorizontal
+    StretchHorizontal,
+    Check,
+    AlertTriangle,
+    Fingerprint,
+    Stethoscope,
+    UserCircle,
+    Info,
+    X
 } from "lucide-react";
 
 interface Sequence {
@@ -32,7 +39,7 @@ const ScanConfirmScreen = () => {
     const [bedMode, setBedMode] = useState<"in" | "out">("in");
 
     // Data structure with sequences at the same level
-    const [groups] = useState<ProtocolGroup[]>([
+    const [groups, setGroups] = useState<ProtocolGroup[]>([
         {
             id: 'g1',
             name: 'Head_FacialBoneVolume',
@@ -44,6 +51,31 @@ const ScanConfirmScreen = () => {
     ]);
 
     const [expandedSeqId, setExpandedSeqId] = useState<string | null>('s1');
+    const [checkedSeqIds, setCheckedSeqIds] = useState<string[]>([]);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showAbortConfirm, setShowAbortConfirm] = useState(false);
+    const [showPatientConfirm, setShowPatientConfirm] = useState(false);
+
+    const toggleCheckSeq = (seqId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setCheckedSeqIds(prev =>
+            prev.includes(seqId) ? prev.filter(id => id !== seqId) : [...prev, seqId]
+        );
+    };
+
+    const handleDeleteClick = () => {
+        if (checkedSeqIds.length === 0) return;
+        setShowDeleteConfirm(true);
+    };
+
+    const handleConfirmDelete = () => {
+        setGroups(prev => prev
+            .map(g => ({ ...g, sequences: g.sequences.filter(s => !checkedSeqIds.includes(s.id)) }))
+            .filter(g => g.sequences.length > 0)
+        );
+        setCheckedSeqIds([]);
+        setShowDeleteConfirm(false);
+    };
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-[#F0F4F9] p-2 text-[#37474F] font-sans select-none">
@@ -99,7 +131,20 @@ const ScanConfirmScreen = () => {
                         <div className="h-[48px] bg-[#F8FAFC] border-b border-[#EEF2F9] flex items-center justify-between px-3 shrink-0">
                             <div className="flex items-center gap-2">
                                 <button className="p-1.5 text-[#546E7A] hover:bg-[#EEF2F9] rounded transition-all"><FilePlus size={18} /></button>
-                                <button className="p-1.5 text-[#90A4AE] opacity-40 cursor-not-allowed"><Trash2 size={18} /></button>
+                                <button
+                                    onClick={handleDeleteClick}
+                                    className={`p-1.5 rounded transition-all relative ${checkedSeqIds.length > 0
+                                        ? 'text-[#D32F2F] hover:bg-[#FFEBEE]'
+                                        : 'text-[#90A4AE] opacity-40 cursor-not-allowed'
+                                        }`}
+                                >
+                                    <Trash2 size={18} />
+                                    {checkedSeqIds.length > 0 && (
+                                        <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-[#D32F2F] text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                                            {checkedSeqIds.length}
+                                        </span>
+                                    )}
+                                </button>
                             </div>
                             <button
                                 onClick={() => setIsTreeCollapsed(!isTreeCollapsed)}
@@ -127,11 +172,30 @@ const ScanConfirmScreen = () => {
                                                 <div key={seq.id} className="mb-1">
                                                     <div
                                                         onClick={() => setExpandedSeqId(isExpanded ? null : seq.id)}
-                                                        className={`flex items-center gap-2 px-2 py-1.5 rounded-md ml-4 shadow-sm cursor-pointer transition-all ${isActive ? 'bg-[#4D94FF] text-white' : 'text-[#37474F] hover:bg-gray-50 mr-1'}`}
+                                                        className={`flex items-center gap-2 px-2 py-1.5 rounded-md ml-4 shadow-sm cursor-pointer transition-all ${checkedSeqIds.includes(seq.id)
+                                                            ? 'bg-[#FFF3E0] text-[#D32F2F]'
+                                                            : isActive
+                                                                ? 'bg-[#4D94FF] text-white'
+                                                                : 'text-[#37474F] hover:bg-gray-50 mr-1'
+                                                            }`}
                                                     >
-                                                        {isExpanded ? <ChevronDown size={14} className={isActive ? "text-white/70" : "text-gray-400"} /> : <ChevronRight size={14} className={isActive ? "text-white/70" : "text-gray-400"} />}
-                                                        <div className={`w-3.5 h-3.5 rounded-sm border ${isActive ? 'bg-white/20 border-white/30' : 'bg-white border-[#B0C4DE]'}`}></div>
-                                                        <span className="text-[13px] font-bold">{seq.name}</span>
+                                                        {isExpanded ? <ChevronDown size={14} className={checkedSeqIds.includes(seq.id) ? 'text-[#D32F2F]/60' : isActive ? "text-white/70" : "text-gray-400"} /> : <ChevronRight size={14} className={checkedSeqIds.includes(seq.id) ? 'text-[#D32F2F]/60' : isActive ? "text-white/70" : "text-gray-400"} />}
+
+                                                        {/* Checkbox */}
+                                                        <div
+                                                            onClick={(e) => toggleCheckSeq(seq.id, e)}
+                                                            className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center shrink-0 transition-all ${checkedSeqIds.includes(seq.id)
+                                                                ? 'bg-[#D32F2F] border-[#D32F2F]'
+                                                                : isActive
+                                                                    ? 'bg-white/20 border-white/30'
+                                                                    : 'bg-white border-[#B0C4DE] hover:border-[#D32F2F]'
+                                                                }`}
+                                                        >
+                                                            {checkedSeqIds.includes(seq.id) && <Check size={9} className="text-white stroke-[3]" />}
+                                                        </div>
+
+                                                        <span className={`text-[13px] font-bold ${checkedSeqIds.includes(seq.id) ? 'line-through opacity-60' : ''
+                                                            }`}>{seq.name}</span>
                                                     </div>
 
                                                     {/* Toggleable Workflow Steps */}
@@ -242,9 +306,9 @@ const ScanConfirmScreen = () => {
                             </div>
 
                             {/* Details Button */}
-                            <div className="p-4 pt-1 flex justify-end shrink-0">
-                                <button className="h-[32px] px-3 bg-white border-2 border-[#4D94FF] rounded text-[12px] font-bold text-[#37474F] hover:bg-blue-50 active:scale-95 transition-all shadow-sm">
-                                    参数详情
+                            <div className="p-4 pt-1 flex justify-center shrink-0">
+                                <button className="h-[32px] w-full bg-white border border-[#B0C4DE] rounded-md text-[10px] font-bold text-[#4D94FF] flex items-center justify-center gap-1 hover:bg-blue-50 transition-all shadow-sm active:scale-95">
+                                    <Info size={14} /> 更多详情
                                 </button>
                             </div>
                         </div>
@@ -268,15 +332,272 @@ const ScanConfirmScreen = () => {
                             <ChevronLeft size={20} /> 上一步
                         </button>
                     </div>
+                    <div className="flex-1 flex justify-center">
+                        <button
+                            onClick={() => setShowAbortConfirm(true)}
+                            className="flex items-center gap-2 px-10 h-[52px] bg-white text-[#F57C00] font-bold rounded-md border-2 border-[#F57C00] hover:bg-orange-50 transition-all uppercase text-[13px] shadow-sm active:scale-95">
+                            <AlertTriangle size={20} /> 中止检查
+                        </button>
+                    </div>
                     <div className="flex-1 flex justify-end">
-                        <button className="flex items-center gap-3 px-14 h-[52px] bg-[#4D94FF] text-white font-bold rounded-md shadow-lg hover:bg-blue-600 transition-all uppercase text-[13px] tracking-widest active:scale-95">
+                        <button
+                            onClick={() => setShowPatientConfirm(true)}
+                            className="flex items-center gap-2 px-10 h-[52px] bg-[#4D94FF] text-white font-bold rounded-md shadow-lg hover:bg-blue-600 transition-all uppercase text-[13px] active:scale-95"
+                        >
                             执行扫描 <ChevronRight size={20} />
                         </button>
                     </div>
                 </footer>
+
+                {/* Delete Confirmation Dialog */}
+                {showDeleteConfirm && (
+                    <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] flex items-center justify-center z-50">
+                        <div className="bg-white rounded-xl shadow-2xl border border-[#B0C4DE] w-[340px] overflow-hidden">
+                            <div className="flex items-center gap-3 px-5 py-4 bg-[#FFF8E1] border-b border-[#FFE082]">
+                                <div className="w-9 h-9 rounded-full bg-[#F57C00]/10 flex items-center justify-center shrink-0">
+                                    <AlertTriangle size={16} className="text-[#F57C00]" />
+                                </div>
+                                <div>
+                                    <div className="text-[14px] font-black text-[#37474F]">确认删除序列</div>
+                                    <div className="text-[11px] text-[#78909C] mt-0.5">已选 {checkedSeqIds.length} 项，此操作不可恢复</div>
+                                </div>
+                            </div>
+                            <div className="px-5 pt-3 pb-1">
+                                <ul className="flex flex-col gap-1.5">
+                                    {checkedSeqIds.map(id => {
+                                        const seq = groups.flatMap(g => g.sequences).find(s => s.id === id);
+                                        return seq ? (
+                                            <li key={id} className="flex items-center gap-2 text-[12px] text-[#37474F] font-bold">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#D32F2F] shrink-0" />
+                                                {seq.name}
+                                            </li>
+                                        ) : null;
+                                    })}
+                                </ul>
+                            </div>
+                            <div className="flex gap-2 px-5 py-4">
+                                <button
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    className="flex-1 h-[40px] bg-white border-2 border-[#B0C4DE] text-[#546E7A] font-bold rounded-lg text-[13px] hover:bg-gray-50 transition-all active:scale-95"
+                                >
+                                    取消
+                                </button>
+                                <button
+                                    onClick={handleConfirmDelete}
+                                    className="flex-1 h-[40px] bg-[#D32F2F] text-white font-bold rounded-lg text-[13px] hover:bg-red-700 shadow-md transition-all active:scale-95"
+                                >
+                                    确认删除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Abort Confirmation Dialog */}
+                {showAbortConfirm && (
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-50">
+                        <div className="bg-white rounded-xl shadow-2xl border border-[#FFE082] w-[360px] overflow-hidden">
+                            <div className="flex items-center gap-3 px-5 py-4 bg-[#FFF8E1] border-b border-[#FFE082]">
+                                <div className="w-10 h-10 rounded-full bg-[#F57C00]/15 flex items-center justify-center shrink-0">
+                                    <AlertTriangle size={20} className="text-[#F57C00]" />
+                                </div>
+                                <div>
+                                    <div className="text-[15px] font-black text-[#37474F]">中止检查</div>
+                                    <div className="text-[12px] text-[#78909C] mt-0.5">确认中止当前检查流程？</div>
+                                </div>
+                            </div>
+                            <div className="px-5 py-3">
+                                <p className="text-[13px] text-[#546E7A] leading-relaxed">
+                                    中止后，<span className="font-bold text-[#37474F]">当前扫描参数将清空</span>，需要重新进入流程。
+                                </p>
+                            </div>
+                            <div className="flex gap-2 px-5 pb-5">
+                                <button
+                                    onClick={() => setShowAbortConfirm(false)}
+                                    className="flex-1 h-[40px] bg-white border-2 border-[#B0C4DE] text-[#546E7A] font-bold rounded-lg text-[13px] hover:bg-gray-50 transition-all active:scale-95"
+                                >
+                                    继续检查
+                                </button>
+                                <button
+                                    onClick={() => setShowAbortConfirm(false)}
+                                    className="flex-1 h-[40px] bg-[#F57C00] text-white font-bold rounded-lg text-[13px] hover:bg-orange-600 shadow-md transition-all active:scale-95"
+                                >
+                                    确认中止
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <PatientConfirmationModal isOpen={showPatientConfirm} onClose={() => setShowPatientConfirm(false)} />
             </div>
         </div>
     );
 };
+
+/**
+ * PatientConfirmationModal - 适配 1024x768 的精简版患者确认弹窗
+ */
+interface PatientData {
+    name: string;
+    age: number;
+    gender: string;
+    idNumber: string;
+    patientId: string;
+    checkType: string;
+}
+
+interface ScanData {
+    ctdi: string;
+    dlp: string;
+    protocol: string;
+}
+
+interface PatientConfirmationModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    patientData?: PatientData;
+    scanData?: ScanData;
+}
+
+// 辅助组件：信息项
+const InfoItem = ({ label, value, icon: Icon }: { label: string; value: string | number; icon?: React.ElementType }) => (
+    <div className="flex flex-col gap-1 p-4 bg-[#F8FAFC] rounded-2xl border border-[#F1F5F9] transition-all">
+        <div className="flex items-center gap-2 text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider">
+            {Icon && <Icon size={12} />}
+            {label}
+        </div>
+        <div className="text-[18px] font-bold text-[#334155] truncate">
+            {value || "---"}
+        </div>
+    </div>
+);
+
+const PatientConfirmationModal: React.FC<PatientConfirmationModalProps> = ({
+    isOpen,
+    onClose,
+    patientData = {
+        name: "张三",
+        age: 45,
+        gender: "男",
+        idNumber: "11010119800101XXXX",
+        patientId: "P20260226001",
+        checkType: "CT Routine"
+    },
+    scanData = { ctdi: "12.45", dlp: "658.2", protocol: "定位像" }
+}) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="absolute inset-0 z-[999] flex items-center justify-center bg-[#0F172A]/40 backdrop-blur-sm animate-in fade-in duration-300">
+            {/* 弹窗主容器 - 尺寸经过优化以适配 1024x768 */}
+            <div className="bg-white w-[880px] rounded-[40px] shadow-[0_30px_60px_-12px_rgba(0,0,0,0.25)] p-10 flex flex-col gap-8 border border-white relative overflow-hidden">
+
+                {/* Close Button */}
+                <button
+                    onClick={onClose}
+                    className="absolute top-8 right-8 w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all z-20 group"
+                >
+                    <X size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+                </button>
+
+                {/* 背景渐变装饰 */}
+                <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-blue-50/40 to-transparent pointer-events-none" />
+
+                {/* 头部标题区 */}
+                <div className="relative z-10 flex items-center gap-3">
+                    <div className="w-11 h-11 bg-[#4D94FF] rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100">
+                        <UserCheckIcon size={22} />
+                    </div>
+                    <div>
+                        <h2 className="text-[22px] font-black text-[#1E293B]">确认患者扫描信息</h2>
+                        <p className="text-[11px] text-[#94A3B8] font-bold uppercase tracking-[0.2em]">Patient Data Confirmation</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-12 gap-8 relative z-10">
+
+                    {/* 左侧：精简后的患者档案 (占据 7/12 列) */}
+                    <div className="col-span-7 flex flex-col gap-4">
+                        <h3 className="text-[12px] font-bold text-[#94A3B8] tracking-widest px-1">患者档案 (PATIENT INFO)</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <InfoItem label="Name / 姓名" value={patientData.name} icon={UserCircle} />
+                            <div className="grid grid-cols-2 gap-4">
+                                <InfoItem label="Age / 年龄" value={patientData.age} />
+                                <InfoItem label="Gender / 性别" value={patientData.gender} />
+                            </div>
+                            <InfoItem label="Check Type / 检查类型" value={patientData.checkType} icon={Stethoscope} />
+                            <InfoItem label="Patient ID / 病历号" value={patientData.patientId} icon={Info} />
+                            <div className="col-span-2">
+                                <InfoItem label="ID Number / 证件号" value={patientData.idNumber} icon={Fingerprint} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 右侧：剂量与序列 (占据 5/12 列) */}
+                    <div className="col-span-5 flex flex-col gap-6">
+                        <div className="flex flex-col gap-4">
+                            <h3 className="text-[12px] font-bold text-[#94A3B8] tracking-widest px-1">参数预览 (PARAMETERS)</h3>
+
+                            {/* 剂量卡片 */}
+                            <div className="bg-[#FFFBEB] rounded-[28px] p-5 border border-[#FEF3C7] flex items-center justify-around shadow-sm">
+                                <div className="text-center">
+                                    <div className="text-[10px] font-bold text-[#B45309] mb-1 opacity-70 uppercase">CTDIvol (mGy)</div>
+                                    <div className="text-[32px] font-black text-[#B45309] leading-none">{scanData.ctdi}</div>
+                                </div>
+                                <div className="w-px h-8 bg-[#FEF3C7]" />
+                                <div className="text-center">
+                                    <div className="text-[10px] font-bold text-[#B45309] mb-1 opacity-70 uppercase">DLP (mGy·cm)</div>
+                                    <div className="text-[32px] font-black text-[#B45309] leading-none">{scanData.dlp}</div>
+                                </div>
+                            </div>
+
+                            {/* 序列卡片 */}
+                            <div className="bg-[#EFF6FF] rounded-[28px] p-5 border border-[#DBEAFE] flex flex-col items-center justify-center min-h-[120px]">
+                                <div className="text-[10px] font-bold text-[#3B82F6] mb-1 uppercase">Current Protocol</div>
+                                <div className="text-[28px] font-black text-[#2563EB] text-center leading-tight">
+                                    {scanData.protocol}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 底部按钮栏 */}
+                <div className="flex items-center justify-between mt-2 pt-8 border-t border-slate-100 relative z-10">
+                    <p className="text-[14px] italic text-[#64748B] font-medium">
+                        请确保以上信息正确，完成后点击“开始扫描”
+                    </p>
+
+                    <div className="flex items-center gap-5">
+                        <div className="flex items-center gap-3 bg-[#F0FDF4] px-4 py-2.5 rounded-xl border border-[#DCFCE7]">
+                            <div className="relative flex h-2.5 w-2.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#22C55E] opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#22C55E]"></span>
+                            </div>
+                            <span className="text-[14px] font-bold text-[#166534]">准备就绪</span>
+                        </div>
+
+                        <button
+                            onClick={onClose}
+                            className="h-[60px] px-12 bg-[#4D94FF] text-white font-black rounded-2xl shadow-[0_15px_30px_-8px_rgba(77,148,255,0.4)] hover:bg-[#3B82F6] hover:translate-y-[-1px] active:translate-y-[1px] transition-all text-[18px]"
+                        >
+                            开始扫描
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// 内部图标小组件
+const UserCheckIcon = ({ size }: { size: number }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <polyline points="16 11 18 13 22 9" />
+    </svg>
+);
 
 export default ScanConfirmScreen;

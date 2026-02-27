@@ -14,9 +14,9 @@ export default function Gallery() {
     const screens = useMemo<ScreenDef[]>(
         () => [
             { key: "patient_list", name: "患者列表（待检查/已完成）", component: <PatientListScreen /> },
+            { key: "protocol_setup", name: "协议选择界面", component: <ProtocolSetupScreen /> },
             { key: "scout_scan", name: "激光灯定位", component: <ScoutScanScreen /> },
             { key: "scan_confirm", name: "参数确认页面", component: <ScanConfirmScreen /> },
-            { key: "protocol_setup", name: "协议选择界面", component: <ProtocolSetupScreen /> },
         ],
         []
     );

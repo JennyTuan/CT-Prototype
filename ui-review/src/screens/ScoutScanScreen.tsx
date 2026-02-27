@@ -12,7 +12,9 @@ import {
     FilePlus,
     Trash2,
     Clock,
-    Circle
+    Circle,
+    ArrowUpDown,
+    AlertTriangle
 } from "lucide-react";
 
 interface Sequence {
@@ -30,6 +32,11 @@ interface ProtocolGroup {
 const ScoutScanScreen = () => {
     const [startPos, setStartPos] = useState("472.95");
     const [endPos, setEndPos] = useState("595.17");
+
+    const handleSwap = () => {
+        setStartPos(endPos);
+        setEndPos(startPos);
+    };
 
     // Initial data
     const [groups, setGroups] = useState<ProtocolGroup[]>([
@@ -49,6 +56,8 @@ const ScoutScanScreen = () => {
 
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isTreeCollapsed, setIsTreeCollapsed] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showAbortConfirm, setShowAbortConfirm] = useState(false);
 
     const toggleSelection = (id: string) => {
         setSelectedIds(prev =>
@@ -56,19 +65,22 @@ const ScoutScanScreen = () => {
         );
     };
 
-    const handleDelete = () => {
+    const handleDeleteClick = () => {
         if (selectedIds.length === 0) return;
+        setShowDeleteConfirm(true);
+    };
 
-        // Filter out selected groups and sequences
+    const handleConfirmDelete = () => {
         setGroups(prev => prev
             .filter(g => !selectedIds.includes(g.id))
             .map(g => ({
                 ...g,
                 sequences: g.sequences.filter(s => !selectedIds.includes(s.id))
             }))
-            .filter(g => g.sequences.length > 0 || !['g1', 'g2'].includes(g.id)) // Keep top levels if needed, or refine filter
+            .filter(g => g.sequences.length > 0 || !['g1', 'g2'].includes(g.id))
         );
         setSelectedIds([]);
+        setShowDeleteConfirm(false);
     };
 
     return (
@@ -126,7 +138,7 @@ const ScoutScanScreen = () => {
                             <div className="flex items-center gap-2">
                                 <button className="p-1.5 text-[#546E7A] hover:bg-[#EEF2F9] rounded transition-all"><FilePlus size={18} /></button>
                                 <button
-                                    onClick={handleDelete}
+                                    onClick={handleDeleteClick}
                                     className={`p-1.5 transition-all rounded ${selectedIds.length > 0 ? 'text-red-500 hover:bg-red-50' : 'text-[#546E7A]/40 cursor-not-allowed'}`}
                                 >
                                     <Trash2 size={18} />
@@ -200,31 +212,49 @@ const ScoutScanScreen = () => {
                             ))}
                         </div>
 
-                        {/* Bottom Positioning Controls - Card Footer Style (Expands when tree is collapsed) */}
-                        <div className={`border-t border-[#EEF2F9] bg-[#F8FAFC] p-4 flex flex-col justify-center gap-4 shrink-0 transition-all duration-300 ${isTreeCollapsed ? 'flex-1 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]' : 'h-[140px]'}`}>
-                            <div className="flex items-center gap-2">
-                                <Circle size={12} className="text-[#90A4AE] border-2 border-white rounded-full shrink-0" />
-                                <span className="text-[12px] font-bold text-[#90A4AE] w-[72px] shrink-0">起始位置 :</span>
-                                <input
-                                    type="text"
-                                    value={startPos}
-                                    onChange={(e) => setStartPos(e.target.value)}
-                                    className="flex-1 min-w-0 h-[32px] bg-white border border-[#B0C4DE] rounded px-2 text-[13px] font-bold text-[#90A4AE] outline-none focus:border-[#4D94FF]"
-                                />
-                            </div>
-                            <div className="flex items-center gap-2">
+                        {/* Bottom Positioning Controls - Range Selector Style */}
+                        <div className={`border-t border-[#EEF2F9] bg-[#F8FAFC] px-4 flex items-center gap-3 shrink-0 transition-all duration-300 ${isTreeCollapsed ? 'flex-1 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]' : 'h-[140px]'}`}>
+
+                            {/* Left column: visual range indicator */}
+                            <div className="flex flex-col items-center self-stretch justify-center py-4 shrink-0">
+                                <Circle size={11} className="text-[#90A4AE] shrink-0" />
+                                <div className="w-px flex-1 bg-[#C5D5E8] my-1" />
+                                <button
+                                    onClick={handleSwap}
+                                    title="交换起始/结束位置"
+                                    className="w-[20px] h-[20px] rounded-full bg-white border border-[#B0C4DE] flex items-center justify-center text-[#78A0BF] hover:text-[#4D94FF] hover:border-[#4D94FF] hover:bg-[#EEF6FF] transition-all active:scale-90 shadow-sm shrink-0"
+                                >
+                                    <ArrowUpDown size={10} />
+                                </button>
+                                <div className="w-px flex-1 bg-[#C5D5E8] my-1" />
                                 <div className="w-3 h-3 rounded-full bg-[#66BB6A] border-2 border-white flex items-center justify-center p-[2px] shrink-0">
-                                    <div className="w-full h-full bg-white rounded-full"></div>
+                                    <div className="w-full h-full bg-white rounded-full" />
                                 </div>
-                                <span className="text-[12px] font-bold text-[#66BB6A] w-[72px] shrink-0">结束位置 :</span>
-                                <input
-                                    type="text"
-                                    value={endPos}
-                                    onChange={(e) => setEndPos(e.target.value)}
-                                    className="flex-1 min-w-0 h-[32px] bg-white border border-[#B0C4DE] rounded px-2 text-[13px] font-bold text-[#66BB6A] outline-none focus:border-[#4D94FF]"
-                                />
+                            </div>
+
+                            {/* Right column: labels + inputs, aligned with dots */}
+                            <div className="flex flex-col flex-1 min-w-0 self-stretch justify-between py-4">
+                                <div className="flex items-center gap-2 h-[32px] min-w-0">
+                                    <span className="text-[12px] font-bold text-[#90A4AE] w-[60px] shrink-0">起始位置 :</span>
+                                    <input
+                                        type="text"
+                                        value={startPos}
+                                        onChange={(e) => setStartPos(e.target.value)}
+                                        className="flex-1 min-w-0 h-[32px] bg-white border border-[#B0C4DE] rounded px-2 text-[13px] font-bold text-[#90A4AE] outline-none focus:border-[#4D94FF]"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2 h-[32px] min-w-0">
+                                    <span className="text-[12px] font-bold text-[#66BB6A] w-[60px] shrink-0">结束位置 :</span>
+                                    <input
+                                        type="text"
+                                        value={endPos}
+                                        onChange={(e) => setEndPos(e.target.value)}
+                                        className="flex-1 min-w-0 h-[32px] bg-white border border-[#B0C4DE] rounded px-2 text-[13px] font-bold text-[#66BB6A] outline-none focus:border-[#4D94FF]"
+                                    />
+                                </div>
                             </div>
                         </div>
+
                     </aside>
 
                     {/* Right Viewport Card */}
@@ -245,12 +275,86 @@ const ScoutScanScreen = () => {
                             <ChevronLeft size={20} /> 上一步
                         </button>
                     </div>
+                    <div className="flex-1 flex justify-center">
+                        <button
+                            onClick={() => setShowAbortConfirm(true)}
+                            className="flex items-center gap-2 px-10 h-[52px] bg-white text-[#F57C00] font-bold rounded-md border-2 border-[#F57C00] hover:bg-orange-50 transition-all uppercase text-[13px] shadow-sm active:scale-95">
+                            <AlertTriangle size={20} /> 中止检查
+                        </button>
+                    </div>
                     <div className="flex-1 flex justify-end">
-                        <button className="flex items-center gap-3 px-14 h-[52px] bg-[#4D94FF] text-white font-bold rounded-md shadow-lg hover:bg-blue-600 transition-all uppercase text-[13px] tracking-widest active:scale-95">
+                        <button className="flex items-center gap-2 px-10 h-[52px] bg-[#4D94FF] text-white font-bold rounded-md shadow-lg hover:bg-blue-600 transition-all uppercase text-[13px] active:scale-95">
                             下一步 <ChevronRight size={20} />
                         </button>
                     </div>
                 </footer>
+
+                {/* Delete Confirmation Dialog */}
+                {showDeleteConfirm && (
+                    <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] flex items-center justify-center z-50">
+                        <div className="bg-white rounded-xl shadow-2xl border border-[#B0C4DE] w-[340px] overflow-hidden">
+                            <div className="flex items-center gap-3 px-5 py-4 bg-[#FFF8E1] border-b border-[#FFE082]">
+                                <div className="w-9 h-9 rounded-full bg-[#F57C00]/10 flex items-center justify-center shrink-0">
+                                    <Trash2 size={16} className="text-[#F57C00]" />
+                                </div>
+                                <div>
+                                    <div className="text-[14px] font-black text-[#37474F]">确认删除</div>
+                                    <div className="text-[11px] text-[#78909C] mt-0.5">已选 {selectedIds.length} 项，此操作不可恢复</div>
+                                </div>
+                            </div>
+                            <div className="flex gap-2 px-5 py-4">
+                                <button
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    className="flex-1 h-[40px] bg-white border-2 border-[#B0C4DE] text-[#546E7A] font-bold rounded-lg text-[13px] hover:bg-gray-50 transition-all active:scale-95"
+                                >
+                                    取消
+                                </button>
+                                <button
+                                    onClick={handleConfirmDelete}
+                                    className="flex-1 h-[40px] bg-[#D32F2F] text-white font-bold rounded-lg text-[13px] hover:bg-red-700 shadow-md transition-all active:scale-95"
+                                >
+                                    确认删除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Abort Confirmation Dialog */}
+                {showAbortConfirm && (
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-50">
+                        <div className="bg-white rounded-xl shadow-2xl border border-[#FFE082] w-[360px] overflow-hidden">
+                            <div className="flex items-center gap-3 px-5 py-4 bg-[#FFF8E1] border-b border-[#FFE082]">
+                                <div className="w-10 h-10 rounded-full bg-[#F57C00]/15 flex items-center justify-center shrink-0">
+                                    <AlertTriangle size={20} className="text-[#F57C00]" />
+                                </div>
+                                <div>
+                                    <div className="text-[15px] font-black text-[#37474F]">中止检查</div>
+                                    <div className="text-[12px] text-[#78909C] mt-0.5">确认中止当前检查流程？</div>
+                                </div>
+                            </div>
+                            <div className="px-5 py-3">
+                                <p className="text-[13px] text-[#546E7A] leading-relaxed">
+                                    中止后，<span className="font-bold text-[#37474F]">当前扫描参数将清空</span>，需要重新进入流程。
+                                </p>
+                            </div>
+                            <div className="flex gap-2 px-5 pb-5">
+                                <button
+                                    onClick={() => setShowAbortConfirm(false)}
+                                    className="flex-1 h-[40px] bg-white border-2 border-[#B0C4DE] text-[#546E7A] font-bold rounded-lg text-[13px] hover:bg-gray-50 transition-all active:scale-95"
+                                >
+                                    继续检查
+                                </button>
+                                <button
+                                    onClick={() => setShowAbortConfirm(false)}
+                                    className="flex-1 h-[40px] bg-[#F57C00] text-white font-bold rounded-lg text-[13px] hover:bg-orange-600 shadow-md transition-all active:scale-95"
+                                >
+                                    确认中止
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

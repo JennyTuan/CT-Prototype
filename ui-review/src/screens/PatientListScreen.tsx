@@ -252,7 +252,7 @@ const PatientListScreen = () => {
                         </button>
                     </div>
                     <div className="flex-1 flex justify-end">
-                        <button className="flex items-center gap-3 px-14 h-[52px] bg-[#4D94FF] text-white font-bold rounded-md shadow-lg hover:bg-blue-600 transition-all uppercase text-[13px] tracking-widest active:scale-95">
+                        <button className="flex items-center gap-2 px-10 h-[52px] bg-[#4D94FF] text-white font-bold rounded-md shadow-lg hover:bg-blue-600 transition-all uppercase text-[13px] active:scale-95">
                             下一步 <ChevronRight size={20} />
                         </button>
                     </div>
