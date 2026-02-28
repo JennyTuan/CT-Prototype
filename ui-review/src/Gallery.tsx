@@ -3,6 +3,8 @@ import PatientListScreen from "./screens/PatientListScreen";
 import ScoutScanScreen from "./screens/ScoutScanScreen";
 import ProtocolSetupScreen from "./screens/ProtocolSetupScreen";
 import ScanConfirmScreen from "./screens/ScanConfirmScreen";
+import MockScanScreen from "./screens/MockScanScreen";
+import ViewScreen from "./screens/ViewScreen";
 
 interface ScreenDef {
     key: string;
@@ -17,6 +19,8 @@ export default function Gallery() {
             { key: "protocol_setup", name: "协议选择界面", component: <ProtocolSetupScreen /> },
             { key: "scout_scan", name: "激光灯定位", component: <ScoutScanScreen /> },
             { key: "scan_confirm", name: "参数确认页面", component: <ScanConfirmScreen /> },
+            { key: "mock_scan", name: "模拟扫描物理按键", component: <MockScanScreen /> },
+            { key: "view", name: "图像预览", component: <ViewScreen /> },
         ],
         []
     );
@@ -26,7 +30,6 @@ export default function Gallery() {
 
     return (
         <div className="h-screen w-screen flex bg-[#F3F6FB]">
-            {/* 左侧导航 */}
             <aside className="w-[280px] shrink-0 border-r border-[#D6E0EE] bg-white">
                 <div className="px-4 py-3 border-b border-[#EEF2F9]">
                     <div className="font-bold text-[14px] text-[#263238]">UI Review Gallery</div>
@@ -35,14 +38,14 @@ export default function Gallery() {
 
                 <div className="p-2">
                     {screens.map((s) => {
-                        const active = s.key === activeKey;
+                        const isActive = s.key === activeKey;
                         return (
                             <button
                                 key={s.key}
                                 onClick={() => setActiveKey(s.key)}
                                 className={[
                                     "w-full text-left px-3 py-2 rounded-md mb-1 transition",
-                                    active
+                                    isActive
                                         ? "bg-[#E3F2FD] text-[#1565C0] font-bold"
                                         : "hover:bg-[#F6F9FF] text-[#37474F]"
                                 ].join(" ")}
@@ -55,17 +58,13 @@ export default function Gallery() {
                 </div>
             </aside>
 
-            {/* 右侧预览 */}
             <main className="flex-1 overflow-auto p-4">
                 <div className="mb-3 text-[12px] text-[#607D8B]">
                     当前预览：<span className="font-bold text-[#37474F]">{active?.name}</span>
                 </div>
-
-                {/* 让你的 1024x768 主画面居中显示 */}
-                <div className="flex justify-center">
-                    {active?.component}
-                </div>
+                <div className="flex justify-center">{active?.component}</div>
             </main>
         </div>
     );
 }
+

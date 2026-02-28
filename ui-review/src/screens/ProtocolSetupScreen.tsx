@@ -31,7 +31,6 @@ const ProtocolSetupScreen = () => {
     // 选中序列ID和重建方案索引
     const [selectedSeqId, setSelectedSeqId] = useState("seq-2");
     const [selectedReconIndex, setSelectedReconIndex] = useState(0);
-    const [swipedPlanId, setSwipedPlanId] = useState<string | null>(null);
 
     // 多选删除相关
     const [checkedSeqIds, setCheckedSeqIds] = useState<string[]>([]);
@@ -293,44 +292,14 @@ const ProtocolSetupScreen = () => {
                                     {scanPlans.map((plan) => (
                                         <div key={plan.id} className="border-b border-gray-100/50">
                                             {/* 计划标题行 - 左滑删除实现 */}
-                                            <div className="relative overflow-hidden group">
-                                                {/* 后层删除按钮 */}
-                                                <div
-                                                    className="absolute right-0 top-0 bottom-0 w-[70px] bg-[#D32F2F] flex items-center justify-center cursor-pointer"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        // 模拟删除逻辑
-                                                        setSwipedPlanId(null);
-                                                    }}
-                                                >
-                                                    <span className="text-white text-[11px] font-bold">删除</span>
-                                                </div>
-
-                                                {/* 前层内容行 */}
-                                                <div
-                                                    onClick={() => {
-                                                        setSwipedPlanId(swipedPlanId === plan.id ? null : null); // 点击重置滑动
-                                                    }}
-                                                    onContextMenu={(e) => {
-                                                        e.preventDefault();
-                                                        setSwipedPlanId(plan.id); // 通过右键模拟左滑
-                                                    }}
-                                                    className={`h-[32px] px-4 flex items-center gap-2 cursor-pointer transition-transform duration-300 relative bg-[#F8FAFC] border-b border-[#EEF2F9] ${swipedPlanId === plan.id ? "-translate-x-[70px]" : "translate-x-0"
-                                                        }`}
-                                                >
-                                                    <CircleDot
-                                                        size={8}
-                                                        className={selectedSeqId && plan.sequences.some(s => s.id === selectedSeqId) ? "text-[#4D94FF]" : "text-[#94A3B8]"}
-                                                    />
-                                                    <span className="text-[10px] font-black tracking-tight text-[#546E7A]">
-                                                        {plan.title}
-                                                    </span>
-
-                                                    {/* 滑动提示 */}
-                                                    <div className="ml-auto opacity-0 group-hover:opacity-40 transition-opacity">
-                                                        <ChevronLeft size={10} />
-                                                    </div>
-                                                </div>
+                                            <div className="h-[32px] px-4 flex items-center gap-2 bg-[#F8FAFC] border-b border-[#EEF2F9]">
+                                                <CircleDot
+                                                    size={8}
+                                                    className={selectedSeqId && plan.sequences.some(s => s.id === selectedSeqId) ? "text-[#4D94FF]" : "text-[#94A3B8]"}
+                                                />
+                                                <span className="text-[10px] font-black tracking-tight text-[#546E7A]">
+                                                    {plan.title}
+                                                </span>
                                             </div>
 
                                             {plan.sequences.map((seq) => (
@@ -341,7 +310,7 @@ const ProtocolSetupScreen = () => {
                                                         setSelectedReconIndex(0);
                                                     }}
                                                     className={`h-[36px] flex items-center px-8 gap-3 cursor-pointer relative ${checkedSeqIds.includes(seq.id)
-                                                        ? 'bg-[#FFF3E0]'
+                                                        ? 'bg-[#F3F8FF]'
                                                         : selectedSeqId === seq.id
                                                             ? 'bg-[#E3F2FD] border-l-4 border-[#4D94FF]'
                                                             : 'hover:bg-gray-50'
@@ -354,8 +323,8 @@ const ProtocolSetupScreen = () => {
                                                     <div
                                                         onClick={(e) => toggleCheckSeq(seq.id, e)}
                                                         className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all ${checkedSeqIds.includes(seq.id)
-                                                            ? 'bg-[#D32F2F] border-[#D32F2F]'
-                                                            : 'bg-white border-[#B0C4DE] hover:border-[#D32F2F]'
+                                                            ? 'bg-[#4D94FF] border-[#4D94FF]'
+                                                            : 'bg-white border-[#B0C4DE] hover:border-[#4D94FF]'
                                                             }`}
                                                     >
                                                         {checkedSeqIds.includes(seq.id) && <Check size={10} className="text-white stroke-[3]" />}
@@ -363,7 +332,7 @@ const ProtocolSetupScreen = () => {
 
                                                     <span
                                                         className={`text-[12px] font-bold ${checkedSeqIds.includes(seq.id)
-                                                            ? 'text-[#D32F2F] line-through opacity-60'
+                                                            ? 'text-[#546E7A]'
                                                             : selectedSeqId === seq.id
                                                                 ? 'text-[#1E88E5]'
                                                                 : 'text-[#546E7A]'

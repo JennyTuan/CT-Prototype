@@ -1,0 +1,52 @@
+<svg width="900" height="900" viewBox="0 0 900 900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="body" cx="50%" cy="48%" r="46%">
+      <stop offset="0%" stop-color="#b9bec4"/>
+      <stop offset="70%" stop-color="#8f969f"/>
+      <stop offset="100%" stop-color="#4d5560"/>
+    </radialGradient>
+    <radialGradient id="lung" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#1f252d"/>
+      <stop offset="75%" stop-color="#2a3039"/>
+      <stop offset="100%" stop-color="#3b434f"/>
+    </radialGradient>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="3"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer>
+        <feFuncA type="table" tableValues="0 0.13"/>
+      </feComponentTransfer>
+    </filter>
+    <filter id="soft">
+      <feGaussianBlur stdDeviation="2.4"/>
+    </filter>
+  </defs>
+
+  <rect width="900" height="900" fill="#141a21"/>
+  <circle cx="450" cy="450" r="340" fill="url(#body)"/>
+  <circle cx="450" cy="450" r="325" fill="#a6adb5" opacity="0.18"/>
+
+  <ellipse cx="310" cy="460" rx="180" ry="245" fill="url(#lung)"/>
+  <ellipse cx="590" cy="460" rx="180" ry="245" fill="url(#lung)"/>
+  <ellipse cx="450" cy="430" rx="56" ry="170" fill="#737d88"/>
+  <ellipse cx="450" cy="430" rx="36" ry="150" fill="#5f6974"/>
+
+  <g opacity="0.28" filter="url(#soft)">
+    <path d="M252 375c60 34 72 112 46 192" stroke="#cfd5db" stroke-width="9" fill="none"/>
+    <path d="M645 362c-72 42-85 118-53 201" stroke="#cfd5db" stroke-width="8" fill="none"/>
+    <path d="M280 450c38 12 65 35 77 88" stroke="#cfd5db" stroke-width="6" fill="none"/>
+    <path d="M620 444c-38 10-67 34-80 92" stroke="#cfd5db" stroke-width="6" fill="none"/>
+  </g>
+
+  <g opacity="0.65">
+    <circle cx="250" cy="300" r="22" fill="#d9dee3"/>
+    <circle cx="650" cy="300" r="22" fill="#d9dee3"/>
+    <circle cx="220" cy="360" r="16" fill="#d5dbe1"/>
+    <circle cx="680" cy="360" r="16" fill="#d5dbe1"/>
+    <circle cx="205" cy="435" r="13" fill="#cfd5dc"/>
+    <circle cx="695" cy="435" r="13" fill="#cfd5dc"/>
+  </g>
+
+  <ellipse cx="450" cy="450" rx="325" ry="325" fill="#000" opacity="0.18"/>
+  <rect width="900" height="900" filter="url(#grain)"/>
+</svg>
