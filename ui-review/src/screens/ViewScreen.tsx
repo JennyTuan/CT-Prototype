@@ -9,17 +9,14 @@ import {
     UserCheck,
     Layers3,
     SlidersHorizontal,
-    SkipBack,
-    SkipForward,
-    Play,
-    Pause,
     ZoomIn,
     ZoomOut,
     Hand,
-    Contrast,
-    RotateCcw,
     Ruler,
     Pencil,
+    CircleDot,
+    Maximize,
+    RefreshCw,
 } from "lucide-react";
 import * as dicomParser from "dicom-parser";
 
@@ -84,10 +81,10 @@ const cleanOverlayText = (value?: string) => {
 const ViewScreen = () => {
     const [selectedSeriesId, setSelectedSeriesId] = useState("series-soft");
     const [sliceIndex, setSliceIndex] = useState(159);
-    const [isPlaying, setIsPlaying] = useState(false);
     const [toolMode, setToolMode] = useState<"pan" | "wl" | "measure" | "annotate">("pan");
     const [zoom, setZoom] = useState(1);
     const [pan, setPan] = useState({ x: 0, y: 0 });
+    const [rotation, setRotation] = useState(0);
     const [invert, setInvert] = useState(false);
     const [ww, setWw] = useState(350);
     const [wl, setWl] = useState(45);
@@ -199,6 +196,20 @@ const ViewScreen = () => {
         const parsed = Number(raw);
         return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
     })();
+    const handleResetAll = () => {
+        setRotation(0);
+        setZoom(1);
+        setPan({ x: 0, y: 0 });
+        setInvert(false);
+        setWw(defaultWindowRef.current.ww);
+        setWl(defaultWindowRef.current.wl);
+        setToolMode("pan");
+        setMeasures([]);
+        setAnnotations([]);
+        setDraftMeasure(null);
+        measureStartRef.current = null;
+        dragRef.current = { dragging: false, x: 0, y: 0 };
+    };
 
     const screenToImage = (clientX: number, clientY: number) => {
         const viewport = viewportRef.current;
@@ -397,19 +408,20 @@ const ViewScreen = () => {
             drawRectRef.current = { x, y, w: drawW, h: drawH };
 
             ctx.imageSmoothingEnabled = true;
+            ctx.save();
+            if (rotation !== 0) {
+                const cx = x + drawW / 2;
+                const cy = y + drawH / 2;
+                ctx.translate(cx, cy);
+                ctx.rotate((rotation * Math.PI) / 180);
+                ctx.translate(-cx, -cy);
+            }
             ctx.drawImage(offscreen, x, y, drawW, drawH);
+            ctx.restore();
         };
 
         renderCurrentSlice();
-    }, [renderTick, ww, wl, zoom, pan, invert]);
-
-    useEffect(() => {
-        if (!isPlaying) return;
-        const id = window.setInterval(() => {
-            setSliceIndex((prev) => (prev + 1) % totalSlices);
-        }, 90);
-        return () => window.clearInterval(id);
-    }, [isPlaying]);
+    }, [renderTick, ww, wl, zoom, pan, invert, rotation]);
 
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
@@ -460,7 +472,7 @@ const ViewScreen = () => {
             window.removeEventListener("mousemove", onMove);
             window.removeEventListener("mouseup", onUp);
         };
-    }, [toolMode, draftMeasure]);
+    }, [toolMode, draftMeasure, pixelSpacingValue]);
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-[#F0F4F9] p-2 text-[#37474F] font-sans select-none">
@@ -584,18 +596,18 @@ const ViewScreen = () => {
                             onMouseDown={(e) => {
                                 e.stopPropagation();
                                 if (e.button !== 0) return;
-                            if (toolMode === "measure") {
-                                const point = screenPointInViewport(e.clientX, e.clientY);
-                                if (!point) return;
-                                measureStartRef.current = point;
-                                setDraftMeasure({
-                                    sx1: point.x,
-                                    sy1: point.y,
-                                    sx2: point.x,
-                                    sy2: point.y,
-                                    slice: sliceIndex,
-                                });
-                                return;
+                                if (toolMode === "measure") {
+                                    const point = screenPointInViewport(e.clientX, e.clientY);
+                                    if (!point) return;
+                                    measureStartRef.current = point;
+                                    setDraftMeasure({
+                                        sx1: point.x,
+                                        sy1: point.y,
+                                        sx2: point.x,
+                                        sy2: point.y,
+                                        slice: sliceIndex,
+                                    });
+                                    return;
                                 }
                                 if (toolMode === "annotate") {
                                     const point = screenToImage(e.clientX, e.clientY);
@@ -618,12 +630,12 @@ const ViewScreen = () => {
                             }}
                             onMouseMove={(e) => {
                                 e.stopPropagation();
-                            if (toolMode === "measure" && measureStartRef.current) {
-                                const point = screenPointInViewport(e.clientX, e.clientY);
-                                if (!point) return;
-                                setDraftMeasure((prev) => (prev ? { ...prev, sx2: point.x, sy2: point.y } : null));
-                                return;
-                            }
+                                if (toolMode === "measure" && measureStartRef.current) {
+                                    const point = screenPointInViewport(e.clientX, e.clientY);
+                                    if (!point) return;
+                                    setDraftMeasure((prev) => (prev ? { ...prev, sx2: point.x, sy2: point.y } : null));
+                                    return;
+                                }
                                 if (!dragRef.current.dragging) return;
                                 const dx = e.clientX - dragRef.current.x;
                                 const dy = e.clientY - dragRef.current.y;
@@ -637,23 +649,23 @@ const ViewScreen = () => {
                             }}
                             onMouseUp={(e) => {
                                 e.stopPropagation();
-                            if (toolMode === "measure" && draftMeasure) {
-                                const distPx = Math.hypot(draftMeasure.sx2 - draftMeasure.sx1, draftMeasure.sy2 - draftMeasure.sy1);
-                                const pxPerImagePixel = Math.max(drawRectRef.current.w / Math.max(imgSizeRef.current.cols, 1), 0.0001);
-                                const dist = (distPx / pxPerImagePixel) * pixelSpacingValue;
-                                if (dist > 1) {
-                                    setMeasures((prev) => [
-                                        ...prev,
-                                        {
-                                            id: `measure-${Date.now()}-${Math.random()}`,
-                                            slice: draftMeasure.slice,
-                                            sx1: draftMeasure.sx1,
-                                            sy1: draftMeasure.sy1,
-                                            sx2: draftMeasure.sx2,
-                                            sy2: draftMeasure.sy2,
-                                        },
-                                    ]);
-                                }
+                                if (toolMode === "measure" && draftMeasure) {
+                                    const distPx = Math.hypot(draftMeasure.sx2 - draftMeasure.sx1, draftMeasure.sy2 - draftMeasure.sy1);
+                                    const pxPerImagePixel = Math.max(drawRectRef.current.w / Math.max(imgSizeRef.current.cols, 1), 0.0001);
+                                    const dist = (distPx / pxPerImagePixel) * pixelSpacingValue;
+                                    if (dist > 1) {
+                                        setMeasures((prev) => [
+                                            ...prev,
+                                            {
+                                                id: `measure-${Date.now()}-${Math.random()}`,
+                                                slice: draftMeasure.slice,
+                                                sx1: draftMeasure.sx1,
+                                                sy1: draftMeasure.sy1,
+                                                sx2: draftMeasure.sx2,
+                                                sy2: draftMeasure.sy2,
+                                            },
+                                        ]);
+                                    }
                                     setDraftMeasure(null);
                                     measureStartRef.current = null;
                                     return;
@@ -662,23 +674,23 @@ const ViewScreen = () => {
                             }}
                             onMouseLeave={(e) => {
                                 e.stopPropagation();
-                            if (toolMode === "measure" && draftMeasure) {
-                                const distPx = Math.hypot(draftMeasure.sx2 - draftMeasure.sx1, draftMeasure.sy2 - draftMeasure.sy1);
-                                const pxPerImagePixel = Math.max(drawRectRef.current.w / Math.max(imgSizeRef.current.cols, 1), 0.0001);
-                                const dist = (distPx / pxPerImagePixel) * pixelSpacingValue;
-                                if (dist > 1) {
-                                    setMeasures((prev) => [
-                                        ...prev,
-                                        {
-                                            id: `measure-${Date.now()}-${Math.random()}`,
-                                            slice: draftMeasure.slice,
-                                            sx1: draftMeasure.sx1,
-                                            sy1: draftMeasure.sy1,
-                                            sx2: draftMeasure.sx2,
-                                            sy2: draftMeasure.sy2,
-                                        },
-                                    ]);
-                                }
+                                if (toolMode === "measure" && draftMeasure) {
+                                    const distPx = Math.hypot(draftMeasure.sx2 - draftMeasure.sx1, draftMeasure.sy2 - draftMeasure.sy1);
+                                    const pxPerImagePixel = Math.max(drawRectRef.current.w / Math.max(imgSizeRef.current.cols, 1), 0.0001);
+                                    const dist = (distPx / pxPerImagePixel) * pixelSpacingValue;
+                                    if (dist > 1) {
+                                        setMeasures((prev) => [
+                                            ...prev,
+                                            {
+                                                id: `measure-${Date.now()}-${Math.random()}`,
+                                                slice: draftMeasure.slice,
+                                                sx1: draftMeasure.sx1,
+                                                sy1: draftMeasure.sy1,
+                                                sx2: draftMeasure.sx2,
+                                                sy2: draftMeasure.sy2,
+                                            },
+                                        ]);
+                                    }
                                     setDraftMeasure(null);
                                     measureStartRef.current = null;
                                 }
@@ -686,119 +698,96 @@ const ViewScreen = () => {
                             }}
                         />
                         <div
-                            className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 rounded-xl border border-slate-300/20 bg-slate-900/35 p-1.5 shadow-[0_12px_36px_rgba(0,0,0,0.45)] backdrop-blur-xl supports-[backdrop-filter]:bg-slate-900/28"
+                            style={{
+                                position: "absolute",
+                                right: "16px",
+                                top: "50%",
+                                transform: "translateY(-50%)",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "4px",
+                                borderRadius: "14px",
+                                border: "1px solid rgba(255,255,255,0.07)",
+                                background: "rgba(10,10,10,0.88)",
+                                padding: "6px",
+                                boxShadow: "0 20px 50px rgba(0,0,0,0.7)",
+                                backdropFilter: "blur(20px)",
+                                WebkitBackdropFilter: "blur(20px)",
+                            }}
                             onPointerDown={(e) => e.stopPropagation()}
                         >
-                            <button
-                                title="Pan"
-                                onClick={() => setToolMode("pan")}
-                                className={`w-10 h-10 rounded-md flex items-center justify-center ${toolMode === "pan" ? "bg-[#2A6FD3]/90 text-white shadow-[0_6px_18px_rgba(42,111,211,0.45)]" : "text-[#CFD8DC] hover:bg-slate-500/25"}`}
-                            >
-                                <Hand size={18} />
-                            </button>
-                            <button
-                                title="WW/WL"
-                                onClick={() => setToolMode("wl")}
-                                className={`w-10 h-10 rounded-md flex items-center justify-center ${toolMode === "wl" ? "bg-[#2A6FD3]/90 text-white shadow-[0_6px_18px_rgba(42,111,211,0.45)]" : "text-[#CFD8DC] hover:bg-slate-500/25"}`}
-                            >
-                                <Contrast size={18} />
-                            </button>
-                            <button
-                                title="Measure"
-                                onClick={() => setToolMode("measure")}
-                                className={`w-10 h-10 rounded-md flex items-center justify-center ${toolMode === "measure" ? "bg-[#2A6FD3]/90 text-white shadow-[0_6px_18px_rgba(42,111,211,0.45)]" : "text-[#CFD8DC] hover:bg-slate-500/25"}`}
-                            >
-                                <Ruler size={18} />
-                            </button>
-                            <button
-                                title="Annotate"
-                                onClick={() => setToolMode("annotate")}
-                                className={`w-10 h-10 rounded-md flex items-center justify-center ${toolMode === "annotate" ? "bg-[#2A6FD3]/90 text-white shadow-[0_6px_18px_rgba(42,111,211,0.45)]" : "text-[#CFD8DC] hover:bg-slate-500/25"}`}
-                            >
-                                <Pencil size={18} />
-                            </button>
-                            <div className="my-0.5 h-px w-full bg-slate-400/25" />
-                            <button
-                                title="Zoom In"
-                                onClick={() => setZoom((z) => Math.min(4, z + 0.1))}
-                                className="flex h-10 w-10 items-center justify-center rounded-md text-[#CFD8DC] hover:bg-slate-500/25"
-                            >
-                                <ZoomIn size={18} />
-                            </button>
-                            <button
-                                title="Zoom Out"
-                                onClick={() => setZoom((z) => Math.max(0.3, z - 0.1))}
-                                className="flex h-10 w-10 items-center justify-center rounded-md text-[#CFD8DC] hover:bg-slate-500/25"
-                            >
-                                <ZoomOut size={18} />
-                            </button>
-                            <button
-                                title="Invert"
-                                onClick={() => setInvert((v) => !v)}
-                                className={`w-10 h-10 rounded-md flex items-center justify-center ${invert ? "bg-[#2A6FD3]/90 text-white shadow-[0_6px_18px_rgba(42,111,211,0.45)]" : "text-[#CFD8DC] hover:bg-slate-500/25"}`}
-                            >
-                                I
-                            </button>
-                            <button
-                                title="Reset"
-                                onClick={() => {
-                                    setZoom(1);
-                                    setPan({ x: 0, y: 0 });
-                                    setInvert(false);
-                                    setWw(defaultWindowRef.current.ww);
-                                    setWl(defaultWindowRef.current.wl);
-                                    setToolMode("pan");
-                                }}
-                                className="flex h-10 w-10 items-center justify-center rounded-md text-[#CFD8DC] hover:bg-slate-500/25"
-                            >
-                                <RotateCcw size={18} />
-                            </button>
-                        </div>
-                        <div
-                            className="absolute bottom-3 left-1/2 flex h-[52px] w-[540px] max-w-[calc(100%-140px)] -translate-x-1/2 items-center gap-2 rounded-xl border border-slate-300/20 bg-slate-900/35 px-2.5 shadow-[0_12px_36px_rgba(0,0,0,0.45)] backdrop-blur-xl supports-[backdrop-filter]:bg-slate-900/28"
-                            onPointerDown={(e) => e.stopPropagation()}
-                        >
-                            <div className="flex items-center gap-1 shrink-0">
-                                <button
-                                    title="Prev"
-                                    onClick={() => setSliceIndex((p) => Math.max(0, p - 1))}
-                                    className="flex h-9 w-9 items-center justify-center rounded-md text-[#CFD8DC] hover:bg-slate-500/25"
-                                >
-                                    <SkipBack size={16} />
-                                </button>
-                                <button
-                                    title="Play/Pause"
-                                    onClick={() => setIsPlaying((v) => !v)}
-                                    className={`w-9 h-9 rounded-md flex items-center justify-center ${isPlaying ? "bg-[#2A6FD3]/90 text-white shadow-[0_6px_18px_rgba(42,111,211,0.45)]" : "text-[#CFD8DC] hover:bg-slate-500/25"}`}
-                                >
-                                    {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-                                </button>
-                                <button
-                                    title="Next"
-                                    onClick={() => setSliceIndex((p) => Math.min(totalSlices - 1, p + 1))}
-                                    className="flex h-9 w-9 items-center justify-center rounded-md text-[#CFD8DC] hover:bg-slate-500/25"
-                                >
-                                    <SkipForward size={16} />
-                                </button>
-                            </div>
+                            {(["pan", "wl", "measure", "annotate"] as const).map((mode, i) => {
+                                const icons = [
+                                    <Hand size={20} strokeWidth={1.5} key="hand" />,
+                                    <CircleDot size={20} strokeWidth={1.5} key="circle" />,
+                                    <Ruler size={20} strokeWidth={1.5} key="ruler" />,
+                                    <Pencil size={20} strokeWidth={1.5} key="pencil" />,
+                                ];
+                                const titles = ["Pan", "WW/WL", "Measure", "Annotate"];
+                                const active = toolMode === mode;
+                                return (
+                                    <button
+                                        key={mode}
+                                        title={titles[i]}
+                                        onClick={() => setToolMode(mode)}
+                                        style={{
+                                            width: "44px",
+                                            height: "44px",
+                                            borderRadius: "10px",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            border: "none",
+                                            cursor: "pointer",
+                                            transition: "all 0.15s ease",
+                                            background: active ? "#3B82F6" : "transparent",
+                                            color: active ? "#ffffff" : "#94A3B8",
+                                            boxShadow: active ? "0 0 15px rgba(59,130,246,0.55)" : "none",
+                                        }}
+                                    >
+                                        {icons[i]}
+                                    </button>
+                                );
+                            })}
 
-                            <div className="flex-1 px-1">
-                                <input
-                                    type="range"
-                                    min={0}
-                                    max={totalSlices - 1}
-                                    value={sliceIndex}
-                                    onChange={(e) => setSliceIndex(Number(e.target.value))}
-                                    className="w-full accent-[#4D94FF]"
-                                />
-                            </div>
+                            <div style={{ height: "1px", background: "rgba(255,255,255,0.07)", margin: "4px 4px" }} />
 
-                            <div className="shrink-0 min-w-[84px] text-right">
-                                <div className="text-[12px] font-mono font-bold text-[#E3EDF9] leading-none">
-                                    {sliceIndex + 1}/{meta.count}
-                                </div>
-                                <div className="text-[10px] text-[#90A4AE] mt-1 leading-none">Image</div>
-                            </div>
+                            {[
+                                { title: "Zoom In", icon: <ZoomIn size={20} strokeWidth={1.5} />, action: () => setZoom((z) => Math.min(4, z + 0.1)) },
+                                { title: "Zoom Out", icon: <ZoomOut size={20} strokeWidth={1.5} />, action: () => setZoom((z) => Math.max(0.3, z - 0.1)) },
+                                {
+                                    title: "Fit to Screen", icon: <Maximize size={20} strokeWidth={1.5} />, action: () => {
+                                        setZoom(1);
+                                        setPan({ x: 0, y: 0 });
+                                    }
+                                },
+                                {
+                                    title: "Reset", icon: <RefreshCw size={20} strokeWidth={1.5} />, action: () => {
+                                        handleResetAll();
+                                    }
+                                },
+                            ].map(({ title, icon, action }) => (
+                                <button
+                                    key={title}
+                                    title={title}
+                                    onClick={action}
+                                    style={{
+                                        width: "44px",
+                                        height: "44px",
+                                        borderRadius: "10px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        transition: "all 0.15s ease",
+                                        background: "transparent",
+                                        color: "#94A3B8",
+                                    }}
+                                >
+                                    {icon}
+                                </button>
+                            ))}
                         </div>
                         <svg className="absolute inset-0 w-full h-full pointer-events-none">
                             {measures
@@ -875,12 +864,12 @@ const ViewScreen = () => {
                 <footer className="h-[84px] bg-[#E8EAF1] border-t border-[#B0C4DE] flex items-center shrink-0 px-8 z-10">
                     <div className="flex-1">
                         <button className="flex items-center gap-2 px-10 h-[52px] bg-white text-[#4D94FF] font-bold rounded-md border-2 border-[#4D94FF] hover:bg-solid shadow-sm transition-all uppercase text-[13px] active:scale-95">
-                            <ChevronLeft size={20} /> 上一步
+                            <ChevronLeft size={20} /> 高级处理
                         </button>
                     </div>
                     <div className="flex-1 flex justify-end">
                         <button className="flex items-center gap-2 px-10 h-[52px] bg-[#4D94FF] text-white font-bold rounded-md shadow-lg hover:bg-blue-600 transition-all uppercase text-[13px] active:scale-95">
-                            下一步 <ChevronRight size={20} />
+                            结束检查 <ChevronRight size={20} />
                         </button>
                     </div>
                 </footer>

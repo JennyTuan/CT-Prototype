@@ -123,16 +123,16 @@ const PatientListScreen = () => {
                                         已完成
                                     </button>
                                 </div>
-
-                                {/* 快速操作图标 */}
-                                <div className="flex items-center gap-4 text-[#90A4AE] border-l border-[#B0C4DE]/50 pl-4 ml-2">
-                                    <RefreshCw size={18} className="cursor-pointer hover:text-blue-500" />
-                                    <Eye size={18} className="cursor-pointer hover:text-blue-500" />
-                                    <Download size={18} className="cursor-pointer hover:text-blue-500" />
-                                </div>
                             </div>
 
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-6">
+                                {/* 快速操作图标 - 已移动至此处 */}
+                                <div className="flex items-center gap-4 text-[#90A4AE]">
+                                    <RefreshCw size={18} className="cursor-pointer hover:text-blue-500 transition-colors" />
+                                    <Eye size={18} className="cursor-pointer hover:text-blue-500 transition-colors" />
+                                    <Download size={18} className="cursor-pointer hover:text-blue-500 transition-colors" />
+                                </div>
+
                                 {/* 搜索框 */}
                                 <div className="relative">
                                     <input

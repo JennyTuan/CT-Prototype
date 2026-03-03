@@ -452,7 +452,7 @@ const ProtocolSetupScreen = () => {
                                 <table className="w-full text-left border-collapse">
                                     <thead className="bg-[#4D94FF] text-white sticky top-0 h-[44px] text-[11px] uppercase font-bold tracking-wider">
                                         <tr>
-                                            <th className="w-[50px] text-center border-r border-white/10">选</th>
+                                            <th className="w-[50px] text-center border-r border-white/10">多选</th>
                                             <th className="px-4 border-r border-white/10">协议名称</th>
                                             <th className="w-[80px] text-center px-2">区域</th>
                                         </tr>
