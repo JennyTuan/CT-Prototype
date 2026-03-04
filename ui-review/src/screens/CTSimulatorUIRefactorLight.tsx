@@ -1,16 +1,14 @@
-﻿import { useState, useEffect } from 'react';
+﻿import { useState } from 'react';
 import {
     Scan,
     MoveHorizontal,
     MoveVertical,
     RotateCw,
     RotateCcw,
-    Wifi,
     AlertTriangle,
     Zap,
     User,
     Activity,
-    ChevronRight
 } from 'lucide-react';
 
 interface ControlCardProps {
@@ -19,18 +17,12 @@ interface ControlCardProps {
     unit: string;
     icon: React.ElementType;
     active: boolean;
-    colorClass?: string;
     schema?: string;
 }
 
-const ControlCard = ({ title, value, unit, icon: Icon, active, colorClass = 'text-sky-600', schema }: ControlCardProps) => (
+const ControlCard = ({ title, value, unit, icon: Icon, active, schema }: ControlCardProps) => (
     <div className={`bg-white border ${active ? 'border-sky-300 shadow-[0_8px_24px_rgba(14,116,144,0.12)]' : 'border-slate-200'} rounded-xl p-3 flex flex-col transition-all duration-300 hover:bg-slate-50 relative group h-full`}>
-        <div className="flex justify-between items-start mb-2">
-            <div className="p-1.5 bg-slate-50 rounded-lg border border-slate-100">
-                <Icon className={active ? colorClass : 'text-slate-400'} size={14} />
-            </div>
-            <span className="text-[13px] uppercase tracking-tight text-slate-500 font-bold whitespace-nowrap">{title}</span>
-        </div>
+
 
         <div className="flex-1 min-h-[80px] bg-slate-50/50 rounded-lg border border-dashed border-slate-200 flex flex-col items-center justify-center p-2 mb-3 group-hover:bg-sky-50 transition-colors">
             {schema ? (
@@ -44,8 +36,8 @@ const ControlCard = ({ title, value, unit, icon: Icon, active, colorClass = 'tex
         </div>
 
         <div className="flex items-baseline justify-end gap-1">
-            <span className={`text-3xl font-mono font-bold tracking-tighter ${active ? 'text-slate-900' : 'text-slate-500'}`}>{value}</span>
-            <span className="text-[12px] text-slate-400 font-bold uppercase">{unit}</span>
+            <span className={`text-[34px] font-mono font-bold tracking-tighter ${active ? 'text-slate-900' : 'text-slate-500'}`}>{value}</span>
+            <span className="text-[15px] text-slate-400 font-bold uppercase">{unit}</span>
         </div>
     </div>
 );
@@ -58,66 +50,43 @@ const CTSimulatorUIRefactorLight = () => {
         tiltB: 0,
         kv: 120,
         ma: 250
-    });
-
-    const [time, setTime] = useState(new Date());
-    const [isRadiating, setIsRadiating] = useState(false);
+    });    const [isRadiating, setIsRadiating] = useState(false);
     const [laserActive, setLaserActive] = useState(true);
-
-    useEffect(() => {
-        const timer = setInterval(() => setTime(new Date()), 1000);
-        return () => clearInterval(timer);
-    }, []);
-
-    const formatTime = (date: Date) => date.toLocaleTimeString('zh-CN', { hour12: false });
-    const formatDate = (date: Date) => date.toLocaleDateString('zh-CN').replace(/\//g, '-');
-
     const toggleRadiation = () => setIsRadiating(!isRadiating);
     const toggleLaser = () => setLaserActive(!laserActive);
 
     return (
         <div className="w-[1366px] h-[768px] bg-[#F4F8FC] text-slate-700 font-sans overflow-hidden flex flex-col select-none">
-            <header className="h-16 bg-white/95 border-b border-slate-200 px-6 flex items-center justify-between backdrop-blur-md z-10">
+            <header className="h-24 bg-white/95 border-b border-slate-200 px-6 flex items-center justify-between backdrop-blur-md z-10">
                 <div className="flex items-center gap-8">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-sky-50 rounded-full flex items-center justify-center border border-sky-200">
-                            <User size={20} className="text-sky-600" />
+                        <div className="w-12 h-12 bg-sky-50 rounded-full flex items-center justify-center border border-sky-200">
+                            <User size={24} className="text-sky-600" />
                         </div>
                         <div>
-                            <div className="text-[13px] text-slate-500 font-bold uppercase tracking-wide">Patient Name</div>
-                            <div className="text-[26px] font-bold text-slate-900 tracking-wide"> 欧阳娜娜</div>
+                            <div className="text-[16px] text-slate-500 font-black uppercase tracking-wide">Patient Name</div>
+                            <div className="text-[30px] font-black text-slate-900 tracking-wide leading-none">欧阳娜娜</div>
                         </div>
                     </div>
 
-                    <div className="h-8 w-px bg-slate-200" />
+                    <div className="h-12 w-px bg-slate-200" />
 
                     <div className="grid grid-cols-3 gap-8">
                         <div>
-                            <div className="text-[13px] text-slate-500 font-bold">ID</div>
-                            <div className="font-mono text-sky-800 text-base">MZ202603030001</div>
+                            <div className="text-[15px] text-slate-500 font-black">ID</div>
+                            <div className="font-mono text-sky-800 text-[28px] font-bold leading-none mt-1">MZ202603030001</div>
                         </div>
                         <div>
-                            <div className="text-[13px] text-slate-500 font-bold">Sex / Age</div>
-                            <div className="font-medium text-slate-700 text-base">M / 100Y</div>
+                            <div className="text-[15px] text-slate-500 font-black">Sex / Age</div>
+                            <div className="font-bold text-slate-700 text-[28px] leading-none mt-1">M / 100Y</div>
                         </div>
                         <div>
-                            <div className="text-[13px] text-slate-500 font-bold">Protocol</div>
-                            <div className="font-medium text-slate-700 text-base flex items-center gap-1">
-                                ABD Enhanced CT <ChevronRight size={14} className="text-slate-400" />
+                            <div className="text-[15px] text-slate-500 font-black">Protocol</div>
+                            <div className="font-bold text-slate-700 text-[28px] leading-none mt-1 flex items-center gap-1">
+                                ABD Enhanced CT
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div className="flex items-center gap-6">
-                    <div className="flex flex-col items-end mr-4">
-                        <div className="text-[32px] font-mono font-bold text-slate-900 leading-none">{formatTime(time)}</div>
-                        <div className="text-[13px] text-slate-500 font-bold mt-1 tracking-tight">{formatDate(time)}</div>
-                    </div>
-                    <button className="px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-red-600 flex items-center gap-2 hover:bg-red-100 transition-colors active:scale-95 group">
-                        <AlertTriangle size={18} className="group-hover:animate-bounce" />
-                        <span className="text-[14px] font-black tracking-tight">EMERGENCY</span>
-                    </button>
                 </div>
             </header>
 
@@ -133,8 +102,8 @@ const CTSimulatorUIRefactorLight = () => {
                         <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-3">
                             <ControlCard title="Lateral Axis (X)" value={values.lateral} unit="mm" icon={MoveHorizontal} active={false} />
                             <ControlCard title="Vertical Axis (Y)" value={values.vertical} unit="mm" icon={MoveVertical} active={false} />
-                            <ControlCard title="Gantry Tilt (A)" value={values.tiltA} unit="deg" icon={RotateCw} active={false} colorClass="text-amber-500" />
-                            <ControlCard title="Cradle Tilt (B)" value={values.tiltB} unit="deg" icon={RotateCcw} active={false} colorClass="text-indigo-500" />
+                            <ControlCard title="Gantry Tilt (A)" value={values.tiltA} unit="deg" icon={RotateCw} active={false} />
+                            <ControlCard title="Cradle Tilt (B)" value={values.tiltB} unit="deg" icon={RotateCcw} active={false} />
                         </div>
                     </div>
                 </div>
@@ -198,12 +167,7 @@ const CTSimulatorUIRefactorLight = () => {
                             </div>
                         </div>
 
-                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3">
-                            <div className="px-4 py-1 bg-white/95 border border-slate-200 rounded-full flex items-center gap-2 backdrop-blur-md">
-                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                <span className="text-[13px] font-black text-slate-700 uppercase tracking-wide">Gantry Ready</span>
-                            </div>
-                        </div>
+
                     </div>
                 </div>
 
@@ -238,47 +202,37 @@ const CTSimulatorUIRefactorLight = () => {
                             </div>
 
                             <div className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col gap-4 shadow-sm">
-                                <div className="flex justify-between items-end">
-                                    <div>
-                                        <div className="text-[13px] font-bold text-slate-500 mb-1">TUBE VOLTAGE</div>
-                                        <div className="text-[34px] font-mono font-bold text-slate-900 leading-none">{values.kv}</div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[14px] font-black text-slate-500 tracking-wide">通讯状态</span>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.45)]" />
+                                        <span className="text-[18px] font-black text-slate-900">正常</span>
                                     </div>
-                                    <span className="text-[14px] text-slate-500 font-bold">kVp</span>
                                 </div>
                                 <div className="h-px bg-slate-200" />
-                                <div className="flex justify-between items-end">
-                                    <div>
-                                        <div className="text-[13px] font-bold text-slate-500 mb-1">TUBE CURRENT</div>
-                                        <div className="text-[34px] font-mono font-bold text-slate-900 leading-none">{values.ma}</div>
+                                <div
+                                    onClick={toggleLaser}
+                                    className="flex items-center justify-between cursor-pointer rounded-lg px-1 py-1 hover:bg-slate-50 transition-colors"
+                                >
+                                    <span className="text-[14px] font-black text-slate-500 tracking-wide">激光灯状态</span>
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-2.5 h-2.5 rounded-full ${laserActive ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.45)] animate-pulse' : 'bg-slate-300'}`} />
+                                        <span className={`text-[18px] font-black ${laserActive ? 'text-red-600' : 'text-slate-900'}`}>{laserActive ? '开启' : '关闭'}</span>
                                     </div>
-                                    <span className="text-[14px] text-slate-500 font-bold">mA</span>
+                                </div>
+                                <div className="h-px bg-slate-200" />
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[14px] font-black text-slate-500 tracking-wide">急停状态</span>
+                                    <div className="flex items-center gap-2">
+                                        <AlertTriangle size={18} className="text-red-500" />
+                                        <span className="text-[18px] font-black text-slate-900">正常</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </main>
-
-            <footer className="h-12 bg-white border-t border-slate-200 px-6 flex items-center justify-between z-10">
-                <div className="flex items-center gap-6">
-                    <button
-                        onClick={toggleLaser}
-                        className={`flex items-center gap-2 px-3 py-1 rounded-md transition-all ${laserActive ? 'bg-red-50 text-red-600 border border-red-200' : 'text-slate-500 border border-slate-200'}`}
-                    >
-                        <div className={`w-2 h-2 rounded-full ${laserActive ? 'bg-red-500 animate-pulse' : 'bg-slate-300'}`} />
-                        <span className="text-[13px] font-black uppercase tracking-wide">Laser Marker</span>
-                    </button>
-
-                    <div className="h-4 w-px bg-slate-200" />
-
-                    <div className="flex items-center gap-5 text-slate-500">
-                        <div className="flex items-center gap-2">
-                            <Wifi size={14} className="text-green-500" />
-                            <span className="text-[13px] font-bold tracking-tight">DCIOT-NODE-ONLINE</span>
-                        </div>
-                    </div>
-                </div>
-            </footer>
 
             {isRadiating && (
                 <>
