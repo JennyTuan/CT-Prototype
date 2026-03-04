@@ -37,7 +37,7 @@ export default function WT32ProtocolDetailScreen() {
               <span className="text-[12px] text-[#546E7A] font-medium leading-none mt-0.5">ID: 20260226</span>
             </div>
           </div>
-          <div className="text-[12px] font-bold text-[#2F80ED] leading-[1.2] space-y-1">
+          <div className="text-[12px] font-bold text-[#4D94FF] leading-[1.2] space-y-1">
             <div className="flex items-center gap-1"><Crosshair size={12} />60 MM</div>
             <div className="flex items-center gap-1"><Monitor size={12} />3.0°</div>
             <div className="flex items-center gap-1"><Thermometer size={12} />60%</div>
@@ -71,11 +71,11 @@ export default function WT32ProtocolDetailScreen() {
               <span className="px-2 py-1 rounded-md bg-[#EEF2F9] text-[#455A64]">头部</span>
               <span className="px-2 py-1 rounded-md bg-[#EEF2F9] text-[#455A64]">成人</span>
             </div>
-            <div className="mt-2 text-[12px] leading-5 text-[#1E63E9] bg-[#E8F1FF] border border-[#B7D1FF] rounded-md px-2 py-1.5">出了模板：您的修改仅对本次扫描生效。</div>
+            <div className="mt-2 text-[12px] leading-5 text-[#4D94FF] bg-[#E8F1FF] border border-[#BFD8FF] rounded-md px-2 py-1.5">出了模板：您的修改仅对本次扫描生效。</div>
           </div>
 
           <div className="p-3 space-y-2">
-            <div className="h-[40px] px-3 rounded-xl bg-[#2D6BFF] text-white text-[14px] font-bold flex items-center justify-between shadow-sm">
+            <div className="h-[40px] px-3 rounded-xl bg-[#4D94FF] text-white text-[14px] font-bold flex items-center justify-between shadow-sm">
               协议基本信息
               <ChevronRight size={16} />
             </div>
@@ -139,7 +139,7 @@ export default function WT32ProtocolDetailScreen() {
                     key={item.code}
                     className={`h-[74px] rounded-xl border text-center transition-colors ${
                       item.active
-                        ? "bg-[#2D6BFF] border-[#2D6BFF] text-white shadow-sm"
+                        ? "bg-[#4D94FF] border-[#4D94FF] text-white shadow-sm"
                         : "bg-white border-[#CFD8E6] text-[#37474F]"
                     }`}
                   >
@@ -152,7 +152,7 @@ export default function WT32ProtocolDetailScreen() {
 
             <div className="mt-3 flex justify-end gap-3">
               <button className="h-[42px] px-7 rounded-md border border-[#CFD8E6] bg-white text-[#37474F] text-[16px] font-medium">取消</button>
-              <button className="h-[42px] px-7 rounded-md bg-[#2D6BFF] text-white text-[16px] font-bold shadow-sm">保存并应用到会话</button>
+              <button className="h-[42px] px-7 rounded-md bg-[#4D94FF] text-white text-[16px] font-bold shadow-sm">保存并应用到会话</button>
             </div>
           </div>
         </section>
