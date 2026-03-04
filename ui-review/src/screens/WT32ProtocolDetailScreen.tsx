@@ -71,7 +71,7 @@ export default function WT32ProtocolDetailScreen() {
       <main className="flex-1 p-[12px] flex gap-[12px] overflow-hidden">
         <aside className="w-[260px] rounded-[16px] border border-[#D4DDEA] bg-white overflow-hidden flex flex-col">
           <div className="p-[14px] border-b border-[#E5EAF1]">
-            <div className="text-[40px] font-semibold leading-[1.1]">脑部/颈部/螺旋</div>
+            <div className="text-[16px] font-semibold leading-[1.2] whitespace-nowrap overflow-hidden text-ellipsis">脑部/颈部/螺旋</div>
             <div className="mt-[8px] flex gap-[8px] text-[13px]">
               <span className="px-[10px] py-[4px] rounded-[10px] bg-[#EEF2F7] text-[#344563]">头部</span>
               <span className="px-[10px] py-[4px] rounded-[10px] bg-[#EEF2F7] text-[#344563]">成人</span>
