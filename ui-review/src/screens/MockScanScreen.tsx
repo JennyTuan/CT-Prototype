@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
     User,
     Settings,
@@ -90,8 +90,7 @@ const MockScanScreen = () => {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-[#F0F4F9] p-2 text-[#37474F] font-sans select-none">
-            <div className="flex flex-col w-[1024px] h-[768px] bg-[#EEF2F9] overflow-hidden rounded-md border border-[#B0C4DE] shadow-2xl relative">
+        <div className="flex flex-col w-[1024px] h-[768px] bg-[#EEF2F9] overflow-hidden rounded-md border border-[#B0C4DE] shadow-2xl relative">
                 <header className={`flex items-center justify-between px-4 h-[80px] bg-[#E8EAF1] border-b border-[#B0C4DE] shrink-0 z-10 ${interactionLocked ? "pointer-events-none opacity-60" : ""}`}>
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-3 py-1.5 px-4 bg-[#DCE6F2] border border-[#B0C4DE] rounded-sm min-w-[210px]">
@@ -422,7 +421,6 @@ const MockScanScreen = () => {
                     </div>
                 )}
             </div>
-        </div>
     );
 };
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import {
     User,
     Settings,
@@ -42,8 +42,7 @@ const HardwareTestScreen = () => {
     const tabs = ['机架', '轨道', '影像'];
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-[#F0F4F9] p-2 text-[#37474F] font-sans select-none">
-            <div className="flex flex-col w-[1024px] h-[768px] bg-[#EEF2F9] overflow-hidden rounded-md border border-[#B0C4DE] shadow-2xl relative">
+        <div className="flex flex-col w-[1024px] h-[768px] bg-[#EEF2F9] overflow-hidden rounded-md border border-[#B0C4DE] shadow-2xl relative">
 
                 {/* 1. Header */}
                 <header className="flex items-center justify-between px-4 h-[80px] bg-[#E8EAF1] border-b border-[#B0C4DE] shrink-0 z-10">
@@ -277,7 +276,6 @@ const HardwareTestScreen = () => {
                         服务模式 · 硬件 / 硬件测试
                     </div>
                 </footer>
-            </div>
 
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import {
     User,
     Settings,
@@ -71,9 +71,8 @@ const TubeWarmupScreen = () => {
     ];
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-[#F0F4F9] p-2 text-[#37474F] font-sans select-none">
+        <div className="flex flex-col w-[1024px] h-[768px] bg-[#EEF2F9] overflow-hidden rounded-md border border-[#B0C4DE] shadow-2xl relative">
             {/* Main Container 1024x768 */}
-            <div className="flex flex-col w-[1024px] h-[768px] bg-[#EEF2F9] overflow-hidden rounded-md border border-[#B0C4DE] shadow-2xl relative">
 
                 {/* 1. Header */}
                 <header className="flex items-center justify-between px-4 h-[80px] bg-[#E8EAF1] border-b border-[#B0C4DE] shrink-0 z-10">
@@ -298,7 +297,6 @@ const TubeWarmupScreen = () => {
                     </div>
                 )}
             </div>
-        </div>
     );
 };
 

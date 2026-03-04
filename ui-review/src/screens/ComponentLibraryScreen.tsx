@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import {
     LayoutGrid,
     Battery,
@@ -42,8 +42,7 @@ const ComponentLibraryScreen = () => {
     const [activeTab, setActiveTab] = useState('Tab 1');
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-[#F0F4F9] p-4 text-[#37474F] font-sans select-none">
-            <div className="w-[1100px] h-[800px] bg-white rounded-xl shadow-2xl border border-[#B0C4DE] flex flex-col overflow-hidden">
+        <div className="w-[1100px] h-[800px] bg-white rounded-xl shadow-2xl border border-[#B0C4DE] flex flex-col overflow-hidden">
 
                 {/* Header */}
                 <header className="h-[70px] bg-[#E8EAF1] border-b border-[#B0C4DE] flex items-center justify-between px-8 shrink-0">
@@ -327,7 +326,6 @@ const ComponentLibraryScreen = () => {
                 <footer className="h-[50px] bg-[#EEF2F9] border-t border-[#B0C4DE] flex items-center px-8 text-[11px] text-[#90A4AE] font-bold uppercase tracking-widest italic shrink-0">
                     Antigravity Design System Toolkit
                 </footer>
-            </div>
 
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar {
