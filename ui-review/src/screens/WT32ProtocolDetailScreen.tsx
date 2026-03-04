@@ -85,17 +85,20 @@ export default function WT32ProtocolDetailScreen() {
               <span className="flex items-center gap-1 text-[#37474F]"><Plus size={14} />新增</span>
             </div>
 
-            <div className="h-[34px] rounded-lg bg-[#F5F7FB] px-3 flex items-center justify-between text-[13px]">
-              <span className="font-semibold">定位像</span>
+            <div className="h-[36px] rounded-lg bg-[#F5F7FB] px-3 flex items-center justify-between text-[14px]">
+              <span className="font-semibold text-[#2F3E58]">定位像</span>
               <span className="text-[11px] text-[#90A4AE]">定位像</span>
             </div>
-            <div className="h-[40px] rounded-lg bg-[#F5F7FB] px-3 flex items-center justify-between text-[13px]">
-              <span className="font-bold text-[18px] text-[#2F3E58]">Acquisition 1</span>
+            <div className="h-[36px] rounded-lg bg-[#F5F7FB] px-3 flex items-center justify-between text-[14px]">
+              <span className="font-semibold text-[#2F3E58]">Acquisition 1</span>
               <span className="text-[11px] text-[#90A4AE] underline">螺旋扫描</span>
             </div>
-            <div className="h-[34px] rounded-lg bg-[#F8FAFC] px-3 flex items-center text-[13px] text-[#607D8B]">锐组织</div>
-            <div className="h-[34px] rounded-lg bg-[#F8FAFC] px-3 flex items-center text-[13px] text-[#607D8B]">骨骼</div>
-            <div className="text-[12px] text-[#4D94FF] px-1">+ 新增序列</div>
+
+            <div className="ml-4 pl-3 border-l border-[#D9E2F0] space-y-2">
+              <div className="h-[32px] rounded-lg bg-[#F8FAFC] px-3 flex items-center text-[13px] text-[#607D8B]">软组织</div>
+              <div className="h-[32px] rounded-lg bg-[#F8FAFC] px-3 flex items-center text-[13px] text-[#607D8B]">骨骼</div>
+              <div className="h-[32px] rounded-lg bg-[#F8FAFC] px-3 flex items-center text-[12px] text-[#4D94FF]">+ 新增序列</div>
+            </div>
 
             <div className="h-[34px] rounded-lg bg-[#F8FAFC] px-3 flex items-center justify-between text-[13px]">剂量 / 通知阈值 <ChevronRight size={14} className="text-[#90A4AE]" /></div>
             <div className="h-[34px] rounded-lg bg-[#F8FAFC] px-3 flex items-center justify-between text-[13px]">高级 <ChevronRight size={14} className="text-[#90A4AE]" /></div>
