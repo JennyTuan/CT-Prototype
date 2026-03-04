@@ -9,6 +9,7 @@ import {
   Bell,
   Lightbulb,
   Settings,
+  ChevronDown,
 } from "lucide-react";
 
 const positions = [
@@ -24,108 +25,159 @@ const positions = [
 
 export default function WT32ProtocolDetailScreen() {
   return (
-    <div className="w-[1024px] h-[768px] bg-[#F5F6FA] border border-[#D8DFEA] rounded-[6px] overflow-hidden text-[#1F2A44] font-sans select-none flex flex-col">
-      <header className="h-[94px] border-b border-[#D8DFEA] bg-[#F3F4F7] px-6 flex items-center justify-between">
-        <div className="flex items-center gap-5">
-          <div className="w-[170px] h-[64px] rounded-[14px] border border-[#E2E6EE] bg-white px-4 flex items-center gap-3 shadow-sm">
-            <div className="w-11 h-11 rounded-xl bg-[#2277D6] flex items-center justify-center text-white">
-              <User size={22} />
+    <div className="w-[1024px] h-[768px] bg-[#ECEEF2] border border-[#D4DBE6] rounded-[8px] overflow-hidden text-[#1F2A44] font-sans flex flex-col select-none">
+      <header className="h-[92px] bg-[#F2F4F8] border-b border-[#D6DEE9] px-[18px] flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-[14px]">
+          <div className="h-[58px] min-w-[170px] rounded-[14px] border border-[#DEE4ED] bg-white px-[12px] flex items-center gap-[10px]">
+            <div className="w-[40px] h-[40px] rounded-[10px] bg-[#1E6ED8] text-white flex items-center justify-center">
+              <User size={20} />
             </div>
             <div>
-              <div className="text-[26px] leading-none font-semibold">张三</div>
-              <div className="text-[18px] text-[#7F8BA3] mt-1">ID: 20260226</div>
+              <div className="text-[16px] leading-[1.05] font-semibold">张三</div>
+              <div className="text-[13px] leading-none text-[#8492AA] mt-[4px]">ID: 20260226</div>
             </div>
           </div>
-          <div className="text-[#1B63D5] space-y-1 text-[25px] font-semibold leading-none">
-            <div className="flex items-center gap-2"><Ruler size={15} />60 MM</div>
-            <div className="flex items-center gap-2"><CircleDashed size={15} />3.0°</div>
-            <div className="flex items-center gap-2"><Thermometer size={15} />60%</div>
+
+          <div className="text-[#1D62D7] text-[12px] font-semibold leading-[1.15] space-y-[3px]">
+            <div className="flex items-center gap-[6px]"><Ruler size={11} />60 MM</div>
+            <div className="flex items-center gap-[6px]"><CircleDashed size={11} />3.0°</div>
+            <div className="flex items-center gap-[6px]"><Thermometer size={11} />60%</div>
           </div>
         </div>
 
         <div className="text-center">
-          <div className="text-[50px] leading-none font-bold text-[#1F2A44]">10:52</div>
-          <div className="text-[30px] text-[#4E607F] font-semibold mt-1">3月4日 周三</div>
+          <div className="text-[50px] leading-none font-bold text-[#172D57]">10:52</div>
+          <div className="text-[18px] font-semibold text-[#415D8A] mt-[2px]">3月4日 周三</div>
         </div>
 
-        <div className="flex items-center gap-3 text-[#4E607F]">
-          <button className="w-[42px] h-[42px] rounded-xl border border-[#D5DDEA] bg-[#F5F7FB] flex items-center justify-center text-[#E54747]"><Cross size={24} /></button>
-          <button className="w-[42px] h-[42px] rounded-xl border border-[#D5DDEA] bg-[#F5F7FB] flex items-center justify-center relative"><Bell size={22} /><span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-[#E30613] text-white text-[10px] leading-4">9</span></button>
-          <button className="w-[42px] h-[42px] rounded-xl border border-[#D5DDEA] bg-[#F5F7FB] flex items-center justify-center"><Lightbulb size={22} /></button>
-          <button className="w-[42px] h-[42px] rounded-xl border border-[#D5DDEA] bg-[#F5F7FB] flex items-center justify-center relative"><Settings size={22} /><span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-[#E30613] text-white text-[10px] leading-4">100</span></button>
+        <div className="flex items-center gap-[8px] text-[#506484]">
+          <button className="w-[40px] h-[40px] rounded-[11px] border border-[#D4DDEA] bg-[#F6F8FC] flex items-center justify-center text-[#E64C4C]">
+            <Cross size={22} />
+          </button>
+          <button className="w-[40px] h-[40px] rounded-[11px] border border-[#D4DDEA] bg-[#F6F8FC] flex items-center justify-center relative">
+            <Bell size={20} />
+            <span className="absolute -top-[4px] -right-[4px] min-w-[16px] h-[16px] px-[3px] bg-[#E10016] text-white text-[10px] rounded-full leading-[16px] text-center font-semibold">9</span>
+          </button>
+          <button className="w-[40px] h-[40px] rounded-[11px] border border-[#D4DDEA] bg-[#F6F8FC] flex items-center justify-center">
+            <Lightbulb size={20} />
+          </button>
+          <button className="w-[40px] h-[40px] rounded-[11px] border border-[#D4DDEA] bg-[#F6F8FC] flex items-center justify-center relative">
+            <Settings size={20} />
+            <span className="absolute -top-[4px] -right-[8px] min-w-[22px] h-[16px] px-[3px] bg-[#E10016] text-white text-[10px] rounded-full leading-[16px] text-center font-semibold">100</span>
+          </button>
         </div>
       </header>
 
-      <main className="flex-1 p-6 flex gap-4 overflow-hidden">
-        <aside className="w-[260px] rounded-2xl border border-[#D8DFEA] bg-white overflow-hidden">
-          <div className="p-4 border-b border-[#E6EBF3]">
-            <div className="text-[29px] font-semibold">脑部/颈部/螺旋</div>
-            <div className="mt-3 flex gap-2">
-              <span className="px-3 py-1 rounded-lg bg-[#EFF3F8] text-[18px]">头部</span>
-              <span className="px-3 py-1 rounded-lg bg-[#EFF3F8] text-[18px]">成人</span>
+      <main className="flex-1 p-[12px] flex gap-[12px] overflow-hidden">
+        <aside className="w-[260px] rounded-[16px] border border-[#D4DDEA] bg-white overflow-hidden flex flex-col">
+          <div className="p-[14px] border-b border-[#E5EAF1]">
+            <div className="text-[16px] font-semibold leading-[1.2] whitespace-nowrap overflow-hidden text-ellipsis">脑部/颈部/螺旋</div>
+            <div className="mt-[8px] flex gap-[8px] text-[13px]">
+              <span className="px-[10px] py-[4px] rounded-[10px] bg-[#EEF2F7] text-[#344563]">头部</span>
+              <span className="px-[10px] py-[4px] rounded-[10px] bg-[#EEF2F7] text-[#344563]">成人</span>
             </div>
-            <div className="mt-3 bg-[#EAF2FF] border border-[#9CC2FF] rounded-xl px-3 py-2 text-[20px] text-[#1B63D5] font-medium">出了模板：您的修改仅对本次扫描生效。</div>
+            <div className="mt-[10px] px-[12px] py-[8px] rounded-[10px] border border-[#99BFFF] bg-[#EAF2FF] text-[#1F62D8] text-[14px] leading-[1.35]">
+              出了模板：您的修改仅对本次扫描生效。
+            </div>
           </div>
 
-          <div className="p-3 space-y-3 text-[29px]">
-            <div className="bg-[#1E5BE5] text-white rounded-2xl px-4 py-4 flex items-center justify-between shadow">协议基本信息 <ChevronRight size={22} /></div>
-            <div className="px-2 text-[20px] text-[#7C8AA6] flex justify-between"><span>采集队列</span><span className="text-[#1F2A44] flex items-center gap-1"><Plus size={18} />新增</span></div>
-            <div className="bg-[#F4F5F7] rounded-xl p-3 text-[24px] text-[#34405B]">定位像</div>
-            <div className="bg-[#F4F5F7] rounded-xl p-3 text-[30px] font-semibold text-[#34405B]">Acquisition 1</div>
-            <div className="bg-[#F8F9FC] rounded-xl p-3 text-[24px] text-[#64748B]">锐组织</div>
-            <div className="bg-[#F8F9FC] rounded-xl p-3 text-[24px] text-[#64748B]">骨骼</div>
-            <div className="text-[#4D7FE0] text-[20px] px-2">+ 新增序列</div>
-            <div className="bg-[#F8F9FC] rounded-xl p-3 flex justify-between">剂量 / 通知阈值 <ChevronRight size={20} className="text-[#9BA8C1]" /></div>
-            <div className="bg-[#F8F9FC] rounded-xl p-3 flex justify-between">高级 <ChevronRight size={20} className="text-[#9BA8C1]" /></div>
+          <div className="p-[10px] space-y-[10px]">
+            <div className="h-[40px] rounded-[14px] bg-[#1E5BE5] text-white px-[14px] flex items-center justify-between text-[18px] font-semibold shadow-[0_4px_12px_rgba(31,93,230,0.25)]">
+              协议基本信息
+              <ChevronRight size={18} />
+            </div>
+
+            <div className="px-[8px] flex items-center justify-between text-[13px]">
+              <span className="text-[#7A8AA6]">采集队列</span>
+              <span className="text-[#1F2A44] flex items-center gap-[4px]"><Plus size={15} />新增</span>
+            </div>
+
+            <div className="h-[38px] rounded-[12px] bg-[#F3F5F8] px-[14px] flex items-center justify-between text-[16px] text-[#2D3E5C]">
+              <span>定位像</span>
+              <span className="text-[12px] text-[#8E9BB1]">定位像</span>
+            </div>
+
+            <div className="h-[40px] rounded-[12px] bg-[#F3F5F8] px-[14px] flex items-center justify-between">
+              <span className="text-[20px] font-semibold text-[#2E3C57]">Acquisition 1</span>
+              <span className="text-[12px] text-[#8E9BB1] underline">螺旋扫描</span>
+            </div>
+
+            <div className="h-[38px] rounded-[12px] bg-[#F8FAFC] px-[14px] flex items-center text-[14px] text-[#6B7A95]">锐组织</div>
+            <div className="h-[38px] rounded-[12px] bg-[#F8FAFC] px-[14px] flex items-center text-[14px] text-[#6B7A95]">骨骼</div>
+            <div className="px-[8px] text-[12px] text-[#4A80E2]">+ 新增序列</div>
+
+            <div className="h-[38px] rounded-[12px] bg-[#F8FAFC] px-[14px] flex items-center justify-between text-[14px] text-[#2F3B54]">
+              剂量 / 通知阈值 <ChevronRight size={16} className="text-[#9DABBF]" />
+            </div>
+            <div className="h-[38px] rounded-[12px] bg-[#F8FAFC] px-[14px] flex items-center justify-between text-[14px] text-[#2F3B54]">
+              高级 <ChevronRight size={16} className="text-[#9DABBF]" />
+            </div>
           </div>
         </aside>
 
-        <section className="flex-1 rounded-2xl border border-[#D8DFEA] bg-white overflow-hidden flex flex-col">
-          <div className="p-4 border-b border-[#E6EBF3]">
-            <h2 className="text-[34px] font-semibold">协议基本信息</h2>
-            <p className="text-[24px] text-[#61718D] mt-1">用于扫描模式筛选与协议继承（协议段字段）</p>
+        <section className="flex-1 rounded-[16px] border border-[#D4DDEA] bg-white overflow-hidden flex flex-col">
+          <div className="px-[18px] py-[14px] border-b border-[#E5EAF1]">
+            <h2 className="text-[20px] leading-none font-semibold text-[#152B54]">协议基本信息</h2>
+            <p className="text-[14px] text-[#607193] mt-[8px]">用于扫描模式筛选与协议继承（协议段字段）</p>
           </div>
 
-          <div className="p-4 flex-1 overflow-hidden flex flex-col">
-            <div className="grid grid-cols-2 gap-3 text-[20px]">
-              {[
-                ["协议名称", "脑部/颈部/螺旋"],
-                ["部位", "头部"],
-                ["解剖区域（细分）", "脑部和颈椎"],
-                ["体型范围（KG）", "50-90"],
-                ["年龄", "成人"],
-              ].map(([label, value], idx) => (
-                <div key={label} className={idx === 4 ? "col-span-1" : ""}>
-                  <div className="text-[#5E6C87] mb-1">{label}</div>
-                  <div className="h-[42px] rounded-xl border border-[#D7DFEC] bg-[#F8FAFE] px-3 flex items-center justify-between font-medium">
-                    <span>{value}</span>
-                    {(label === "部位" || label === "年龄") && <ChevronRight size={18} className="rotate-90 text-[#7C8AA6]" />}
-                  </div>
+          <div className="p-[16px] flex-1 flex flex-col min-h-0">
+            <div className="grid grid-cols-2 gap-x-[14px] gap-y-[10px]">
+              <div>
+                <div className="text-[13px] text-[#5D6D89] mb-[5px]">协议名称</div>
+                <div className="h-[36px] rounded-[10px] border border-[#D5DEEA] bg-[#F7F9FD] px-[12px] flex items-center text-[14px]">脑部/颈部/螺旋</div>
+              </div>
+              <div>
+                <div className="text-[13px] text-[#5D6D89] mb-[5px]">部位</div>
+                <div className="h-[36px] rounded-[10px] border border-[#D5DEEA] bg-[#F7F9FD] px-[12px] flex items-center justify-between text-[14px]">
+                  头部 <ChevronDown size={16} className="text-[#7988A5]" />
                 </div>
-              ))}
+              </div>
+              <div>
+                <div className="text-[13px] text-[#5D6D89] mb-[5px]">解剖区域（细分）</div>
+                <div className="h-[36px] rounded-[10px] border border-[#D5DEEA] bg-[#F7F9FD] px-[12px] flex items-center text-[14px]">脑部和颈椎</div>
+              </div>
+              <div>
+                <div className="text-[13px] text-[#5D6D89] mb-[5px]">体型范围（KG）</div>
+                <div className="h-[36px] rounded-[10px] border border-[#D5DEEA] bg-[#F7F9FD] px-[12px] flex items-center text-[14px]">50-90</div>
+              </div>
+              <div>
+                <div className="text-[13px] text-[#5D6D89] mb-[5px]">年龄</div>
+                <div className="h-[36px] rounded-[10px] border border-[#D5DEEA] bg-[#F7F9FD] px-[12px] flex items-center justify-between text-[14px]">
+                  成人 <ChevronDown size={16} className="text-[#7988A5]" />
+                </div>
+              </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-[#E6EBF3] flex-1 overflow-hidden flex flex-col">
-              <div className="flex items-center justify-between text-[24px] mb-2">
-                <span className="font-medium text-[#3E4D68]">现搭预设：扫描体位</span>
-                <span className="text-[#A1ACC0] text-[18px]">only one position can be set for protocol preset</span>
+            <div className="mt-[16px] pt-[14px] border-t border-[#E5EAF1] flex-1 flex flex-col min-h-0">
+              <div className="flex items-center justify-between mb-[10px]">
+                <div className="text-[18px] text-[#233457]">
+                  <span className="font-semibold">现搭预设：</span>
+                  <span className="ml-[8px]">扫描体位</span>
+                </div>
+                <div className="text-[13px] text-[#99A6BB]">only one position can be set for protocol preset</div>
               </div>
-              <div className="grid grid-cols-4 gap-3">
-                {positions.map((p) => (
+
+              <div className="grid grid-cols-4 gap-[10px]">
+                {positions.map((item) => (
                   <button
-                    key={p.code}
-                    className={`rounded-2xl border h-[74px] text-center ${p.active ? "bg-[#1F5DE6] text-white border-[#1F5DE6] shadow" : "bg-white text-[#25324C] border-[#DCE3EF]"}`}
+                    key={item.code}
+                    className={`h-[62px] rounded-[12px] border text-center ${
+                      item.active
+                        ? "bg-[#1F5DE6] border-[#1F5DE6] text-white shadow-[0_4px_12px_rgba(31,93,230,0.3)]"
+                        : "bg-white border-[#D7DEEA] text-[#223553]"
+                    }`}
                   >
-                    <div className="text-[28px] font-semibold">{p.code}</div>
-                    <div className={`text-[16px] ${p.active ? "text-white/80" : "text-[#9AA8BE]"}`}>{p.desc}</div>
+                    <div className="text-[17px] font-semibold leading-none mt-[9px]">{item.code}</div>
+                    <div className={`text-[11px] mt-[6px] ${item.active ? "text-white/80" : "text-[#8B9AB2]"}`}>{item.desc}</div>
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="mt-3 flex justify-end gap-3">
-              <button className="h-[44px] px-8 rounded-xl border border-[#D8DFEA] text-[30px] text-[#2D3A56]">取消</button>
-              <button className="h-[44px] px-8 rounded-xl bg-[#1F5DE6] text-white text-[30px] shadow">保存并应用到会话</button>
+            <div className="mt-[12px] flex justify-end gap-[10px]">
+              <button className="h-[42px] px-[20px] rounded-[10px] border border-[#D4DCEA] bg-[#F9FAFC] text-[#2E3B57] text-[20px]">取消</button>
+              <button className="h-[42px] px-[20px] rounded-[10px] bg-[#1F5DE6] text-white text-[20px] shadow-[0_4px_12px_rgba(31,93,230,0.3)]">保存并应用到会话</button>
             </div>
           </div>
         </section>
