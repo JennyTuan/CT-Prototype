@@ -1,4 +1,6 @@
-import { useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
+import type { MouseEvent, ReactElement } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
 import {
     User,
     Settings,
@@ -10,6 +12,7 @@ import {
     ChevronDown,
     ChevronLeft,
     ChevronRight,
+    ArrowLeftRight,
     Monitor,
     RefreshCw,
     Check,
@@ -20,167 +23,462 @@ import {
     AlertTriangle,
     Activity,
 } from "lucide-react";
+import { loadProtocolCasesFromDb, seedProtocolCasesIfEmpty } from "../lib/protocolDb";
+
+type RawProtocol = {
+    id: string;
+    name: string;
+    region: string;
+    scanLocationLabel: string;
+    supportedPositions: string[];
+    supportedModes: string[];
+};
+
+type RawRecon = {
+    id: string;
+    name: string;
+    params: Record<string, string | number | boolean>;
+};
+
+type RawSequence = {
+    id: string;
+    name: string;
+    sequenceType: string;
+    mode: string;
+    scanParams: Record<string, string | number | boolean>;
+    reconstructionParams: RawRecon[];
+};
+
+type RawProtocolCase = {
+    protocol: RawProtocol;
+    sequences: RawSequence[];
+};
+
+type UiParam = {
+    label: string;
+    value: string;
+    highlight?: boolean;
+    options?: string[];
+};
+
+type UiReconPlan = {
+    name: string;
+    params: UiParam[];
+};
+
+type UiSequence = {
+    id: string;
+    name: string;
+    mode: string;
+    status: string;
+    type: string;
+    icon: ReactElement;
+    scanParams: UiParam[];
+    reconPlans: UiReconPlan[];
+};
+
+type UiPlan = {
+    id: string;
+    title: string;
+    sequences: UiSequence[];
+};
+const protocolCaseData: RawProtocolCase[] = [
+    {
+        protocol: {
+            id: "origin-1",
+            name: "脑部螺旋",
+            region: "头部",
+            scanLocationLabel: "脑部",
+            supportedPositions: ["HFS"],
+            supportedModes: ["定位像", "螺旋扫描"],
+        },
+        sequences: [
+            {
+                id: "q-scout",
+                name: "定位像",
+                sequenceType: "localizer",
+                mode: "定位像",
+                scanParams: {
+                    scanLength: 450,
+                    scanningDirection: "OUT",
+                    mA: 50,
+                    kV: 120,
+                    angle: 0,
+                    scoutFOV: 500,
+                },
+                reconstructionParams: [],
+            },
+            {
+                id: "q-2",
+                name: "Acquisition 1",
+                sequenceType: "scan",
+                mode: "螺旋扫描",
+                scanParams: {
+                    scanLength: 165,
+                    scanningDirection: "OUT",
+                    mA: 215,
+                    kV: 120,
+                    angle: 0,
+                    rotationTime: 1,
+                    collimation: "320.6",
+                    scoutFOV: 500,
+                    dom: 0,
+                    pitch: 0.5,
+                },
+                reconstructionParams: [
+                    {
+                        id: "seq-1",
+                        name: "软组织",
+                        params: {
+                            sliceThickness: 5,
+                            interval: 5,
+                            kernel: "Brain2",
+                            windowCenter: 40,
+                            windowWidth: 100,
+                            fov: 250,
+                            matrix: 512,
+                            centerX: 0,
+                            centerY: 0,
+                            metalReduction: false,
+                        },
+                    },
+                    {
+                        id: "seq-2",
+                        name: "骨骼",
+                        params: {
+                            sliceThickness: 5,
+                            interval: 5,
+                            kernel: "Bone2",
+                            windowCenter: 600,
+                            windowWidth: 3500,
+                            fov: 250,
+                            matrix: 512,
+                            centerX: 0,
+                            centerY: 0,
+                            metalReduction: false,
+                        },
+                    },
+                ],
+            },
+        ],
+    },
+    {
+        protocol: {
+            id: "origin-2",
+            name: "脑部轴位2D",
+            region: "头部",
+            scanLocationLabel: "脑部",
+            supportedPositions: ["HFS"],
+            supportedModes: ["定位像", "断层扫描"],
+        },
+        sequences: [
+            {
+                id: "q-scout",
+                name: "定位像",
+                sequenceType: "localizer",
+                mode: "定位像",
+                scanParams: {
+                    scanLength: 450,
+                    scanningDirection: "OUT",
+                    mA: 50,
+                    kV: 120,
+                    angle: 0,
+                    scoutFOV: 500,
+                },
+                reconstructionParams: [],
+            },
+            {
+                id: "q-2",
+                name: "Acquisition 1",
+                sequenceType: "scan",
+                mode: "断层扫描",
+                scanParams: {
+                    scanLength: 173,
+                    scanningDirection: "OUT",
+                    mA: 200,
+                    kV: 120,
+                    angle: 0,
+                    rotationTime: 2,
+                    collimation: "320.6",
+                    scoutFOV: 500,
+                    dom: 0,
+                    scanIncrement: 19.2,
+                    cycleCount: 9,
+                },
+                reconstructionParams: [
+                    {
+                        id: "seq-1",
+                        name: "软组织",
+                        params: {
+                            sliceThickness: 2.4,
+                            interval: 2.4,
+                            kernel: "Brain2",
+                            windowCenter: 600,
+                            windowWidth: 100,
+                            fov: 250,
+                            matrix: 512,
+                            centerX: 0,
+                            centerY: 0,
+                            metalReduction: false,
+                        },
+                    },
+                    {
+                        id: "seq-2",
+                        name: "骨骼",
+                        params: {
+                            sliceThickness: 2.4,
+                            interval: 2.4,
+                            kernel: "Bone2",
+                            windowCenter: 600,
+                            windowWidth: 3500,
+                            fov: 250,
+                            matrix: 512,
+                            centerX: 0,
+                            centerY: 0,
+                            metalReduction: false,
+                        },
+                    },
+                ],
+            },
+        ],
+    },
+];
+
+const scanParamOrder = ["mA", "kV", "scanLength", "scanningDirection", "angle", "rotationTime", "collimation", "scoutFOV", "dom", "pitch", "scanIncrement", "cycleCount"];
+const scanParamLabelMap: Record<string, string> = {
+    mA: "MA",
+    kV: "KV",
+    scanLength: "LEN",
+    scanningDirection: "DIR",
+    angle: "ANG",
+    rotationTime: "ROT",
+    collimation: "COL",
+    scoutFOV: "FOV",
+    dom: "DOM",
+    pitch: "PITCH",
+    scanIncrement: "INC",
+    cycleCount: "CYC",
+};
+
+const reconParamOrder = ["sliceThickness", "interval", "kernel", "windowCenter", "windowWidth", "fov", "matrix", "centerX", "centerY", "metalReduction"];
+const reconParamLabelMap: Record<string, string> = {
+    sliceThickness: "THICK",
+    interval: "INT",
+    kernel: "KER",
+    windowCenter: "WC",
+    windowWidth: "WW",
+    fov: "FOV",
+    matrix: "MAT",
+    centerX: "CX",
+    centerY: "CY",
+    metalReduction: "MAR",
+};
+
+const formatValue = (key: string, value: string | number | boolean | undefined): string => {
+    if (value === undefined || value === null) return "-";
+    if (typeof value === "boolean") return value ? "ON" : "OFF";
+    switch (key) {
+        case "scanLength":
+        case "scoutFOV":
+        case "fov":
+        case "sliceThickness":
+        case "interval":
+        case "windowCenter":
+        case "windowWidth":
+        case "scanIncrement":
+            return `${value}mm`;
+        case "angle":
+            return `${value}°`;
+        case "rotationTime":
+            return `${value}s`;
+        default:
+            return String(value);
+    }
+};
+
+const toUiPlan = (entry: RawProtocolCase): UiPlan => ({
+    id: entry.protocol.id,
+    title: entry.protocol.name,
+    sequences: entry.sequences.map((seq: RawSequence, index: number) => ({
+        id: `${entry.protocol.id}-${seq.id}`,
+        name: seq.name,
+        mode: seq.mode,
+        status: index === 0 ? "DONE" : "ACTIVE",
+        type: seq.sequenceType,
+        icon: seq.sequenceType === "localizer" ? <Target size={14} /> : <RefreshCw size={14} />,
+        scanParams: scanParamOrder
+            .filter((k) => seq.scanParams && seq.scanParams[k] !== undefined)
+            .map((k) => ({
+                label: scanParamLabelMap[k] || k.toUpperCase(),
+                value: formatValue(k, seq.scanParams[k]),
+                options: k === "mA" ? ["50", "100", "150", "200", "215"] : k === "kV" ? ["80", "100", "120", "140"] : undefined,
+            })),
+        reconPlans: (seq.reconstructionParams || []).map((rp: RawRecon) => ({
+            name: rp.name,
+            params: reconParamOrder
+                .filter((k) => rp.params && rp.params[k] !== undefined)
+                .map((k) => ({
+                    label: reconParamLabelMap[k] || k.toUpperCase(),
+                    value: formatValue(k, rp.params[k]),
+                })),
+        })),
+    })),
+});
 
 const ProtocolSetupScreen = () => {
-    const [activeTab, setActiveTab] = useState<"scan" | "recon">("scan");
+        const [activeTab, setActiveTab] = useState<"scan" | "recon">("scan");
     const [libraryTab, setLibraryTab] = useState<"spiral" | "axial">("spiral");
-    const [selectedProtocol, setSelectedProtocol] = useState<number>(2);
-    const [positioning, setPositioning] = useState<"HFS" | "FFS" | "HFP" | "FFP">("HFS");
+    const [selectedProtocolIds, setSelectedProtocolIds] = useState<number[]>([1]);
+    const [positioning, setPositioning] = useState<"HFS" | "FFS" | "HFP" | "FFP" | "HFDR" | "FFDR" | "HFDL" | "FFDL">("HFS");
+    const [positionGroupIndex, setPositionGroupIndex] = useState<0 | 1>(0);
     const [planListOpen, setPlanListOpen] = useState(true);
+    const [collapsedPlanIds, setCollapsedPlanIds] = useState<string[]>([]);
 
-    // 选中序列ID和重建方案索引
-    const [selectedSeqId, setSelectedSeqId] = useState("seq-2");
+    // 选中序列 ID 和重建方案索引
+    const [selectedSeqId, setSelectedSeqId] = useState(() => {
+        const first = protocolCaseData[0];
+        const firstSeq = first?.sequences?.[0];
+        return first && firstSeq ? `${first.protocol.id}-${firstSeq.id}` : "";
+    });
     const [selectedReconIndex, setSelectedReconIndex] = useState(0);
 
     // 多选删除相关
+    const [checkedPlanIds, setCheckedPlanIds] = useState<string[]>([]);
     const [checkedSeqIds, setCheckedSeqIds] = useState<string[]>([]);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-    const toggleCheckSeq = (seqId: string, e: React.MouseEvent) => {
+    useEffect(() => {
+        void seedProtocolCasesIfEmpty(protocolCaseData);
+    }, []);
+
+    const dbProtocolCases = useLiveQuery(
+        () => loadProtocolCasesFromDb(),
+        [],
+        [] as RawProtocolCase[]
+    );
+    const protocolSource = dbProtocolCases.length > 0 ? dbProtocolCases : protocolCaseData;
+
+    const protocolCatalog = useMemo(
+        () => protocolSource.map((entry, idx) => ({ id: idx + 1, entry })),
+        [protocolSource]
+    );
+
+    const libraryData = useMemo(
+        () => protocolCatalog
+            .filter(({ entry }) =>
+                libraryTab === "spiral"
+                    ? entry.protocol.supportedModes.includes("螺旋扫描")
+                    : entry.protocol.supportedModes.includes("断层扫描")
+            )
+            .map(({ id, entry }) => ({
+                id,
+                name: entry.protocol.name,
+                region: entry.protocol.region,
+            })),
+        [protocolCatalog, libraryTab]
+    );
+
+    const buildPlansFromIds = (ids: number[]): UiPlan[] =>
+        protocolCatalog
+            .filter((item) => ids.includes(item.id))
+            .map((item) => toUiPlan(item.entry));
+
+    const [scanPlans, setScanPlans] = useState<UiPlan[]>(() => buildPlansFromIds(selectedProtocolIds));
+
+    const toggleProtocolSelection = (protocolId: number) => {
+        const nextIds = selectedProtocolIds.includes(protocolId)
+            ? selectedProtocolIds.filter((id) => id !== protocolId)
+            : [...selectedProtocolIds, protocolId];
+
+        setSelectedProtocolIds(nextIds);
+        setCollapsedPlanIds([]);
+        setCheckedPlanIds([]);
+        setCheckedSeqIds([]);
+        setSelectedReconIndex(0);
+        setPlanListOpen(true);
+
+        const nextPlans = buildPlansFromIds(nextIds);
+        setScanPlans(nextPlans);
+        setSelectedSeqId(nextPlans.flatMap((p) => p.sequences)[0]?.id || "");
+    };
+
+    const handleLibraryTabChange = (tab: "spiral" | "axial") => {
+        setLibraryTab(tab);
+        setCheckedPlanIds([]);
+        setCheckedSeqIds([]);
+    };
+
+    const toggleCheckSeq = (seqId: string, e: MouseEvent) => {
         e.stopPropagation();
         setCheckedSeqIds(prev =>
             prev.includes(seqId) ? prev.filter(id => id !== seqId) : [...prev, seqId]
         );
     };
 
+    const toggleCheckPlan = (planId: string) => {
+        setCheckedPlanIds((prev) =>
+            prev.includes(planId) ? prev.filter((id) => id !== planId) : [...prev, planId]
+        );
+    };
+
     const handleDeleteClick = () => {
-        if (checkedSeqIds.length === 0) return;
+        if (checkedSeqIds.length === 0 && checkedPlanIds.length === 0) return;
         setShowDeleteConfirm(true);
     };
 
-    const handleConfirmDelete = () => {
-        setScanPlans(prev => prev
-            .map(plan => ({
-                ...plan,
-                sequences: plan.sequences.filter(s => !checkedSeqIds.includes(s.id))
-            }))
-            .filter(plan => plan.sequences.length > 0)
+    const togglePlanCollapse = (planId: string) => {
+        setCollapsedPlanIds((prev) =>
+            prev.includes(planId) ? prev.filter((id) => id !== planId) : [...prev, planId]
         );
-        setCheckedSeqIds([]);
-        setShowDeleteConfirm(false);
-        setSelectedSeqId("");
     };
 
-    const [scanPlans, setScanPlans] = useState([
-        {
-            id: "plan-1",
-            title: "HEAD_ROUTINE_01",
-            sequences: [
-                {
-                    id: "seq-1",
-                    name: "定位像 (Scout)",
-                    status: "DONE",
-                    type: "scout",
-                    icon: <Target size={14} />,
-                    scanParams: [
-                        { label: "MA", value: "10", options: ["10", "15", "20", "30", "50", "100"] },
-                        { label: "KV", value: "80", options: ["80", "100", "120", "140"] },
-                        { label: "SLICE", value: "1.0mm" },
-                        { label: "FOV", value: "250mm" },
-                        { label: "LEN", value: "300mm" },
-                        { label: "DIR", value: "0°" },
-                    ],
-                    reconPlans: [
-                        {
-                            name: "R1",
-                            params: [
-                                { label: "THICK", value: "1.0mm" },
-                                { label: "INT", value: "1.0mm" },
-                                { label: "KER", value: "Standard" },
-                                { label: "MAT", value: "512" },
-                            ],
-                        },
-                    ],
-                },
-                {
-                    id: "seq-2",
-                    name: "螺旋扫描 (Spiral)",
-                    status: "ACTIVE",
-                    type: "spiral",
-                    icon: <RefreshCw size={14} />,
-                    scanParams: [
-                        { label: "MA", value: "30", options: ["10", "15", "30", "50", "100", "150", "200"] },
-                        { label: "KV", value: "120", options: ["80", "100", "120", "140"] },
-                        { label: "SLICE", value: "0.625mm" },
-                        { label: "FOV", value: "220mm" },
-                        { label: "PITCH", value: "1.0", highlight: true },
-                        { label: "ROTATION", value: "0.5s" },
-                    ],
-                    reconPlans: [
-                        {
-                            name: "R1",
-                            params: [
-                                { label: "THICK", value: "0.625mm" },
-                                { label: "INT", value: "0.625mm" },
-                                { label: "KER", value: "Bone" },
-                                { label: "MAT", value: "512" },
-                                { label: "ASIR", value: "30%" },
-                            ],
-                        },
-                        {
-                            name: "R2",
-                            params: [
-                                { label: "THICK", value: "2.5mm" },
-                                { label: "INT", value: "2.5mm" },
-                                { label: "KER", value: "Soft" },
-                                { label: "MAT", value: "512" },
-                                { label: "ASIR", value: "Off" },
-                            ],
-                        },
-                    ],
-                },
-            ],
-        },
-        {
-            id: "plan-2",
-            title: "CHEST_SCAN_02",
-            sequences: [
-                {
-                    id: "seq-3",
-                    name: "胸部定位像",
-                    status: "PENDING",
-                    type: "scout",
-                    icon: <Target size={14} />,
-                    scanParams: [
-                        { label: "MA", value: "15", options: ["10", "15", "30", "50", "100"] },
-                        { label: "KV", value: "100", options: ["80", "100", "120", "140"] },
-                        { label: "FOV", value: "350mm" },
-                    ],
-                    reconPlans: [{ name: "R1", params: [{ label: "THICK", value: "5mm" }] }],
-                },
-                {
-                    id: "seq-4",
-                    name: "螺旋扫描",
-                    status: "PENDING",
-                    type: "spiral",
-                    icon: <RefreshCw size={14} />,
-                    scanParams: [
-                        { label: "MA", value: "100", options: ["10", "15", "30", "50", "100", "150", "200"] },
-                        { label: "KV", value: "120", options: ["80", "100", "120", "140"] },
-                        { label: "FOV", value: "380mm" },
-                    ],
-                    reconPlans: [
-                        { name: "R1", params: [{ label: "THICK", value: "1.25mm" }] },
-                        { name: "R2", params: [{ label: "THICK", value: "5.0mm" }] },
-                        { name: "R3", params: [{ label: "THICK", value: "MIP" }] },
-                    ],
-                },
-            ],
-        },
-    ]);
+    const handleConfirmDelete = () => {
+        const deletedPlanIds = new Set(checkedPlanIds);
+        const nextSelectedProtocolIds = selectedProtocolIds.filter((id) => {
+            const item = protocolCatalog.find((p) => p.id === id);
+            if (!item) return true;
+            return !deletedPlanIds.has(item.entry.protocol.id);
+        });
 
-    // 获取当前选中的序列对象
+        setSelectedProtocolIds(nextSelectedProtocolIds);
+
+        const updatedPlans = scanPlans
+            .filter((plan) => !deletedPlanIds.has(plan.id))
+            .map((plan) => ({
+                ...plan,
+                sequences: plan.sequences.filter((s) => !checkedSeqIds.includes(s.id)),
+            }))
+            .filter((plan) => plan.sequences.length > 0);
+
+        setScanPlans(updatedPlans);
+        setSelectedSeqId(updatedPlans.flatMap((p) => p.sequences)[0]?.id || "");
+        setCheckedPlanIds([]);
+        setCheckedSeqIds([]);
+        setShowDeleteConfirm(false);
+        setSelectedReconIndex(0);
+    };
+
+    // 获取当前选中序列对象
     const allSequences = scanPlans.flatMap((p) => p.sequences);
-    const activeSeq = allSequences.find((s) => s.id === selectedSeqId) || allSequences[0];
+    const activeSeq = allSequences.find((s) => s.id === selectedSeqId) || allSequences[0] || {
+        type: "",
+        mode: "",
+        scanParams: [],
+        reconPlans: [],
+    };
 
-    const libraryData = [
-        { id: 1, name: "HEAD_SCOUT_STANDARD", region: "Head" },
-        { id: 2, name: "HEAD_SPIRAL_ULTRA", region: "Head" },
-        { id: 3, name: "HEAD_BONE_CONTRAST", region: "Head" },
-        { id: 4, name: "NECK_SPIRAL_V5", region: "Neck" },
-        { id: 5, name: "CHEST_LOW_Dose", region: "Chest" },
-        { id: 6, name: "ABDOMEN_3PHASE", region: "Abdomen" },
-    ];
+    const visibleSequenceCount = scanPlans.reduce((count, plan) => {
+        if (collapsedPlanIds.includes(plan.id)) return count;
+        return count + plan.sequences.length;
+    }, 0);
+
+    const planHeaderHeight = 60;
+    const planTitleRowHeight = 32;
+    const seqRowHeight = 36;
+    const desiredPlanPanelHeight = planListOpen
+        ? planHeaderHeight + scanPlans.length * planTitleRowHeight + visibleSequenceCount * seqRowHeight
+        : planHeaderHeight;
+    const planPanelHeight = Math.min(Math.max(desiredPlanPanelHeight, planHeaderHeight), 420);
 
     return (
         <div className="flex flex-col w-[1024px] h-[768px] bg-[#EEF2F9] overflow-hidden rounded-md border border-[#B0C4DE] shadow-2xl text-[#37474F] font-sans select-none">
@@ -234,11 +532,14 @@ const ProtocolSetupScreen = () => {
             </header>
 
             {/* Main */}
-            <main className="flex-1 overflow-hidden p-[16px] flex gap-[16px] bg-[#EEF2F9]">
+            <main className="flex-1 overflow-hidden p-2 flex gap-[12px] bg-[#EEF2F9]">
                 {/* Left */}
                 <aside className="w-[310px] flex flex-col bg-white border border-[#B0C4DE] rounded-md shadow-sm overflow-hidden">
-                    <div className="flex-1 flex flex-col min-h-0">
-                        <div className="px-3 py-2 bg-[#F8FAFC] border-b border-[#EEF2F9] flex justify-between items-center shrink-0">
+                    <div
+                        className="shrink-0 flex flex-col min-h-0 overflow-hidden"
+                        style={{ height: `${planPanelHeight}px` }}
+                    >
+                        <div className="px-3 h-[60px] bg-[#F8FAFC] border-b border-[#EEF2F9] flex justify-between items-center shrink-0">
                             <button
                                 className="flex items-center gap-2 flex-1 min-w-0"
                                 onClick={() => setPlanListOpen((v) => !v)}
@@ -271,15 +572,15 @@ const ProtocolSetupScreen = () => {
                                 <button
                                     title="删除已选序列"
                                     onClick={handleDeleteClick}
-                                    className={`w-[44px] h-[44px] flex items-center justify-center rounded-md transition-colors ${checkedSeqIds.length > 0
+                                    className={`w-[44px] h-[44px] flex items-center justify-center rounded-md transition-colors ${checkedSeqIds.length > 0 || checkedPlanIds.length > 0
                                         ? 'text-[#D32F2F] hover:bg-[#FFEBEE] active:bg-[#FFCDD2]'
                                         : 'text-[#B0C4DE] cursor-not-allowed'
                                         }`}
                                 >
                                     <Trash2 size={18} />
-                                    {checkedSeqIds.length > 0 && (
+                                    {(checkedSeqIds.length > 0 || checkedPlanIds.length > 0) && (
                                         <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#D32F2F] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
-                                            {checkedSeqIds.length}
+                                            {checkedSeqIds.length + checkedPlanIds.length}
                                         </span>
                                     )}
                                 </button>
@@ -290,18 +591,31 @@ const ProtocolSetupScreen = () => {
                             <div className="flex-1 overflow-y-auto bg-white">
                                 {scanPlans.map((plan) => (
                                     <div key={plan.id} className="border-b border-gray-100/50">
-                                        {/* 计划标题行 - 左滑删除实现 */}
+                                        {/* 计划标题行 */}
                                         <div className="h-[32px] px-4 flex items-center gap-2 bg-[#F8FAFC] border-b border-[#EEF2F9]">
-                                            <CircleDot
-                                                size={8}
-                                                className={selectedSeqId && plan.sequences.some(s => s.id === selectedSeqId) ? "text-[#4D94FF]" : "text-[#94A3B8]"}
+                                            <button
+                                                type="button"
+                                                onClick={() => togglePlanCollapse(plan.id)}
+                                                title={collapsedPlanIds.includes(plan.id) ? "展开该协议内扫描序列" : "收起该协议内扫描序列"}
+                                                className="inline-flex w-6 h-6 items-center justify-center rounded-sm hover:bg-[#E3F2FD] transition-colors"
+                                            >
+                                                <CircleDot
+                                                    size={12}
+                                                    className={collapsedPlanIds.includes(plan.id) ? "text-[#94A3B8]" : "text-[#4D94FF]"}
+                                                />
+                                            </button>
+                                            <input
+                                                type="checkbox"
+                                                checked={checkedPlanIds.includes(plan.id)}
+                                                onChange={() => toggleCheckPlan(plan.id)}
+                                                className="w-3.5 h-3.5 rounded-sm accent-[#4D94FF]"
                                             />
                                             <span className="text-[10px] font-black tracking-tight text-[#546E7A]">
                                                 {plan.title}
                                             </span>
                                         </div>
 
-                                        {plan.sequences.map((seq) => (
+                                        {!collapsedPlanIds.includes(plan.id) && plan.sequences.map((seq) => (
                                             <div
                                                 key={seq.id}
                                                 onClick={() => {
@@ -348,13 +662,13 @@ const ProtocolSetupScreen = () => {
                     </div>
 
                     {/* Params */}
-                    <div className="shrink-0 bg-[#F8FAFC] border-t border-[#EEF2F9] p-3 flex flex-col gap-3">
-                        <div className="flex flex-col gap-2">
+                    <div className="flex-1 min-h-[170px] bg-[#F8FAFC] border-t border-[#EEF2F9] p-3 flex flex-col">
+                        <div className="shrink-0 flex flex-col gap-2">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <div className="w-1.5 h-3 bg-[#4D94FF] rounded-full"></div>
                                     <span className="text-[10px] font-black uppercase tracking-tight text-[#37474F]">
-                                        参数详情 ({activeSeq.type?.toUpperCase()})
+                                        参数详情 ({activeSeq.mode || activeSeq.type?.toUpperCase() || "-"})
                                     </span>
                                 </div>
                                 <div className="flex bg-white rounded-md border border-[#B0C4DE]/50 p-0.5 h-[28px]">
@@ -375,7 +689,7 @@ const ProtocolSetupScreen = () => {
                                 </div>
                             </div>
 
-                            {/* 重建方案切换栏 (仅在重建 Tab 且有多个方案时显示) */}
+                            {/* 重建方案切换栏（仅在重建 Tab 且有多个方案时显示） */}
                             {activeTab === "recon" && activeSeq.reconPlans && (
                                 <div className="flex gap-1">
                                     {activeSeq.reconPlans.map((plan, idx) => (
@@ -394,17 +708,19 @@ const ProtocolSetupScreen = () => {
                             )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2">
-                            {activeTab === "scan"
-                                ? activeSeq.scanParams?.map((p, i) => (
-                                    <ParamBox key={i} label={p.label} value={p.value} highlight={p.highlight} options={p.options} />
-                                ))
-                                : activeSeq.reconPlans?.[selectedReconIndex]?.params?.map((p, i) => (
-                                    <ParamBox key={i} label={p.label} value={p.value} />
-                                ))}
+                        <div className="flex-1 min-h-0 mt-3 overflow-y-auto pr-1">
+                            <div className="grid grid-cols-2 gap-2">
+                                {activeTab === "scan"
+                                    ? activeSeq.scanParams?.map((p, i) => (
+                                        <ParamBox key={i} label={p.label} value={p.value} highlight={p.highlight} options={p.options} />
+                                    ))
+                                    : activeSeq.reconPlans?.[selectedReconIndex]?.params?.map((p, i) => (
+                                        <ParamBox key={i} label={p.label} value={p.value} />
+                                    ))}
+                            </div>
                         </div>
 
-                        <button className="h-[32px] w-full bg-white border border-[#B0C4DE] rounded-md text-[10px] font-bold text-[#4D94FF] flex items-center justify-center gap-1 hover:bg-blue-50 transition-all shadow-sm">
+                        <button className="shrink-0 mt-3 h-[32px] w-full bg-white border border-[#B0C4DE] rounded-md text-[10px] font-bold text-[#4D94FF] flex items-center justify-center gap-1 hover:bg-blue-50 transition-all shadow-sm">
                             <Info size={14} /> 更多详情
                         </button>
                     </div>
@@ -427,7 +743,7 @@ const ProtocolSetupScreen = () => {
                         {/* 协议库 tabs */}
                         <div className="flex h-[48px] bg-[#F8FAFC] border-b border-[#EEF2F9] p-1.5 gap-1.5 shrink-0">
                             <button
-                                onClick={() => setLibraryTab("spiral")}
+                                onClick={() => handleLibraryTabChange("spiral")}
                                 className={`flex-1 text-[12px] font-black rounded-md transition-all ${libraryTab === "spiral"
                                     ? "bg-[#4D94FF] text-white shadow-md"
                                     : "bg-white text-[#4D94FF] hover:bg-gray-50"
@@ -436,7 +752,7 @@ const ProtocolSetupScreen = () => {
                                 螺旋协议
                             </button>
                             <button
-                                onClick={() => setLibraryTab("axial")}
+                                onClick={() => handleLibraryTabChange("axial")}
                                 className={`flex-1 text-[12px] font-black rounded-md transition-all ${libraryTab === "axial"
                                     ? "bg-[#4D94FF] text-white shadow-md"
                                     : "bg-white text-[#4D94FF] hover:bg-gray-50"
@@ -460,18 +776,18 @@ const ProtocolSetupScreen = () => {
                                     {libraryData.map((item) => (
                                         <tr
                                             key={item.id}
-                                            onClick={() => setSelectedProtocol(item.id)}
-                                            className={`h-[52px] cursor-pointer transition-colors ${selectedProtocol === item.id ? "bg-[#E3F2FD]" : "hover:bg-[#F9FBFC]"
+                                            onClick={() => toggleProtocolSelection(item.id)}
+                                            className={`h-[52px] cursor-pointer transition-colors ${selectedProtocolIds.includes(item.id) ? "bg-[#E3F2FD]" : "hover:bg-[#F9FBFC]"
                                                 }`}
                                         >
                                             <td className="text-center">
                                                 <div
-                                                    className={`w-5 h-5 rounded-md border-2 mx-auto flex items-center justify-center transition-all ${selectedProtocol === item.id
+                                                    className={`w-5 h-5 rounded-md border-2 mx-auto flex items-center justify-center transition-all ${selectedProtocolIds.includes(item.id)
                                                         ? "bg-[#4D94FF] border-[#4D94FF]"
                                                         : "bg-white border-[#B0C4DE]/50"
                                                         }`}
                                                 >
-                                                    {selectedProtocol === item.id && (
+                                                    {selectedProtocolIds.includes(item.id) && (
                                                         <Check size={14} className="text-white stroke-[4px]" />
                                                     )}
                                                 </div>
@@ -484,16 +800,26 @@ const ProtocolSetupScreen = () => {
                             </table>
                         </div>
 
-                        {/* 摆位关联设置 — 同一张卡内的子分区 */}
+                        {/* 摆位关联设置 */}
                         <div className="shrink-0 border-t-2 border-[#EEF2F9] bg-[#F8FAFC] px-4 pt-3 pb-4 flex flex-col gap-3">
                             <div className="flex items-center gap-2">
                                 <div className="w-1.5 h-3 bg-[#4D94FF] rounded-full"></div>
                                 <span className="text-[10px] font-black uppercase tracking-widest text-[#37474F]">
                                     摆位关联设置
                                 </span>
+                                <button
+                                    onClick={() => setPositionGroupIndex((prev) => (prev === 0 ? 1 : 0))}
+                                    title="切换摆位组"
+                                    className="ml-auto w-[24px] h-[24px] rounded border border-[#B0C4DE] bg-white text-[#4D94FF] flex items-center justify-center hover:bg-blue-50 transition-colors"
+                                >
+                                    <ArrowLeftRight size={12} />
+                                </button>
                             </div>
                             <div className="grid grid-cols-4 gap-3 h-[52px]">
-                                {(["HFS", "FFS", "HFP", "FFP"] as const).map((pos) => (
+                                {(positionGroupIndex === 0
+                                    ? (["HFS", "FFS", "HFP", "FFP"] as const)
+                                    : (["HFDR", "FFDR", "HFDL", "FFDL"] as const)
+                                ).map((pos) => (
                                     <button
                                         key={pos}
                                         onClick={() => setPositioning(pos)}
@@ -541,20 +867,40 @@ const ProtocolSetupScreen = () => {
                         </div>
                         {/* Dialog Body */}
                         <div className="px-5 py-4">
-                            <p className="text-[13px] text-[#546E7A] leading-relaxed">
-                                即将删除以下 <span className="font-black text-[#D32F2F]">{checkedSeqIds.length}</span> 个序列：
-                            </p>
-                            <ul className="mt-2 flex flex-col gap-1.5">
-                                {checkedSeqIds.map(id => {
-                                    const seq = scanPlans.flatMap(p => p.sequences).find(s => s.id === id);
-                                    return seq ? (
-                                        <li key={id} className="flex items-center gap-2 text-[12px] text-[#37474F] font-bold">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-[#D32F2F] shrink-0" />
-                                            {seq.name}
-                                        </li>
-                                    ) : null;
-                                })}
-                            </ul>
+                            {checkedPlanIds.length > 0 && (
+                                <>
+                                    <p className="text-[13px] text-[#546E7A] leading-relaxed">
+                                        即将移除以下 <span className="font-black text-[#D32F2F]">{checkedPlanIds.length}</span> 个协议：
+                                    </p>
+                                    <ul className="mt-2 flex flex-col gap-1.5">
+                                        {scanPlans.filter((p) => checkedPlanIds.includes(p.id)).map((plan) => (
+                                            <li key={plan.id} className="flex items-center gap-2 text-[12px] text-[#37474F] font-bold">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#D32F2F] shrink-0" />
+                                                {plan.title}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </>
+                            )}
+
+                            {checkedSeqIds.length > 0 && (
+                                <>
+                                    <p className="text-[13px] text-[#546E7A] leading-relaxed mt-3">
+                                        即将删除以下 <span className="font-black text-[#D32F2F]">{checkedSeqIds.length}</span> 个序列：
+                                    </p>
+                                    <ul className="mt-2 flex flex-col gap-1.5">
+                                        {checkedSeqIds.map(id => {
+                                            const seq = scanPlans.flatMap(p => p.sequences).find(s => s.id === id);
+                                            return seq ? (
+                                                <li key={id} className="flex items-center gap-2 text-[12px] text-[#37474F] font-bold">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-[#D32F2F] shrink-0" />
+                                                    {seq.name}
+                                                </li>
+                                            ) : null;
+                                        })}
+                                    </ul>
+                                </>
+                            )}
                         </div>
                         {/* Dialog Footer */}
                         <div className="flex gap-2 px-5 pb-5">
@@ -627,3 +973,16 @@ const ParamBox = ({ label, value, highlight = false, options, onChange }: ParamB
 
 
 export default ProtocolSetupScreen;
+
+
+
+
+
+
+
+
+
+
+
+
+

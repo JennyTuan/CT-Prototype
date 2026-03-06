@@ -121,7 +121,7 @@ const AddPatientScreen = ({ isOpen, onClose }: AddPatientModalProps) => {
                     >
                         CANCEL
                     </button>
-                    <button className="h-[44px] px-12 rounded-md bg-[#4D94FF]/40 text-[#4D94FF] border border-[#4D94FF]/60 font-black text-[13px] uppercase tracking-widest cursor-default flex items-center gap-2">
+                    <button className="h-[44px] px-12 rounded-md bg-[#4D94FF] text-white font-black text-[13px] uppercase tracking-widest shadow-lg hover:bg-blue-600 active:scale-95 transition-all flex items-center gap-2">
                         SCAN
                     </button>
                 </div>
