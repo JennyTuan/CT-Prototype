@@ -1,164 +1,290 @@
+import { useState } from "react";
 import {
   User,
   Plus,
   ChevronRight,
+  ChevronDown,
   Bell,
   Lightbulb,
   Settings,
+  Monitor,
   Crosshair,
   Thermometer,
   CircleDot,
-  ChevronDown,
+  HeartPulse,
   Info,
   X,
-  HeartPulse,
 } from "lucide-react";
 
-const scanFields = [
-  { label: "KV", value: "120", type: "select" },
-  { label: "MA (MAX: 240 [SMALL])", value: "50", type: "input" },
-  { label: "旋转时间 (S)", value: "1", type: "select" },
-  { label: "准直器 (COLLIMATION)", value: "例如：32×0.6", type: "placeholder" },
-  { label: "扫描长度 (MM)", value: "450", type: "input" },
-  { label: "扫描方向", value: "OUT", type: "select" },
-  { label: "定位像 FOV", value: "500", type: "input" },
-  { label: "DOM（动态扫描）", value: "0 或 1", type: "input" },
-  { label: "床倾角 (ANGLE)", value: "0", type: "input", span: true },
+type DetailPanel = "basic" | "scout" | "softTissue" | "bone";
+
+type Field = {
+  label: string;
+  value: string;
+  type?: "select" | "input" | "placeholder";
+};
+
+const basicInfoFields: Field[] = [
+  { label: "协议名称", value: "Chest Routine + Contrast" },
+  { label: "检查部位", value: "Thorax" },
+  { label: "扫描模式", value: "Helical" },
+  { label: "协议版本", value: "WT32 v2.4" },
+  { label: "默认层厚", value: "1.0 mm" },
+  { label: "重建间隔", value: "0.8 mm" },
 ];
 
+const scoutFields: Field[] = [
+  { label: "KV", value: "120", type: "select" },
+  { label: "MA (MAX: 240 [SMALL])", value: "50", type: "input" },
+  { label: "ROTATION TIME (S)", value: "1", type: "select" },
+  { label: "COLLIMATION", value: "e.g. 2x0.6", type: "placeholder" },
+  { label: "SCAN LENGTH (MM)", value: "450", type: "input" },
+  { label: "SCAN DIRECTION", value: "OUT", type: "select" },
+  { label: "SCOUT FOV", value: "500", type: "input" },
+  { label: "DOM", value: "0 or 1", type: "input" },
+];
+
+const reconFields: Record<Exclude<DetailPanel, "basic" | "scout">, Field[]> = {
+  softTissue: [
+    { label: "Kernel", value: "B31f (Soft Tissue)" },
+    { label: "Slice Thickness", value: "1.0 mm" },
+    { label: "Increment", value: "0.8 mm" },
+    { label: "Window W/L", value: "400 / 40" },
+  ],
+  bone: [
+    { label: "Kernel", value: "B70f (Bone)" },
+    { label: "Slice Thickness", value: "1.0 mm" },
+    { label: "Increment", value: "0.7 mm" },
+    { label: "Window W/L", value: "2000 / 500" },
+  ],
+};
+
+const panelMeta: Record<DetailPanel, { title: string; subtitle: string }> = {
+  basic: {
+    title: "协议基本信息",
+    subtitle: "Protocol profile and defaults",
+  },
+  scout: {
+    title: "定位像采集参数",
+    subtitle: "Acquisition settings for scout scan",
+  },
+  softTissue: {
+    title: "软组织重建参数",
+    subtitle: "Reconstruction settings for soft tissue",
+  },
+  bone: {
+    title: "骨骼重建参数",
+    subtitle: "Reconstruction settings for bone",
+  },
+};
+
+const cardInputClass =
+  "h-[36px] rounded-md border border-[#B0C4DE]/50 bg-white px-3 flex items-center justify-between text-[12px] font-bold text-[#37474F] shadow-sm";
+
+const panelButtonClass = (active: boolean) =>
+  `w-full h-[34px] rounded-md px-3 flex items-center justify-between text-[12px] font-bold transition-all ${
+    active ? "bg-[#4D94FF] text-white shadow-sm" : "text-[#546E7A] hover:bg-[#EEF2F9]"
+  }`;
+
 export default function WT32ProtocolDetailScreen() {
-  return (
-    <div className="flex flex-col w-[1024px] h-[768px] bg-[#F3F4F6] overflow-hidden rounded-md border border-[#D1D5DB] shadow-2xl text-[#334155] font-sans select-none">
-      <header className="flex items-center justify-between px-7 h-[96px] bg-[#F8FAFC] border-b border-[#E2E8F0] shrink-0">
-        <div className="flex items-center gap-5">
-          <div className="flex items-center gap-3 py-2 px-4 bg-white border border-[#E2E8F0] rounded-2xl min-w-[170px] shadow-sm">
-            <div className="w-12 h-12 rounded-xl bg-[#2B6CBF] flex items-center justify-center text-white">
-              <User size={24} />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[30px] leading-none scale-50 origin-left font-bold text-[#0F172A]">张三</span>
-              <span className="text-[18px] leading-none scale-50 origin-left text-[#94A3B8] mt-1">ID: 20260226</span>
+  const [activePanel, setActivePanel] = useState<DetailPanel>("basic");
+
+  const renderBasicPanel = () => (
+    <div className="grid grid-cols-2 gap-3">
+      {basicInfoFields.map((field) => (
+        <div key={field.label} className="p-2 bg-[#F8FAFC] border border-[#EEF2F9] rounded-md">
+          <div className="text-[9px] font-black uppercase tracking-wider text-[#90A4AE]">{field.label}</div>
+          <div className={`${cardInputClass} mt-1`}>{field.value}</div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const renderScoutPanel = () => (
+    <>
+      <div className="p-3 bg-[#E3F2FD] border border-[#BBDEFB] rounded-md text-[#1E88E5]">
+        <div className="text-[12px] font-black flex items-center gap-1">
+          <Info size={14} /> Scout note
+        </div>
+        <p className="text-[11px] mt-1">Scout is used for positioning. It does not include reconstruction output.</p>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        {scoutFields.map((field) => (
+          <div key={field.label} className="p-2 bg-[#F8FAFC] border border-[#EEF2F9] rounded-md">
+            <div className="text-[9px] font-black uppercase tracking-wider text-[#90A4AE]">{field.label}</div>
+            <div className={`${cardInputClass} mt-1`}>
+              <span className={field.type === "placeholder" ? "text-[#B0BEC5]" : ""}>{field.value}</span>
+              {field.type === "select" && <ChevronDown size={12} className="text-[#90A4AE]" />}
             </div>
           </div>
-          <div className="text-[11px] font-bold text-[#1E3A8A] leading-[1.25] space-y-1">
-            <div className="flex items-center gap-1"><CircleDot size={12} />60 MM</div>
-            <div className="flex items-center gap-1 text-[#2563EB]"><Crosshair size={12} />3.0°</div>
-            <div className="flex items-center gap-1"><Thermometer size={12} />60%</div>
+        ))}
+      </div>
+
+      <div className="mt-3 flex justify-end">
+        <button className="h-[32px] px-3 border border-[#B0C4DE] rounded-md text-[11px] font-bold text-[#546E7A] hover:bg-[#EEF2F9] transition-all flex items-center gap-1">
+          <X size={12} /> 删除该采集队列
+        </button>
+      </div>
+    </>
+  );
+
+  const renderReconPanel = () => {
+    const fields = reconFields[activePanel as "softTissue" | "bone"];
+    return (
+      <div className="grid grid-cols-2 gap-3">
+        {fields.map((field) => (
+          <div key={field.label} className="p-2 bg-[#F8FAFC] border border-[#EEF2F9] rounded-md">
+            <div className="text-[9px] font-black uppercase tracking-wider text-[#90A4AE]">{field.label}</div>
+            <div className={`${cardInputClass} mt-1`}>{field.value}</div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="w-[1024px] h-[768px] bg-[#EEF2F9] border border-[#B0C4DE] rounded-md shadow-sm text-[#37474F] flex flex-col overflow-hidden select-none">
+      <header className="h-[84px] bg-[#E8EAF1] border-b border-[#B0C4DE] px-6 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-md bg-[#4D94FF] text-white flex items-center justify-center">
+              <User size={18} />
+            </div>
+            <div>
+              <div className="text-[13px] font-black">张三</div>
+              <div className="text-[10px] text-[#546E7A] font-bold">ID: 20260226</div>
+            </div>
+          </div>
+          <div className="text-[10px] font-bold text-[#546E7A] leading-4">
+            <div className="flex items-center gap-1">
+              <CircleDot size={10} /> 60 MM
+            </div>
+            <div className="flex items-center gap-1">
+              <Crosshair size={10} /> 3.0°
+            </div>
+            <div className="flex items-center gap-1">
+              <Thermometer size={10} /> 60%
+            </div>
           </div>
         </div>
 
         <div className="text-center">
-          <div className="text-[46px] leading-none scale-50 origin-center font-black tracking-tight text-[#0F172A]">13:32</div>
-          <div className="text-[24px] scale-50 origin-center text-[#64748B] font-semibold -mt-2">3月4日 周三</div>
+          <div className="text-[28px] font-bold leading-none">13:32</div>
+          <div className="text-[11px] font-bold text-[#546E7A] mt-1">3月4日 周三</div>
         </div>
 
-        <div className="flex items-center gap-3 pr-2">
-          <div className="w-10 h-10 rounded-xl border border-[#CBD5E1] bg-white text-[#EF4444] flex items-center justify-center"><HeartPulse size={25} /></div>
-          <div className="relative w-10 h-10 rounded-xl border border-[#CBD5E1] bg-white text-[#64748B] flex items-center justify-center">
-            <Bell size={22} />
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-4 px-1 bg-red-500 text-white text-[9px] flex items-center justify-center rounded-full font-bold border border-white">9</span>
+        <div className="flex items-center gap-4">
+          <div className="text-[#D32F2F]">
+            <HeartPulse size={24} />
           </div>
-          <div className="w-10 h-10 rounded-xl border border-[#CBD5E1] bg-white text-[#64748B] flex items-center justify-center"><Lightbulb size={21} /></div>
-          <div className="relative w-10 h-10 rounded-xl border border-[#CBD5E1] bg-white text-[#64748B] flex items-center justify-center">
+          <div className="text-[#546E7A]">
+            <Monitor size={22} />
+          </div>
+          <div className="relative text-[#546E7A]">
+            <Bell size={22} />
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[8px] rounded-full flex items-center justify-center border border-white">
+              9
+            </span>
+          </div>
+          <div className="text-[#546E7A]">
+            <Lightbulb size={22} />
+          </div>
+          <div className="relative text-[#546E7A]">
             <Settings size={22} />
-            <span className="absolute -top-1 -right-2 min-w-[22px] h-4 px-1 bg-red-500 text-white text-[9px] flex items-center justify-center rounded-full font-bold border border-white">100</span>
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[8px] rounded-full flex items-center justify-center border border-white">
+              10
+            </span>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 overflow-hidden p-6 flex gap-4">
-        <aside className="w-[250px] bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0] px-3 py-4 flex flex-col">
-          <div className="h-[42px] px-4 rounded-xl border border-[#E5E7EB] bg-white text-[14px] font-bold text-[#334155] flex items-center justify-between">
-            协议基本信息
-            <ChevronRight size={16} className="text-[#CBD5E1]" />
+      <main className="flex-1 flex overflow-hidden p-4 gap-4">
+        <aside className="w-[264px] bg-white rounded-lg border border-[#B0C4DE] shadow-sm flex flex-col overflow-hidden shrink-0">
+          <div className="h-[48px] bg-[#F8FAFC] border-b border-[#EEF2F9] px-3 flex items-center justify-between">
+            <span className="text-[11px] font-black tracking-wider uppercase text-[#37474F]">协议结构</span>
+            <button className="w-[28px] h-[28px] rounded-md text-[#4D94FF] hover:bg-[#EEF2F9] flex items-center justify-center">
+              <Plus size={16} />
+            </button>
           </div>
 
-          <div className="mt-4 flex justify-between px-2 text-[21px] scale-50 origin-left text-[#64748B]">
-            <span>采集队列</span>
-            <span className="flex items-center gap-1 text-[#0F172A]"><Plus size={16} />新增</span>
-          </div>
+          <div className="p-2 space-y-2">
+            <button type="button" onClick={() => setActivePanel("basic")} className={panelButtonClass(activePanel === "basic")}>
+              <span>协议基本信息</span>
+              <ChevronRight size={14} className={activePanel === "basic" ? "text-white" : "text-[#90A4AE]"} />
+            </button>
 
-          <div className="mt-1 rounded-xl bg-[#2563EB] px-3 h-[38px] flex items-center justify-between text-white shadow">
-            <span className="text-[14px] font-bold">定位像</span>
-            <span className="text-[12px]">定位像</span>
-          </div>
-          <div className="text-[11px] text-[#94A3B8] mt-2 px-4 italic">定位像不需要重建</div>
+            <div className="rounded-md border border-[#EEF2F9] p-2">
+              <button type="button" onClick={() => setActivePanel("scout")} className={panelButtonClass(activePanel === "scout")}>
+                <span>定位像</span>
+                <span className="text-[10px] opacity-80">Scout</span>
+              </button>
+              <div className="text-[10px] text-[#90A4AE] px-2 py-1">定位像不需要重建</div>
 
-          <div className="mt-2 ml-2 border-l border-[#E2E8F0] pl-2 space-y-2">
-            <div className="h-[34px] rounded-xl bg-[#E5E7EB] px-3 flex items-center justify-between">
-              <span className="font-bold text-[#475569]">Acquisition 1</span>
-              <span className="text-[12px] text-[#94A3B8]">螺旋扫描</span>
-            </div>
-            <div className="text-[14px] text-[#64748B] px-3">软组织</div>
-            <div className="text-[14px] text-[#64748B] px-3">骨骼</div>
-            <div className="text-[12px] text-[#60A5FA] px-3">+ 新增重建</div>
-          </div>
-
-          <div className="mt-4 space-y-2">
-            <div className="h-[40px] px-4 rounded-xl border border-[#E5E7EB] bg-[#F8FAFC] text-[14px] font-semibold text-[#334155] flex items-center justify-between">
-              剂量 / 通知阈值
-              <ChevronRight size={15} className="text-[#CBD5E1]" />
-            </div>
-            <div className="h-[40px] px-4 rounded-xl border border-[#E5E7EB] bg-[#F8FAFC] text-[14px] font-semibold text-[#334155] flex items-center justify-between">
-              高级
-              <ChevronRight size={15} className="text-[#CBD5E1]" />
-            </div>
-          </div>
-        </aside>
-
-        <section className="flex-1 bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0] flex flex-col min-h-0">
-          <div className="px-6 py-5 border-b border-[#E5E7EB]">
-            <h2 className="text-[30px] leading-none scale-50 origin-left font-black text-[#0F172A]">扫描采集：定位像</h2>
-            <p className="text-[24px] leading-none scale-50 origin-left text-[#64748B] mt-1">单个采集队列的扫描参数（kV, mA, 长度等）</p>
-          </div>
-
-          <div className="px-5 py-4 overflow-y-auto">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="text-[12px] text-[#64748B] mb-1">名称</div>
-                <div className="h-[36px] rounded-lg border border-[#CBD5E1] bg-white px-3 text-[28px] leading-none scale-50 origin-left font-semibold text-[#0F172A] flex items-center">定位像</div>
-              </div>
-              <div>
-                <div className="text-[12px] text-[#64748B] mb-1">模式</div>
-                <div className="h-[36px] rounded-lg border border-[#CBD5E1] bg-white px-3 text-[28px] leading-none scale-50 origin-left font-semibold text-[#0F172A] flex items-center justify-between">
-                  定位像
-                  <ChevronRight size={14} className="rotate-90 text-[#334155]" />
+              <div className="ml-2 border-l border-[#EEF2F9] pl-2 space-y-1">
+                <div className="h-[28px] rounded-md bg-[#EEF2F9] px-2 flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-[#546E7A]">Acquisition 1</span>
+                  <span className="text-[10px] text-[#90A4AE]">Helical</span>
                 </div>
-              </div>
-            </div>
-
-            <div className="mt-5 p-3 rounded-2xl border border-[#93C5FD] bg-[#DBEAFE] text-[#2563EB]">
-              <div className="text-[14px] font-bold flex items-center gap-1"><Info size={14} /> 定位像扫描</div>
-              <p className="text-[13px] mt-1">定位像用于定位扫描区域，不涉及图像重建。通常使用较低剂量参数。</p>
-            </div>
-
-            <div className="mt-4 rounded-3xl border border-[#E5E7EB] bg-[#F3F4F6] p-4">
-              <div className="text-[16px] font-bold text-[#475569] mb-3">采集参数</div>
-              <div className="grid grid-cols-2 gap-3">
-                {scanFields.map((field) => (
-                  <div key={field.label} className={field.span ? "col-span-1" : ""}>
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#64748B] mb-1">{field.label}</div>
-                    <div className="h-[36px] rounded-lg border border-[#D1D5DB] bg-white px-3 flex items-center justify-between text-[30px] leading-none scale-50 origin-left font-semibold text-[#111827]">
-                      <span className={field.type === "placeholder" ? "text-[#94A3B8]" : ""}>{field.value}</span>
-                      {field.type === "select" && <ChevronDown size={14} className="text-[#334155]" />}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-4 text-right">
-                <button className="inline-flex items-center gap-1 text-[#94A3B8] text-[13px] hover:text-[#64748B]">
-                  <X size={14} /> 删除该采集队列
+                <button
+                  type="button"
+                  onClick={() => setActivePanel("softTissue")}
+                  className={`w-full h-[28px] px-2 rounded-md text-left text-[11px] font-bold transition-all ${
+                    activePanel === "softTissue"
+                      ? "bg-[#E3F2FD] text-[#1E88E5] border border-[#BBDEFB]"
+                      : "text-[#546E7A] hover:bg-[#EEF2F9]"
+                  }`}
+                >
+                  软组织
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivePanel("bone")}
+                  className={`w-full h-[28px] px-2 rounded-md text-left text-[11px] font-bold transition-all ${
+                    activePanel === "bone"
+                      ? "bg-[#E3F2FD] text-[#1E88E5] border border-[#BBDEFB]"
+                      : "text-[#546E7A] hover:bg-[#EEF2F9]"
+                  }`}
+                >
+                  骨骼
                 </button>
               </div>
             </div>
           </div>
+
+          <div className="mt-auto p-2 border-t border-[#EEF2F9] bg-[#F8FAFC] space-y-2">
+            <button className="w-full h-[32px] rounded-md border border-[#B0C4DE] bg-white text-[11px] font-bold text-[#546E7A] hover:bg-[#EEF2F9]">
+              剂量 / 通知阈值
+            </button>
+            <button className="w-full h-[32px] rounded-md border border-[#B0C4DE] bg-white text-[11px] font-bold text-[#546E7A] hover:bg-[#EEF2F9]">
+              高级
+            </button>
+          </div>
+        </aside>
+
+        <section className="flex-1 bg-white rounded-lg border border-[#B0C4DE] shadow-sm flex flex-col overflow-hidden">
+          <div className="h-[48px] bg-[#F8FAFC] border-b border-[#EEF2F9] px-4 flex items-center justify-between">
+            <div>
+              <div className="text-[12px] font-black text-[#37474F]">{panelMeta[activePanel].title}</div>
+              <div className="text-[10px] font-bold text-[#90A4AE]">{panelMeta[activePanel].subtitle}</div>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4">
+            {activePanel === "basic" && renderBasicPanel()}
+            {activePanel === "scout" && renderScoutPanel()}
+            {(activePanel === "softTissue" || activePanel === "bone") && renderReconPanel()}
+          </div>
         </section>
       </main>
 
-      <footer className="h-[72px] px-6 flex items-center justify-end gap-3 bg-[#F8FAFC] border-t border-[#E2E8F0]">
-        <button className="h-[40px] px-8 rounded-xl border border-[#D1D5DB] bg-white text-[#334155] text-[30px] leading-none scale-50 origin-center font-bold">取消</button>
-        <button className="h-[40px] px-8 rounded-xl bg-[#2563EB] text-white text-[30px] leading-none scale-50 origin-center font-bold shadow">保存并应用到会话</button>
+      <footer className="h-[84px] bg-[#E8EAF1] border-t border-[#B0C4DE] px-8 flex items-center justify-end gap-3 shrink-0">
+        <button className="h-[44px] px-8 bg-white text-[#4D94FF] border-2 border-[#4D94FF] rounded-md text-[13px] font-bold hover:bg-[#E3F2FD] transition-all">
+          取消
+        </button>
+        <button className="h-[44px] px-8 bg-[#4D94FF] text-white rounded-md text-[13px] font-bold shadow-md hover:bg-blue-600 transition-all">
+          保存并应用到会话
+        </button>
       </footer>
     </div>
   );

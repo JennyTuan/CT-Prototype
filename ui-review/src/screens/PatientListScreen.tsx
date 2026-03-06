@@ -6,21 +6,24 @@ import {
     Plus,
     Trash2,
     ChevronDown,
-    ChevronUp,
     ChevronLeft,
     ChevronRight,
-    Monitor,
+    Siren,
     RefreshCw,
     Search,
+    Upload,
     Download,
+    Network,
     Eye,
+    Flame,
     Image as ImageIcon,
     ChevronsLeft,
-    ChevronsRight,
-    UserCheck
+    ChevronsRight
 } from 'lucide-react';
 
 import AddPatientScreen from './AddPatientScreen';
+
+type CheckStatus = '待进行' | '已完成' | '已终止';
 
 const PatientListScreen = () => {
     const [activeTab, setActiveTab] = useState('pending'); // 'pending' or 'completed'
@@ -29,16 +32,31 @@ const PatientListScreen = () => {
     const [showAddModal, setShowAddModal] = useState(false);
 
     // 模拟患者列表数据
-    const patientData = [
-        { id: 1, serial: 6, patientId: 'P001', name: '张三', gender: '男', age: 45, type: 'CT胸部扫描' },
-        { id: 2, serial: 6, patientId: 'P002', name: '李四', gender: '女', age: 32, type: 'MRI头部' },
-        { id: 3, serial: 5, patientId: 'P003', name: '王五', gender: '男', age: 28, type: 'CT腹部' },
-        { id: 4, serial: 5, patientId: 'P004', name: '赵六', gender: '女', age: 55, type: '螺旋扫描' },
-        { id: 5, serial: 4, patientId: 'P005', name: '孙七', gender: '男', age: 19, type: '定位像' },
-        { id: 6, serial: 4, patientId: 'P006', name: '周八', gender: '女', age: 64, type: 'CT增强' },
-        { id: 7, serial: 3, patientId: 'P007', name: '吴九', gender: '男', age: 41, type: '骨盆扫描' },
-        { id: 8, serial: 3, patientId: 'P008', name: '郑十', gender: '女', age: 37, type: '颈椎平扫' },
+    const patientData: Array<{
+        id: number;
+        serial: number;
+        patientId: string;
+        name: string;
+        gender: string;
+        age: number;
+        type: string;
+        checkStatus: CheckStatus;
+    }> = [
+        { id: 1, serial: 6, patientId: 'P001', name: '张三', gender: '男', age: 45, type: 'CT胸部扫描', checkStatus: '待进行' },
+        { id: 2, serial: 6, patientId: 'P002', name: '李四', gender: '女', age: 32, type: 'MRI头部', checkStatus: '已完成' },
+        { id: 3, serial: 5, patientId: 'P003', name: '王五', gender: '男', age: 28, type: 'CT腹部', checkStatus: '待进行' },
+        { id: 4, serial: 5, patientId: 'P004', name: '赵六', gender: '女', age: 55, type: '螺旋扫描', checkStatus: '已终止' },
+        { id: 5, serial: 4, patientId: 'P005', name: '孙七', gender: '男', age: 19, type: '定位像', checkStatus: '待进行' },
+        { id: 6, serial: 4, patientId: 'P006', name: '周八', gender: '女', age: 64, type: 'CT增强', checkStatus: '已完成' },
+        { id: 7, serial: 3, patientId: 'P007', name: '吴九', gender: '男', age: 41, type: '骨盆扫描', checkStatus: '已终止' },
+        { id: 8, serial: 3, patientId: 'P008', name: '郑十', gender: '女', age: 37, type: '颈椎平扫', checkStatus: '待进行' },
     ];
+
+    const checkStatusClass: Record<CheckStatus, string> = {
+        待进行: 'bg-[#FFF3E0] text-[#FA8C16] border border-[#FFD591]',
+        已完成: 'bg-[#E8F5E9] text-[#43A047] border border-[#A5D6A7]',
+        已终止: 'bg-[#FFEBEE] text-[#D32F2F] border border-[#FFCDD2]',
+    };
 
     const toggleSelectRow = (id: number) => {
         if (selectedRows.includes(id)) {
@@ -72,9 +90,13 @@ const PatientListScreen = () => {
                                 <span className="text-[16px] font-bold">Roky Zhang</span>
                                 <span className="text-[12px] text-[#546E7A] font-medium leading-none mt-0.5">ID: 67890</span>
                             </div>
-                            <div className="ml-auto flex flex-col gap-0.5 text-[#546E7A] opacity-60">
-                                <div className="text-[9px] font-bold italic">⊥ 0</div>
-                                <div className="text-[9px] font-bold">∠ 0</div>
+                        </div>
+                        <div className="flex flex-col gap-0.5 text-[#546E7A] opacity-60">
+                            <div className="text-[9px] font-bold italic">⊥ 0</div>
+                            <div className="text-[9px] font-bold">∠ 0</div>
+                            <div className="flex items-center gap-1 text-[11px] font-bold">
+                                <Flame size={14} />
+                                <span>0%</span>
                             </div>
                         </div>
                     </div>
@@ -85,11 +107,13 @@ const PatientListScreen = () => {
                     </div>
 
                     <div className="flex items-center gap-5 pr-2">
-                        <div className="p-1 text-[#D32F2F] cursor-pointer hover:opacity-70"><UserCheck size={32} strokeWidth={1.5} /></div>
-                        <div className="p-1 text-[#546E7A] cursor-pointer hover:opacity-70"><Monitor size={24} /></div>
+                        <div className="p-1 text-[#D32F2F] cursor-pointer hover:opacity-70"><Siren size={30} strokeWidth={1.8} /></div>
+                        <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
+                            <Network size={24} />
+                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[9px] flex items-center justify-center rounded-full font-bold border border-white">5</span>
+                        </div>
                         <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
                             <Sun size={24} />
-                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[9px] flex items-center justify-center rounded-full font-bold border border-white">5</span>
                         </div>
                         <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
                             <Settings size={24} />
@@ -99,7 +123,7 @@ const PatientListScreen = () => {
                 </header>
 
                 {/* 2. Main Content Area */}
-                <main className="flex-1 overflow-hidden p-4">
+                <main className="flex-1 overflow-hidden p-2">
 
                     {/* 这里是包裹操作栏和列表内容的统一大卡片 */}
                     <div className="h-full flex flex-col bg-white rounded-lg border border-[#B0C4DE] shadow-sm overflow-hidden">
@@ -153,8 +177,8 @@ const PatientListScreen = () => {
                                     >
                                         <Plus size={18} />
                                     </button>
-                                    <button title="导出" className="w-[36px] h-[36px] bg-white border border-[#B0C4DE] text-[#546E7A] rounded-md flex items-center justify-center hover:bg-gray-50 active:scale-95 transition-all">
-                                        <ChevronUp size={18} />
+                                    <button title="导入" className="w-[36px] h-[36px] bg-white border border-[#B0C4DE] text-[#546E7A] rounded-md flex items-center justify-center hover:bg-gray-50 active:scale-95 transition-all">
+                                        <Upload size={18} />
                                     </button>
                                     <button title="删除" className="w-[36px] h-[36px] bg-white border border-[#B0C4DE] text-[#546E7A] rounded-md flex items-center justify-center hover:text-red-500 hover:border-red-200 active:scale-95 transition-all">
                                         <Trash2 size={18} />
@@ -183,7 +207,7 @@ const PatientListScreen = () => {
                                             <th className="px-4 text-left border-r border-white/10">性别</th>
                                             <th className="px-4 text-left border-r border-white/10">年龄</th>
                                             <th className="px-4 text-left border-r border-white/10">检查类型</th>
-                                            <th className="px-4 text-center">图像状态</th>
+                                            <th className="px-4 text-center">{activeTab === 'completed' ? '图像状态' : '检查状态'}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100 bg-white">
@@ -208,9 +232,16 @@ const PatientListScreen = () => {
                                                 <td className="px-4">{patient.age}</td>
                                                 <td className="px-4 text-[#78909C]">{patient.type}</td>
                                                 <td className="text-center">
-                                                    <div className={`w-8 h-8 rounded-md flex items-center justify-center mx-auto transition-all ${selectedRows.includes(patient.id) ? 'bg-white shadow-sm text-blue-500' : 'bg-gray-50 text-gray-400'}`}>
-                                                        <ImageIcon size={16} />
-                                                    </div>
+                                                    {activeTab === 'completed' ? (
+                                                        <span className="inline-flex h-[24px] px-2 rounded-full items-center justify-center gap-1 text-[11px] font-bold bg-[#E3F2FD] text-[#1E88E5] border border-[#BBDEFB]">
+                                                            <ImageIcon size={12} />
+                                                            可查看图像
+                                                        </span>
+                                                    ) : (
+                                                        <span className={`inline-flex min-w-[62px] h-[24px] px-2 rounded-full items-center justify-center text-[11px] font-bold ${checkStatusClass[patient.checkStatus]}`}>
+                                                            {patient.checkStatus}
+                                                        </span>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))}
@@ -244,15 +275,15 @@ const PatientListScreen = () => {
                 </main>
 
                 {/* 3. Global Footer (底部操作) */}
-                <footer className="h-[84px] bg-[#E8EAF1] border-t border-[#B0C4DE] flex items-center shrink-0 px-8">
+                <footer className="h-[80px] bg-[#E8EAF1] border-t border-[#B0C4DE] flex items-center shrink-0 px-8">
                     <div className="flex-1">
-                        <button className="flex items-center gap-2 px-10 h-[52px] bg-white text-[#4D94FF] font-bold rounded-md border-2 border-[#4D94FF] hover:bg-blue-50 transition-all uppercase text-[13px] shadow-sm active:scale-95">
-                            <ChevronLeft size={20} /> 上一步
+                        <button className="flex items-center gap-2 px-12 h-[56px] bg-white text-[#4D94FF] font-bold rounded-md border-2 border-[#4D94FF] hover:bg-blue-50 transition-all uppercase text-[14px] shadow-sm active:scale-95">
+                            <ChevronLeft size={22} /> 上一步
                         </button>
                     </div>
                     <div className="flex-1 flex justify-end">
-                        <button className="flex items-center gap-2 px-10 h-[52px] bg-[#4D94FF] text-white font-bold rounded-md shadow-lg hover:bg-blue-600 transition-all uppercase text-[13px] active:scale-95">
-                            下一步 <ChevronRight size={20} />
+                        <button className="flex items-center gap-2 px-12 h-[56px] bg-[#4D94FF] text-white font-bold rounded-md shadow-lg hover:bg-blue-600 transition-all uppercase text-[14px] active:scale-95">
+                            下一步 <ChevronRight size={22} />
                         </button>
                     </div>
                 </footer>
