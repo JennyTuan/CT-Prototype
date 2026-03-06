@@ -326,7 +326,7 @@ const toUiPlan = (entry: RawProtocolCase): UiPlan => ({
 });
 
 const ProtocolSetupScreen = () => {
-        const [activeTab, setActiveTab] = useState<"scan" | "recon">("scan");
+    const [activeTab, setActiveTab] = useState<"scan" | "recon">("scan");
     const [libraryTab, setLibraryTab] = useState<"spiral" | "axial">("spiral");
     const [selectedProtocolIds, setSelectedProtocolIds] = useState<number[]>([1]);
     const [positioning, setPositioning] = useState<"HFS" | "FFS" | "HFP" | "FFP" | "HFDR" | "FFDR" | "HFDL" | "FFDL">("HFS");
@@ -721,7 +721,7 @@ const ProtocolSetupScreen = () => {
                         </div>
 
                         <button className="shrink-0 mt-3 h-[32px] w-full bg-white border border-[#B0C4DE] rounded-md text-[10px] font-bold text-[#4D94FF] flex items-center justify-center gap-1 hover:bg-blue-50 transition-all shadow-sm">
-                            <Info size={14} /> 更多详情
+                            <Info size={14} /> 参数详情
                         </button>
                     </div>
                 </aside >
