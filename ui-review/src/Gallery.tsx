@@ -18,6 +18,7 @@ import DiskManagementScreen from "./screens/DiskManagementScreen";
 import PerformanceEvaluationScreen from "./screens/PerformanceEvaluationScreen";
 import CTSimulatorUIRefactor from "./screens/CTSimulatorUIRefactor";
 import CTSimulatorUIRefactorLight from "./screens/CTSimulatorUIRefactorLight";
+import CTSimulatorUIRefactorLight2 from "./screens/CTSimulatorUIRefactorLight2";
 
 
 
@@ -51,6 +52,7 @@ export default function Gallery() {
             screens: [
                 { key: "ct-simulator-ui-refactor-dark", name: "CTSimulatorUIRefactor-dark", component: <CTSimulatorUIRefactor /> },
                 { key: "CTSimulatorUIRefactor-light", name: "CTSimulatorUIRefactor-light", component: <CTSimulatorUIRefactorLight /> },
+                { key: "CTSimulatorUIRefactor-light2", name: "CTSimulatorUIRefactor-light2", component: <CTSimulatorUIRefactorLight2 /> },
             ]
         }
     ], []);

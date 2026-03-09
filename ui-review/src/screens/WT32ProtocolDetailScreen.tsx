@@ -1,311 +1,192 @@
-import { useMemo, useState } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { ChevronDown, ChevronRight, Info, User, X } from "lucide-react";
-import { loadProtocolCasesFromDb, type RawProtocolCase, type RawRecon, type RawSequence } from "../lib/protocolDb";
-
-type PanelKind = "protocol" | "sequence" | "recon";
-
-const fieldLabel: Record<string, string> = {
-    id: "ID",
-    name: "名称",
-    region: "区域",
-    scanLocationLabel: "扫描部位",
-    supportedPositions: "支持摆位",
-    supportedModes: "支持模式",
-    sequenceType: "序列类型",
-    mode: "扫描模式",
-    scanLength: "扫描长度",
-    scanningDirection: "扫描方向",
-    mA: "mA",
-    kV: "kV",
-    angle: "角度",
-    rotationTime: "旋转时间",
-    collimation: "准直",
-    scoutFOV: "Scout FOV",
-    dom: "DOM",
-    pitch: "Pitch",
-    scanIncrement: "扫描增量",
-    cycleCount: "循环次数",
-    sliceThickness: "层厚",
-    interval: "间隔",
-    kernel: "重建核",
-    windowCenter: "窗位",
-    windowWidth: "窗宽",
-    fov: "FOV",
-    matrix: "矩阵",
-    centerX: "中心X",
-    centerY: "中心Y",
-    metalReduction: "金属伪影抑制",
-};
-
-const formatValue = (value: unknown): string => {
-    if (Array.isArray(value)) return value.join(", ");
-    if (typeof value === "boolean") return value ? "是" : "否";
-    return String(value);
-};
-
-const titleClass =
-    "text-[9px] font-black uppercase tracking-wider text-[#90A4AE]";
-const valueClass =
-    "h-[36px] mt-1 rounded-md border border-[#B0C4DE]/50 bg-white px-3 flex items-center text-[12px] font-bold text-[#37474F]";
-
-function FieldGrid({ fields }: { fields: Array<{ label: string; value: string }> }) {
-    return (
-        <div className="grid grid-cols-2 gap-3">
-            {fields.map((field) => (
-                <div key={field.label} className="p-2 bg-[#F8FAFC] border border-[#EEF2F9] rounded-md">
-                    <div className={titleClass}>{field.label}</div>
-                    <div className={valueClass}>{field.value}</div>
-                </div>
-            ))}
-        </div>
-    );
-}
+import { useState } from "react";
+import { Plus, ChevronRight, Info, User } from "lucide-react";
 
 export default function WT32ProtocolDetailScreen() {
-    const protocolCases = useLiveQuery(
-        () => loadProtocolCasesFromDb(),
-        [],
-        [] as RawProtocolCase[]
-    );
+    const [activeTab, setActiveTab] = useState("basic");
+    const [selectedPos, setSelectedPos] = useState("HFS");
 
-    const [selectedProtocolId, setSelectedProtocolId] = useState("");
-    const [selectedSequenceId, setSelectedSequenceId] = useState("");
-    const [selectedReconId, setSelectedReconId] = useState("");
-    const [expandedProtocolIds, setExpandedProtocolIds] = useState<string[]>([]);
-    const [expandedSequenceKeys, setExpandedSequenceKeys] = useState<string[]>([]);
-
-    const resolvedProtocol = useMemo(() => {
-        if (protocolCases.length === 0) return undefined;
-        return protocolCases.find((p) => p.protocol.id === selectedProtocolId) ?? protocolCases[0];
-    }, [protocolCases, selectedProtocolId]);
-
-    const resolvedSequence: RawSequence | undefined = useMemo(() => {
-        if (!resolvedProtocol) return undefined;
-        return resolvedProtocol.sequences.find((s) => s.id === selectedSequenceId)
-            ?? (selectedSequenceId ? undefined : resolvedProtocol.sequences[0]);
-    }, [resolvedProtocol, selectedSequenceId]);
-
-    const resolvedRecon: RawRecon | undefined = useMemo(() => {
-        if (!resolvedSequence) return undefined;
-        return resolvedSequence.reconstructionParams.find((r) => r.id === selectedReconId);
-    }, [resolvedSequence, selectedReconId]);
-
-    const panelKind: PanelKind = resolvedRecon ? "recon" : resolvedSequence ? "sequence" : "protocol";
-
-    const protocolFields = resolvedProtocol
-        ? [
-            { label: "协议ID", value: resolvedProtocol.protocol.id },
-            { label: "协议名称", value: resolvedProtocol.protocol.name },
-            { label: "区域", value: resolvedProtocol.protocol.region },
-            { label: "扫描部位", value: resolvedProtocol.protocol.scanLocationLabel },
-            { label: "支持摆位", value: formatValue(resolvedProtocol.protocol.supportedPositions) },
-            { label: "支持模式", value: formatValue(resolvedProtocol.protocol.supportedModes) },
-        ]
-        : [];
-
-    const sequenceFields = resolvedSequence
-        ? [
-            { label: "序列ID", value: resolvedSequence.id },
-            { label: "序列名称", value: resolvedSequence.name },
-            { label: "序列类型", value: resolvedSequence.sequenceType },
-            { label: "扫描模式", value: resolvedSequence.mode },
-            ...Object.entries(resolvedSequence.scanParams).map(([k, v]) => ({
-                label: fieldLabel[k] || k,
-                value: formatValue(v),
-            })),
-        ]
-        : [];
-
-    const reconFields = resolvedRecon
-        ? [
-            { label: "重建ID", value: resolvedRecon.id },
-            { label: "重建名称", value: resolvedRecon.name },
-            ...Object.entries(resolvedRecon.params).map(([k, v]) => ({
-                label: fieldLabel[k] || k,
-                value: formatValue(v),
-            })),
-        ]
-        : [];
-
-    const panelTitle =
-        panelKind === "protocol"
-            ? "协议基本信息"
-            : panelKind === "sequence"
-                ? `序列参数：${resolvedSequence?.name || ""}`
-                : `重建参数：${resolvedRecon?.name || ""}`;
-
-    const panelSubtitle =
-        panelKind === "protocol"
-            ? "Protocol profile and defaults"
-            : panelKind === "sequence"
-                ? "Acquisition and scan settings"
-                : "Reconstruction settings";
+    const positions = [
+        { id: "HFS", label: "头先进-仰卧" },
+        { id: "FFS", label: "足先进-仰卧" },
+        { id: "HFP", label: "头先进-俯卧" },
+        { id: "FFP", label: "足先进-俯卧" },
+        { id: "HFDR", label: "头先进-右侧卧" },
+        { id: "FFDR", label: "足先进-右侧卧" },
+        { id: "HFDL", label: "头先进-左侧卧" },
+        { id: "FFDL", label: "足先进-左侧卧" },
+    ];
 
     return (
-        <div className="w-[1024px] h-[768px] bg-[#EEF2F9] text-[#37474F] flex flex-col overflow-hidden select-none font-sans border border-[#B0C4DE] rounded-md">
-            <header className="h-[80px] px-6 flex items-center justify-between border-b border-[#B0C4DE] bg-[#E8EAF1] shrink-0">
+        <div className="w-[1024px] h-[768px] bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden border border-[#D0DFFF] font-sans text-slate-700 relative">
+            <div className="flex justify-between items-center px-6 py-3 border-b border-[#D0DFFF] bg-[#F4F8FF]">
                 <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-md bg-[#4D94FF] text-white flex items-center justify-center">
+                    <div className="w-8 h-8 bg-[#4C88FF] rounded-md flex items-center justify-center text-white">
                         <User size={18} />
                     </div>
                     <div>
-                        <div className="text-[16px] font-black">协议详情</div>
-                        <div className="text-[11px] font-bold text-[#546E7A]">层级结构查看与参数核对</div>
+                        <h1 className="text-base font-bold text-slate-800">协议编辑器 (Session Detail)</h1>
+                        <p className="text-[10px] text-slate-400 font-medium tracking-wide">协议参数配置与管理</p>
                     </div>
                 </div>
-                <button className="text-[#90A4AE] hover:text-[#546E7A] transition-colors">
-                    <X size={22} />
-                </button>
-            </header>
 
-            <main className="flex-1 flex overflow-hidden p-2 gap-[12px]">
-                <aside className="w-[300px] bg-white rounded-md border border-[#B0C4DE] shadow-sm flex flex-col overflow-hidden shrink-0">
-                    <div className="h-[48px] bg-[#F8FAFC] border-b border-[#EEF2F9] px-3 flex items-center justify-between">
-                        <span className="text-[11px] font-black tracking-wider uppercase text-[#37474F]">协议结构</span>
-                        <span className="text-[10px] font-bold text-[#90A4AE]">{protocolCases.length} 项</span>
-                    </div>
+            </div>
 
-                    <div className="flex-1 p-2 space-y-2 overflow-y-auto">
-                        {protocolCases.length === 0 && (
-                            <div className="p-3 text-[12px] font-bold text-[#90A4AE] bg-[#F8FAFC] border border-[#EEF2F9] rounded-md">
-                                暂无协议数据
-                            </div>
-                        )}
-
-                        {protocolCases.map((protocolCase) => {
-                            const protocolId = protocolCase.protocol.id;
-                            const protocolExpanded = expandedProtocolIds.includes(protocolId);
-                            const protocolActive = resolvedProtocol?.protocol.id === protocolId && panelKind === "protocol";
-
-                            return (
-                                <div key={protocolId} className="rounded-md border border-[#EEF2F9] p-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setSelectedProtocolId(protocolId);
-                                            setSelectedSequenceId("");
-                                            setSelectedReconId("");
-                                        }}
-                                        className={`w-full h-[34px] rounded-md px-2 flex items-center justify-between text-[12px] font-black transition-all ${
-                                            protocolActive ? "bg-[#4D94FF] text-white" : "text-[#546E7A] hover:bg-[#EEF2F9]"
-                                        }`}
-                                    >
-                                        <span className="truncate">{protocolCase.protocol.name}</span>
-                                        <span
-                                            className="w-6 h-6 inline-flex items-center justify-center rounded hover:bg-white/20"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setExpandedProtocolIds((prev) =>
-                                                    prev.includes(protocolId) ? prev.filter((id) => id !== protocolId) : [...prev, protocolId]
-                                                );
-                                            }}
-                                        >
-                                            {protocolExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                                        </span>
-                                    </button>
-
-                                    {protocolExpanded && (
-                                        <div className="mt-2 ml-2 border-l border-[#EEF2F9] pl-2 space-y-1">
-                                            {protocolCase.sequences.map((sequence) => {
-                                                const seqKey = `${protocolId}-${sequence.id}`;
-                                                const seqExpanded = expandedSequenceKeys.includes(seqKey);
-                                                const seqActive = resolvedSequence?.id === sequence.id && panelKind === "sequence";
-
-                                                return (
-                                                    <div key={seqKey}>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setSelectedProtocolId(protocolId);
-                                                                setSelectedSequenceId(sequence.id);
-                                                                setSelectedReconId("");
-                                                            }}
-                                                            className={`w-full h-[30px] rounded-md px-2 flex items-center justify-between text-[11px] font-bold transition-all ${
-                                                                seqActive
-                                                                    ? "bg-[#E3F2FD] text-[#1E88E5] border border-[#BBDEFB]"
-                                                                    : "text-[#546E7A] hover:bg-[#EEF2F9]"
-                                                            }`}
-                                                        >
-                                                            <span className="truncate">{sequence.name}</span>
-                                                            {sequence.reconstructionParams.length > 0 && (
-                                                                <span
-                                                                    className="w-5 h-5 inline-flex items-center justify-center rounded hover:bg-[#E3F2FD]"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setExpandedSequenceKeys((prev) =>
-                                                                            prev.includes(seqKey)
-                                                                                ? prev.filter((k) => k !== seqKey)
-                                                                                : [...prev, seqKey]
-                                                                        );
-                                                                    }}
-                                                                >
-                                                                    {seqExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                                                                </span>
-                                                            )}
-                                                        </button>
-
-                                                        {seqExpanded && sequence.reconstructionParams.length > 0 && (
-                                                            <div className="ml-2 mt-1 border-l border-[#EEF2F9] pl-2 space-y-1">
-                                                                {sequence.reconstructionParams.map((recon) => {
-                                                                    const reconActive = resolvedRecon?.id === recon.id;
-                                                                    return (
-                                                                        <button
-                                                                            key={`${seqKey}-${recon.id}`}
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                setSelectedProtocolId(protocolId);
-                                                                                setSelectedSequenceId(sequence.id);
-                                                                                setSelectedReconId(recon.id);
-                                                                            }}
-                                                                            className={`w-full h-[28px] px-2 rounded-md text-left text-[11px] font-bold transition-all ${
-                                                                                reconActive
-                                                                                    ? "bg-[#E3F2FD] text-[#1E88E5] border border-[#BBDEFB]"
-                                                                                    : "text-[#546E7A] hover:bg-[#EEF2F9]"
-                                                                            }`}
-                                                                        >
-                                                                            {recon.name}
-                                                                        </button>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </aside>
-
-                <section className="flex-1 bg-white rounded-md border border-[#B0C4DE] shadow-sm flex flex-col overflow-hidden">
-                    <div className="h-[52px] bg-[#F8FAFC] border-b border-[#EEF2F9] px-4 flex items-center justify-between">
-                        <div>
-                            <div className="text-[13px] font-black text-[#37474F]">{panelTitle}</div>
-                            <div className="text-[10px] font-bold text-[#90A4AE]">{panelSubtitle}</div>
+            <div className="flex flex-1 overflow-hidden bg-[#F4F7FC]">
+                <div className="w-64 bg-white border-r border-[#D0DFFF] p-4 flex flex-col gap-4 overflow-y-auto">
+                    <div className="mb-1">
+                        <div className="flex items-center gap-2 mb-1.5">
+                            <span className="font-bold text-base">牙齿</span>
+                            <span className="bg-gray-100 text-gray-500 text-[10px] px-1.5 py-0.5 rounded">头部</span>
+                            <span className="bg-gray-100 text-gray-500 text-[10px] px-1.5 py-0.5 rounded">成人</span>
                         </div>
-                        <Info size={16} className="text-[#4D94FF]" />
+                        <div className="bg-[#F0F7FF] border border-[#D0E8FF] rounded-md p-2 flex items-start gap-2">
+                            <div className="mt-0.5 text-[#4C88FF] shrink-0"><Info size={12} /></div>
+                            <p className="text-[10px] text-[#4C88FF] leading-tight font-medium">
+                                出厂模板：您的修改仅对本次扫描生效。
+                            </p>
+                        </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4">
-                        {panelKind === "protocol" && <FieldGrid fields={protocolFields} />}
-                        {panelKind === "sequence" && <FieldGrid fields={sequenceFields} />}
-                        {panelKind === "recon" && <FieldGrid fields={reconFields} />}
-                    </div>
-                </section>
-            </main>
+                    <nav className="flex flex-col gap-3">
+                        <button
+                            onClick={() => setActiveTab("basic")}
+                            className={`flex items-center justify-between px-4 py-4 rounded-lg text-sm font-medium transition-all border ${activeTab === "basic"
+                                ? "bg-[#F4F8FF] border-[#4C88FF] text-[#4C88FF] shadow-sm font-bold"
+                                : "text-slate-600 border-transparent hover:bg-gray-50"
+                                }`}
+                        >
+                            协议基本信息
+                        </button>
 
-            <footer className="h-[80px] border-t border-[#B0C4DE] px-8 flex items-center justify-end gap-5 shrink-0 bg-[#E8EAF1]">
-                <button className="h-[52px] px-10 rounded-md bg-white border-2 border-[#4D94FF] font-bold text-[13px] text-[#4D94FF] hover:bg-blue-50 transition-all shadow-sm active:scale-95">
+                        <div className="mt-2">
+                            <div className="flex justify-between items-center px-1 mb-2">
+                                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">采集队列</span>
+                                <button className="text-[#4C88FF] flex items-center gap-1 text-[11px] hover:underline font-bold px-2 py-1 rounded hover:bg-sky-50 transition-colors">
+                                    <Plus size={12} /> 新增
+                                </button>
+                            </div>
+
+                            <div className="space-y-3">
+                                <div className="group relative bg-[#F9FBFF] border border-[#D0DFFF] rounded-lg p-4 cursor-pointer hover:bg-[#F4F8FF] transition-colors">
+                                    <div className="flex justify-between text-[11px] text-slate-500 mb-1">
+                                        <span className="font-bold">定位像</span>
+                                        <span className="opacity-50">定位像</span>
+                                    </div>
+                                    <div className="text-[11px] text-gray-400 italic">定位像不需要重建</div>
+                                </div>
+
+                                <div className="bg-[#F9FBFF] border border-[#D0DFFF] rounded-lg p-4 cursor-pointer hover:bg-[#F4F8FF] transition-colors">
+                                    <div className="flex justify-between text-[11px] text-slate-500 mb-2.5">
+                                        <span className="font-bold">Acquisition 1</span>
+                                        <span className="opacity-50">螺旋扫描</span>
+                                    </div>
+                                    <div className="text-[11px] text-gray-400 mb-3">骨骼</div>
+                                    <button className="text-[11px] text-[#4C88FF] hover:underline font-bold px-2 py-1 bg-white border border-sky-100 rounded shadow-sm">+ 新增重建</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button className="flex items-center justify-between px-4 py-4 rounded-lg text-sm font-medium text-slate-600 hover:bg-gray-50 mt-1 transition-colors">
+                            剂量 / 通知阈值
+                            <ChevronRight size={14} className="text-gray-300" />
+                        </button>
+
+                        <button className="flex items-center justify-between px-4 py-4 rounded-lg text-sm font-medium text-slate-600 hover:bg-gray-50 transition-colors">
+                            高级
+                            <ChevronRight size={14} className="text-gray-300" />
+                        </button>
+                    </nav>
+                </div>
+
+                <div className="flex-1 p-6 overflow-y-auto">
+                    <div className="mb-4 border-b border-[#D0DFFF] pb-3">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h2 className="text-base font-bold text-slate-800">协议基本信息</h2>
+                                <p className="text-[11px] text-slate-400 mt-0.5">用于扫描模式筛选与协议继承（协议级字段）</p>
+                            </div>
+                            <div className="text-[#4C88FF]"><Info size={16} /></div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-4 mb-6">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 ml-1 uppercase">协议名称</label>
+                            <input
+                                type="text"
+                                defaultValue="牙齿"
+                                className="w-full px-3 py-2 bg-white border border-[#D0DFFF] rounded-lg text-sm font-bold text-slate-700 outline-none focus:border-[#4C88FF]"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 ml-1 uppercase">部位</label>
+                            <select className="w-full px-3 py-2 bg-white border border-[#D0DFFF] rounded-lg text-sm font-bold text-slate-700 outline-none appearance-none cursor-pointer">
+                                <option>头部</option>
+                            </select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 ml-1 uppercase">解剖区域（细分）</label>
+                            <input
+                                type="text"
+                                defaultValue="上颌骨"
+                                className="w-full px-3 py-2 bg-white border border-[#D0DFFF] rounded-lg text-sm font-bold text-slate-700 outline-none"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 ml-1 uppercase">体型范围（KG）</label>
+                            <input
+                                type="text"
+                                defaultValue="50-90"
+                                className="w-full px-3 py-2 bg-white border border-[#D0DFFF] rounded-lg text-sm font-bold text-slate-700 outline-none"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 ml-1 uppercase">年龄</label>
+                            <select className="w-full px-3 py-2 bg-white border border-[#D0DFFF] rounded-lg text-sm font-bold text-slate-700 outline-none appearance-none cursor-pointer">
+                                <option>成人</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="mt-4">
+                        <div className="flex justify-between items-end mb-3 px-1">
+                            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide">规格预设：扫描体位</h3>
+                            <span className="text-[9px] text-slate-400 font-normal italic">only one position can be set for protocol preset</span>
+                        </div>
+
+                        <div className="grid grid-cols-4 gap-2.5">
+                            {positions.map((pos) => (
+                                <button
+                                    key={pos.id}
+                                    onClick={() => setSelectedPos(pos.id)}
+                                    className={`relative flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all h-20 ${selectedPos === pos.id
+                                        ? "bg-[#4C88FF] border-[#4C88FF] text-white shadow-md"
+                                        : "bg-white border-[#D0DFFF] text-slate-500 hover:border-[#4C88FF] hover:bg-[#F4F8FF]"
+                                        }`}
+                                >
+                                    {selectedPos === pos.id && (
+                                        <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                                    )}
+                                    <span className="text-base font-black mb-0.5 tracking-tight">{pos.id}</span>
+                                    <span className={`text-[9px] leading-tight font-medium ${selectedPos === pos.id ? "text-white/80" : "text-slate-400"}`}>
+                                        {pos.label}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="px-6 py-3 bg-[#F4F7FC] border-t border-[#D0DFFF] flex justify-end gap-3 items-center">
+                <button className="px-10 py-2 text-sm font-bold text-[#4C88FF] bg-white border border-[#4C88FF] rounded-md hover:bg-[#F4F8FF] transition-colors">
                     取消
                 </button>
-                <button className="h-[52px] px-10 rounded-md bg-[#4D94FF] font-bold text-[13px] text-white shadow-lg hover:bg-blue-600 transition-all uppercase active:scale-95">
+                <button className="px-10 py-2 text-sm font-bold text-white bg-[#4C88FF] border border-[#4C88FF] rounded-md hover:bg-[#3D76E5] shadow-sm transition-all active:scale-95">
                     保存
                 </button>
-            </footer>
+            </div>
+
         </div>
     );
 }
