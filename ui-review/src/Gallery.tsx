@@ -8,6 +8,8 @@ import WT32ProtocolDetailScreen from "./screens/WT32ProtocolDetailScreen";
 import WT32ProtocolScoutDetailScreen from "./screens/WT32NewProtocolScoutDetailScreen";
 import WT32ProtocolHelicalDetailScreen from "./screens/WT32NewProtocolHelicalDetailScreen";
 import WT32ProtocolReconDetailScreen from "./screens/WT32NewProtocolReconDetailScreen";
+import WT32ProtocolDoseDetailScreen from "./screens/WT32NewProtocolDoseDetailScreen";
+import ProtocolEditorModal from "./components/ProtocolEditorModal";
 import ScanConfirmScreen from "./screens/ScanConfirmScreen";
 import MockScanScreen from "./screens/MockScanScreen";
 import ViewScreen from "./screens/ViewScreen";
@@ -33,11 +35,12 @@ export default function Gallery() {
             screens: [
                 { key: "patient_list", name: "患者列表", component: <PatientListScreen /> },
                 { key: "protocol_setup", name: "协议选择", component: <ProtocolSetupScreen /> },
-                { key: "protocol_detail", name: "协议详情", component: <WT32ProtocolDetailScreen /> },
-                { key: "protocol_scout_detail", name: "协议详情-定位像", component: <WT32ProtocolScoutDetailScreen /> },
-                { key: "protocol_helical_detail", name: "协议详情-螺旋扫描", component: <WT32ProtocolHelicalDetailScreen /> },
-                { key: "protocol_recon_soft", name: "协议详情-重建(软组织)", component: <WT32ProtocolReconDetailScreen type="soft" /> },
-                { key: "protocol_recon_bone", name: "协议详情-重建(骨骼)", component: <WT32ProtocolReconDetailScreen type="bone" /> },
+                { key: "protocol_detail", name: "协议详情", component: <ProtocolEditorModal><WT32ProtocolDetailScreen /></ProtocolEditorModal> },
+                { key: "protocol_scout_detail", name: "协议详情-定位像", component: <ProtocolEditorModal><WT32ProtocolScoutDetailScreen /></ProtocolEditorModal> },
+                { key: "protocol_helical_detail", name: "协议详情-螺旋扫描", component: <ProtocolEditorModal><WT32ProtocolHelicalDetailScreen /></ProtocolEditorModal> },
+                { key: "protocol_recon_soft", name: "协议详情-重建(软组织)", component: <ProtocolEditorModal><WT32ProtocolReconDetailScreen type="soft" /></ProtocolEditorModal> },
+                { key: "protocol_recon_bone", name: "协议详情-重建(骨骼)", component: <ProtocolEditorModal><WT32ProtocolReconDetailScreen type="bone" /></ProtocolEditorModal> },
+                { key: "protocol_dose_detail", name: "协议详情-剂量通知", component: <ProtocolEditorModal><WT32ProtocolDoseDetailScreen /></ProtocolEditorModal> },
                 { key: "scout_scan", name: "激光灯定位", component: <ScoutScanScreen /> },
                 { key: "4d-scan", name: "4D 扫描", component: <FourDScanScreen /> },
                 { key: "scan_confirm", name: "参数确认", component: <ScanConfirmScreen /> },
@@ -183,6 +186,11 @@ export default function Gallery() {
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
                     background: #CBD5E1;
+                }
+                .wt32-preview {
+                    width: 1024px !important;
+                    height: 768px !important;
+                    position: relative;
                 }
                 .wt32-preview button {
                     border-radius: 8px !important;

@@ -3,12 +3,6 @@ import {
     Plus,
     ChevronRight,
     Info,
-    User,
-    Settings,
-    Sun,
-    ChevronLeft,
-    Monitor,
-    UserCheck,
     CircleDot,
     ChevronDown
 } from "lucide-react";
@@ -29,60 +23,8 @@ export default function WT32ProtocolDetailScreen() {
     ];
 
     return (
-        <div className="flex flex-col w-[1024px] h-[768px] bg-[#EEF2F9] overflow-hidden rounded-md border border-[#B0C4DE] shadow-2xl text-[#37474F] font-sans select-none">
-            {/* 1. Header (System Info) */}
-            <header className="flex items-center justify-between px-4 h-[80px] bg-[#E8EAF1] border-b border-[#B0C4DE] shrink-0 z-10">
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-3 py-1.5 px-4 bg-[#DCE6F2] border border-[#B0C4DE] rounded-sm min-w-[210px]">
-                        <div className="w-10 h-10 rounded-sm bg-[#4A6982] flex items-center justify-center text-white opacity-90">
-                            <User size={24} />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-[16px] font-bold tracking-tight">Roky Zhang</span>
-                            <span className="text-[12px] text-[#546E7A] font-medium leading-none mt-0.5 opacity-80">
-                                ID: 12345678
-                            </span>
-                        </div>
-                        <div className="ml-auto flex flex-col gap-0.5 text-[#546E7A] opacity-60">
-                            <div className="text-[9px] font-bold italic tracking-tighter">⊥ 0</div>
-                            <div className="text-[9px] font-bold tracking-tighter">∠ 0</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="text-center">
-                    <div className="text-[28px] font-bold tracking-tight text-[#37474F] leading-none">13:52</div>
-                    <div className="text-[11px] text-[#546E7A] font-bold mt-1 uppercase opacity-70">
-                        2月26日 周四
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-5 pr-2">
-                    <div className="p-1 text-[#D32F2F] cursor-pointer hover:opacity-70">
-                        <UserCheck size={32} strokeWidth={1.5} />
-                    </div>
-                    <div className="p-1 text-[#546E7A] cursor-pointer hover:opacity-70 relative">
-                        <Monitor size={24} />
-                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[9px] flex items-center justify-center rounded-full font-bold border border-white">
-                            9
-                        </span>
-                    </div>
-                    <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
-                        <Sun size={24} />
-                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[9px] flex items-center justify-center rounded-full font-bold border border-white">
-                            5
-                        </span>
-                    </div>
-                    <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
-                        <Settings size={24} />
-                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[9px] flex items-center justify-center rounded-full font-bold border border-white">
-                            10
-                        </span>
-                    </div>
-                </div>
-            </header>
-
-            {/* 2. Main Content Area */}
+        <div className="flex flex-col h-full bg-[#EEF2F9] text-[#37474F] font-sans select-none">
+            {/* Main Content Area */}
             <main className="flex-1 overflow-hidden p-2 flex gap-3">
                 {/* Left Panel - Protocol Sidebar */}
                 <aside className="w-[310px] flex flex-col bg-white border border-[#B0C4DE] rounded-md shadow-sm overflow-hidden shrink-0">
@@ -127,23 +69,31 @@ export default function WT32ProtocolDetailScreen() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <div className="group relative bg-[#F8FAFC] border border-[#EEF2F9] rounded-md p-3 cursor-pointer hover:bg-[#F3F8FF] transition-colors shadow-sm">
-                                        <div className="flex justify-between text-[11px] text-[#546E7A] mb-1">
-                                            <span className="font-bold">定位像</span>
-                                            <span className="opacity-50 text-[10px]">LOCALIZER</span>
-                                        </div>
-                                        <div className="text-[10px] text-[#90A4AE] italic text-xs">定位像不需要重建</div>
+                                    <div className="group relative bg-[#F8FAFC] border border-[#EEF2F9] rounded-md px-3 py-2 cursor-pointer hover:bg-[#F3F8FF] transition-colors shadow-sm flex justify-between items-start">
+                                        <span className="text-[11px] text-[#37474F] font-bold">定位像</span>
+                                        <span className="opacity-50 text-[10px] mt-0.5">LOCALIZER</span>
                                     </div>
 
-                                    <div className="bg-[#F8FAFC] border border-[#EEF2F9] rounded-md p-3 cursor-pointer hover:bg-[#F3F8FF] transition-colors shadow-sm">
-                                        <div className="flex justify-between text-[11px] text-[#546E7A] mb-1.5">
-                                            <span className="font-bold">Acquisition 1</span>
-                                            <span className="opacity-50 text-[10px]">HELICAL</span>
+                                    <div className="flex flex-col rounded-md border border-[#EEF2F9] bg-[#F8FAFC] overflow-hidden shadow-sm">
+                                        <div className="px-3 py-2.5 flex justify-between items-center border-b border-[#EEF2F9] group cursor-pointer hover:bg-[#F3F8FF] transition-colors">
+                                            <span className="text-[11px] font-bold text-[#546E7A]">Acquisition 1</span>
+                                            <span className="text-[10px] text-[#94A3B8] font-medium uppercase tracking-tight">螺旋扫描</span>
                                         </div>
-                                        <div className="text-[11px] text-[#78909C] mb-2 font-medium">骨骼</div>
-                                        <button className="text-[11px] text-[#4D94FF] hover:underline font-bold px-3 py-1 bg-white border border-[#B0C4DE]/30 rounded shadow-sm hover:border-[#4D94FF] transition-all">
-                                            + 新增重建
-                                        </button>
+
+                                        <div className="p-2 flex flex-col gap-1">
+                                            <div className="flex items-center gap-2 px-2 py-1.5 hover:bg-[#E3F2FD]/50 rounded cursor-pointer transition-colors group">
+                                                <div className="w-1 h-3 bg-[#4D94FF] rounded-full opacity-30 group-hover:opacity-100 transition-opacity"></div>
+                                                <span className="text-[11px] text-[#546E7A] font-bold">软组织</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 px-2 py-1.5 hover:bg-[#E3F2FD]/50 rounded cursor-pointer transition-colors group">
+                                                <div className="w-1 h-3 bg-[#4D94FF] rounded-full opacity-30 group-hover:opacity-100 transition-opacity"></div>
+                                                <span className="text-[11px] text-[#546E7A] font-bold">骨骼</span>
+                                            </div>
+
+                                            <button className="mt-0.5 w-full py-1.5 bg-white border border-[#4D94FF]/10 text-[#4D94FF] hover:border-[#4D94FF]/30 rounded text-[10px] font-black transition-all flex items-center justify-center gap-1.5 shadow-sm">
+                                                <Plus size={10} strokeWidth={3} /> 新增重建
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -234,23 +184,6 @@ export default function WT32ProtocolDetailScreen() {
                     </div>
                 </section>
             </main>
-
-            {/* 3. Footer (Action Buttons) */}
-            <footer className="h-[84px] bg-[#E8EAF1] border-t border-[#B0C4DE] flex items-center shrink-0 px-8 z-10">
-                <div className="flex-1">
-                    <button className="flex items-center gap-2 px-10 h-[52px] bg-white text-[#4D94FF] font-bold rounded-md border-2 border-[#4D94FF] hover:bg-blue-50 transition-all uppercase text-[13px] shadow-sm active:scale-95">
-                        <ChevronLeft size={20} /> 上一步
-                    </button>
-                </div>
-                <div className="flex-1 flex justify-end gap-4">
-                    <button className="px-10 h-[52px] bg-white text-[#546E7A] font-bold rounded-md border-2 border-[#B0C4DE] hover:bg-gray-50 transition-all uppercase text-[13px] shadow-sm active:scale-95">
-                        取消
-                    </button>
-                    <button className="px-12 h-[52px] bg-[#4D94FF] text-white font-bold rounded-md shadow-lg hover:bg-blue-600 transition-all uppercase text-[13px] active:scale-95">
-                        保存协议
-                    </button>
-                </div>
-            </footer>
         </div>
     );
 }

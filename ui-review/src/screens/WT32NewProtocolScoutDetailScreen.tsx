@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, Info, Plus, User, Settings, Sun, ChevronLeft, Monitor, UserCheck, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Info, Plus, X } from "lucide-react";
 
 type ScoutField =
     | { label: string; type: "select"; options: string[] }
@@ -18,60 +18,8 @@ const scoutFields: ScoutField[] = [
 
 export default function WT32NewProtocolScoutDetailScreen() {
     return (
-        <div className="flex flex-col w-[1024px] h-[768px] bg-[#EEF2F9] overflow-hidden rounded-md border border-[#B0C4DE] shadow-2xl text-[#37474F] font-sans select-none">
-            {/* 1. Header (System Info) - Identical to Detail Screen */}
-            <header className="flex items-center justify-between px-4 h-[80px] bg-[#E8EAF1] border-b border-[#B0C4DE] shrink-0 z-10">
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-3 py-1.5 px-4 bg-[#DCE6F2] border border-[#B0C4DE] rounded-sm min-w-[210px]">
-                        <div className="w-10 h-10 rounded-sm bg-[#4A6982] flex items-center justify-center text-white opacity-90">
-                            <User size={24} />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-[16px] font-bold tracking-tight">Roky Zhang</span>
-                            <span className="text-[12px] text-[#546E7A] font-medium leading-none mt-0.5 opacity-80">
-                                ID: 12345678
-                            </span>
-                        </div>
-                        <div className="ml-auto flex flex-col gap-0.5 text-[#546E7A] opacity-60">
-                            <div className="text-[9px] font-bold italic tracking-tighter">⊥ 0</div>
-                            <div className="text-[9px] font-bold tracking-tighter">∠ 0</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="text-center">
-                    <div className="text-[28px] font-bold tracking-tight text-[#37474F] leading-none">13:52</div>
-                    <div className="text-[11px] text-[#546E7A] font-bold mt-1 uppercase opacity-70">
-                        2月26日 周四
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-5 pr-2">
-                    <div className="p-1 text-[#D32F2F] cursor-pointer hover:opacity-70">
-                        <UserCheck size={32} strokeWidth={1.5} />
-                    </div>
-                    <div className="p-1 text-[#546E7A] cursor-pointer hover:opacity-70 relative">
-                        <Monitor size={24} />
-                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[9px] flex items-center justify-center rounded-full font-bold border border-white">
-                            9
-                        </span>
-                    </div>
-                    <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
-                        <Sun size={24} />
-                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[9px] flex items-center justify-center rounded-full font-bold border border-white">
-                            5
-                        </span>
-                    </div>
-                    <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
-                        <Settings size={24} />
-                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[9px] flex items-center justify-center rounded-full font-bold border border-white">
-                            10
-                        </span>
-                    </div>
-                </div>
-            </header>
-
-            {/* 2. Main Content Area */}
+        <div className="flex flex-col h-full bg-[#EEF2F9] text-[#37474F] font-sans select-none">
+            {/* Main Content Area */}
             <main className="flex-1 overflow-hidden p-2 flex gap-3">
                 {/* Left Panel - Protocol Sidebar (EXACT COPY OF Detail Screen) */}
                 <aside className="w-[310px] flex flex-col bg-white border border-[#B0C4DE] rounded-md shadow-sm overflow-hidden shrink-0">
@@ -113,26 +61,31 @@ export default function WT32NewProtocolScoutDetailScreen() {
 
                                 <div className="space-y-2">
                                     {/* Selected Item in this screen */}
-                                    <div className="bg-[#4D94FF] text-white px-3 py-3 rounded-md flex justify-between items-center cursor-pointer shadow-sm">
-                                        <div className="flex flex-col">
-                                            <span className="text-[11px] font-bold">定位像</span>
-                                            <span className="text-[10px] opacity-80 font-medium">LOCALIZER</span>
-                                        </div>
-                                        <ChevronRight size={14} className="opacity-60" />
-                                    </div>
-                                    <div className="px-4 py-2 text-[10px] text-[#94A3B8] italic border-l-2 border-[#4D94FF] ml-2">
-                                        定位像不需要重建
+                                    <div className="bg-[#4D94FF] text-white px-3 py-2.5 rounded-md flex justify-between items-start cursor-pointer shadow-sm">
+                                        <span className="text-[11px] font-bold">定位像</span>
+                                        <span className="text-[10px] opacity-80 font-medium mt-0.5">LOCALIZER</span>
                                     </div>
 
-                                    <div className="bg-[#F8FAFC] border border-[#EEF2F9] rounded-md p-3 cursor-pointer hover:bg-[#F3F8FF] transition-colors shadow-sm">
-                                        <div className="flex justify-between text-[11px] text-[#546E7A] mb-1.5">
-                                            <span className="font-bold">Acquisition 1</span>
-                                            <span className="opacity-50 text-[10px]">HELICAL</span>
+                                    <div className="flex flex-col rounded-md border border-[#EEF2F9] bg-[#F8FAFC] overflow-hidden shadow-sm">
+                                        <div className="px-3 py-2.5 flex justify-between items-center border-b border-[#EEF2F9] group cursor-pointer hover:bg-[#F3F8FF] transition-colors">
+                                            <span className="text-[11px] font-bold text-[#546E7A]">Acquisition 1</span>
+                                            <span className="text-[10px] text-[#94A3B8] font-medium uppercase tracking-tight">螺旋扫描</span>
                                         </div>
-                                        <div className="text-[11px] text-[#78909C] mb-2 font-medium">骨骼</div>
-                                        <button className="text-[11px] text-[#4D94FF] hover:underline font-bold px-3 py-1 bg-white border border-[#B0C4DE]/30 rounded shadow-sm hover:border-[#4D94FF] transition-all">
-                                            + 新增重建
-                                        </button>
+
+                                        <div className="p-2 flex flex-col gap-1">
+                                            <div className="flex items-center gap-2 px-2 py-1.5 hover:bg-[#E3F2FD]/50 rounded cursor-pointer transition-colors group">
+                                                <div className="w-1 h-3 bg-[#4D94FF] rounded-full opacity-30 group-hover:opacity-100 transition-opacity"></div>
+                                                <span className="text-[11px] text-[#546E7A] font-bold">软组织</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 px-2 py-1.5 hover:bg-[#E3F2FD]/50 rounded cursor-pointer transition-colors group">
+                                                <div className="w-1 h-3 bg-[#4D94FF] rounded-full opacity-30 group-hover:opacity-100 transition-opacity"></div>
+                                                <span className="text-[11px] text-[#546E7A] font-bold">骨骼</span>
+                                            </div>
+
+                                            <button className="mt-0.5 w-full py-1.5 bg-white border border-[#4D94FF]/10 text-[#4D94FF] hover:border-[#4D94FF]/30 rounded text-[10px] font-black transition-all flex items-center justify-center gap-1.5 shadow-sm">
+                                                <Plus size={10} strokeWidth={3} /> 新增重建
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -152,37 +105,37 @@ export default function WT32NewProtocolScoutDetailScreen() {
 
                 {/* Right Panel - Parameter Editor (Scout Specific) */}
                 <section className="flex-1 bg-white border border-[#B0C4DE] rounded-md shadow-sm flex flex-col overflow-hidden">
-                    <div className="h-[44px] bg-[#F8FAFC] border-b border-[#EEF2F9] flex items-center justify-between px-6 shrink-0 text-[#37474F]">
-                        <span className="text-[11px] font-black uppercase tracking-widest">定位像采集参数 (Scout Params)</span>
+                    <div className="h-[52px] bg-[#F8FAFC] border-b border-[#EEF2F9] flex items-center justify-between px-6 shrink-0 text-[#37474F]">
+                        <span className="text-[11px] font-black uppercase tracking-widest text-[#37474F]">定位像采集参数 (Scout Params)</span>
                         <button className="flex items-center gap-1.5 text-[#94A3B8] hover:text-[#D32F2F] transition-colors group">
                             <X size={14} className="opacity-70 group-hover:opacity-100" />
                             <span className="text-[11px] font-bold">删除该采集队列</span>
                         </button>
                     </div>
 
-                    <div className="flex-1 p-6 overflow-y-auto bg-[#EEF2F9]/20">
-                        <div className="bg-[#FFF8E1] border border-[#FFE082] rounded-md px-3 py-2.5 flex items-start gap-2.5 mb-4 shadow-sm">
-                            <div className="w-6 h-6 rounded-full bg-[#F57C00]/10 flex items-center justify-center shrink-0">
-                                <Info size={14} className="text-[#F57C00]" />
+                    <div className="flex-1 p-5 overflow-y-auto bg-white">
+                        <div className="bg-[#FFF8E1] border border-[#FFE082] rounded-md px-3 py-2 flex items-start gap-2.5 mb-4 shadow-sm shrink-0">
+                            <div className="w-5 h-5 rounded-full bg-[#F57C00]/10 flex items-center justify-center shrink-0 mt-0.5">
+                                <Info size={12} className="text-[#F57C00]" />
                             </div>
-                            <p className="text-[11px] text-[#546E7A] leading-5 font-medium">
-                                定位像用于确定扫描区域，不涉及图像重建，通常使用<span className="text-[#F57C00] font-bold mx-1 underline decoration-dotted underline-offset-4">较低剂量</span>参数以保障患者安全与减少辐射。
+                            <p className="text-[10px] text-[#546E7A] leading-relaxed font-medium">
+                                定位像用于确定扫描区域，通常使用<span className="text-[#F57C00] font-bold mx-1 underline decoration-dotted underline-offset-2">较低剂量</span>参数以保障患者安全与减少辐射。
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-x-6 gap-y-4 mb-4">
-                            <div className="flex flex-col gap-1.5">
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                            <div className="flex flex-col gap-1">
                                 <label className="text-[10px] font-black text-[#90A4AE] ml-1 uppercase tracking-tight">名称</label>
                                 <input
                                     type="text"
                                     defaultValue="定位像"
-                                    className="w-full h-[38px] px-3 bg-white border border-[#B0C4DE] rounded-md text-[13px] font-bold text-[#37474F] outline-none focus:border-[#4D94FF] focus:ring-1 focus:ring-[#4D94FF]/10 shadow-sm"
+                                    className="w-full h-[36px] px-3 bg-white border border-[#B0C4DE] rounded text-[13px] font-bold text-[#37474F] outline-none focus:border-[#4D94FF] focus:ring-1 focus:ring-[#4D94FF]/10 shadow-sm"
                                 />
                             </div>
-                            <div className="flex flex-col gap-1.5">
+                            <div className="flex flex-col gap-1">
                                 <label className="text-[10px] font-black text-[#90A4AE] ml-1 uppercase tracking-tight">模式</label>
                                 <div className="relative">
-                                    <select className="w-full h-[38px] px-3 bg-white border border-[#B0C4DE] rounded-md text-[13px] font-bold text-[#37474F] outline-none appearance-none cursor-pointer focus:border-[#4D94FF] shadow-sm">
+                                    <select className="w-full h-[36px] px-3 bg-white border border-[#B0C4DE] rounded text-[13px] font-bold text-[#37474F] outline-none appearance-none cursor-pointer focus:border-[#4D94FF] shadow-sm">
                                         <option>定位像</option>
                                         <option>螺旋扫描</option>
                                         <option>断层扫描</option>
@@ -190,61 +143,37 @@ export default function WT32NewProtocolScoutDetailScreen() {
                                     <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#90A4AE] pointer-events-none" />
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="bg-white border border-[#B0C4DE] rounded-lg shadow-sm overflow-hidden">
-                            <div className="px-5 py-4 bg-[#F8FAFC] border-b border-[#EEF2F9] flex items-center gap-2">
-                                <div className="w-1.5 h-3 bg-[#4D94FF] rounded-full"></div>
-                                <span className="text-[10px] font-black text-[#546E7A] uppercase tracking-widest">采集参数配置</span>
-                            </div>
+                            <div className="col-span-2 h-[1px] bg-[#EEF2F9] my-1"></div>
 
-                            <div className="p-5 grid grid-cols-2 gap-x-6 gap-y-3">
-                                {scoutFields.map((field) => (
-                                    <div key={field.label} className="flex flex-col gap-2">
-                                        <label className="text-[10px] font-black text-[#90A4AE] ml-1 uppercase tracking-wider">{field.label}</label>
-                                        <div className="relative">
-                                            {field.type === "select" ? (
-                                                <>
-                                                    <select className="w-full h-[40px] px-4 bg-white border border-[#B0C4DE] rounded-md text-[14px] font-bold text-[#37474F] outline-none appearance-none cursor-pointer focus:border-[#4D94FF] focus:ring-1 focus:ring-[#4D94FF]/10 transition-all">
-                                                        {field.options.map((option) => (
-                                                            <option key={option}>{option}</option>
-                                                        ))}
-                                                    </select>
-                                                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#90A4AE] pointer-events-none" />
-                                                </>
-                                            ) : (
-                                                <input
-                                                    type="text"
-                                                    defaultValue={field.value}
-                                                    placeholder={field.placeholder}
-                                                    className="w-full h-[40px] px-4 bg-white border border-[#B0C4DE] rounded-md text-[14px] font-bold text-[#37474F] outline-none placeholder:font-normal placeholder:text-[#90A4AE]/40 focus:border-[#4D94FF] focus:ring-1 focus:ring-[#4D94FF]/10 transition-all"
-                                                />
-                                            )}
-                                        </div>
+                            {scoutFields.map((field) => (
+                                <div key={field.label} className="flex flex-col gap-1">
+                                    <label className="text-[10px] font-black text-[#90A4AE] ml-1 uppercase tracking-tight">{field.label}</label>
+                                    <div className="relative">
+                                        {field.type === "select" ? (
+                                            <>
+                                                <select className="w-full h-[36px] px-3 bg-white border border-[#B0C4DE] rounded text-[13px] font-bold text-[#37474F] outline-none appearance-none cursor-pointer focus:border-[#4D94FF] focus:ring-1 focus:ring-[#4D94FF]/10 transition-all">
+                                                    {field.options.map((option) => (
+                                                        <option key={option}>{option}</option>
+                                                    ))}
+                                                </select>
+                                                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#90A4AE] pointer-events-none" />
+                                            </>
+                                        ) : (
+                                            <input
+                                                type="text"
+                                                defaultValue={field.value}
+                                                placeholder={field.placeholder}
+                                                className="w-full h-[36px] px-3 bg-white border border-[#B0C4DE] rounded text-[13px] font-bold text-[#37474F] outline-none placeholder:font-normal placeholder:text-[#90A4AE]/40 focus:border-[#4D94FF] focus:ring-1 focus:ring-[#4D94FF]/10 transition-all"
+                                            />
+                                        )}
                                     </div>
-                                ))}
-                            </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </section>
             </main>
-
-            {/* 3. Footer (Action Buttons) - Also aligned with WT32 style */}
-            <footer className="h-[84px] bg-[#E8EAF1] border-t border-[#B0C4DE] flex items-center shrink-0 px-8 z-10">
-                <div className="flex-1">
-                    <button className="flex items-center gap-2 px-10 h-[52px] bg-white text-[#4D94FF] font-bold rounded-md border-2 border-[#4D94FF] hover:bg-blue-50 transition-all uppercase text-[13px] shadow-sm active:scale-95">
-                        <ChevronLeft size={20} /> 上一步
-                    </button>
-                </div>
-                <div className="flex-1 flex justify-end gap-4">
-                    <button className="px-10 h-[52px] bg-white text-[#546E7A] font-bold rounded-md border-2 border-[#B0C4DE] hover:bg-gray-50 transition-all uppercase text-[13px] shadow-sm active:scale-95">
-                        还原默认
-                    </button>
-                    <button className="px-12 h-[52px] bg-[#4D94FF] text-white font-bold rounded-md shadow-lg hover:bg-blue-600 transition-all uppercase text-[13px] active:scale-95">
-                        确认定位参数
-                    </button>
-                </div>
-            </footer>
         </div>
     );
 }
