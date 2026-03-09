@@ -5,6 +5,7 @@ import ScoutScanScreen from "./screens/ScoutScanScreen";
 import FourDScanScreen from "./screens/FourDScanScreen";
 import ProtocolSetupScreen from "./screens/ProtocolSetupScreen";
 import WT32ProtocolDetailScreen from "./screens/WT32ProtocolDetailScreen";
+import WT32ProtocolScoutDetailScreen from "./screens/WT32NewProtocolScoutDetailScreen";
 import ScanConfirmScreen from "./screens/ScanConfirmScreen";
 import MockScanScreen from "./screens/MockScanScreen";
 import ViewScreen from "./screens/ViewScreen";
@@ -31,6 +32,7 @@ export default function Gallery() {
                 { key: "patient_list", name: "患者列表", component: <PatientListScreen /> },
                 { key: "protocol_setup", name: "协议选择", component: <ProtocolSetupScreen /> },
                 { key: "protocol_detail", name: "协议详情", component: <WT32ProtocolDetailScreen /> },
+                { key: "protocol_scout_detail", name: "协议详情-定位像", component: <WT32ProtocolScoutDetailScreen /> },
                 { key: "scout_scan", name: "激光灯定位", component: <ScoutScanScreen /> },
                 { key: "4d-scan", name: "4D 扫描", component: <FourDScanScreen /> },
                 { key: "scan_confirm", name: "参数确认", component: <ScanConfirmScreen /> },
