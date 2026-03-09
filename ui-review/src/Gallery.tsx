@@ -6,6 +6,8 @@ import FourDScanScreen from "./screens/FourDScanScreen";
 import ProtocolSetupScreen from "./screens/ProtocolSetupScreen";
 import WT32ProtocolDetailScreen from "./screens/WT32ProtocolDetailScreen";
 import WT32ProtocolScoutDetailScreen from "./screens/WT32NewProtocolScoutDetailScreen";
+import WT32ProtocolHelicalDetailScreen from "./screens/WT32NewProtocolHelicalDetailScreen";
+import WT32ProtocolReconDetailScreen from "./screens/WT32NewProtocolReconDetailScreen";
 import ScanConfirmScreen from "./screens/ScanConfirmScreen";
 import MockScanScreen from "./screens/MockScanScreen";
 import ViewScreen from "./screens/ViewScreen";
@@ -33,6 +35,9 @@ export default function Gallery() {
                 { key: "protocol_setup", name: "协议选择", component: <ProtocolSetupScreen /> },
                 { key: "protocol_detail", name: "协议详情", component: <WT32ProtocolDetailScreen /> },
                 { key: "protocol_scout_detail", name: "协议详情-定位像", component: <WT32ProtocolScoutDetailScreen /> },
+                { key: "protocol_helical_detail", name: "协议详情-螺旋扫描", component: <WT32ProtocolHelicalDetailScreen /> },
+                { key: "protocol_recon_soft", name: "协议详情-重建(软组织)", component: <WT32ProtocolReconDetailScreen type="soft" /> },
+                { key: "protocol_recon_bone", name: "协议详情-重建(骨骼)", component: <WT32ProtocolReconDetailScreen type="bone" /> },
                 { key: "scout_scan", name: "激光灯定位", component: <ScoutScanScreen /> },
                 { key: "4d-scan", name: "4D 扫描", component: <FourDScanScreen /> },
                 { key: "scan_confirm", name: "参数确认", component: <ScanConfirmScreen /> },
