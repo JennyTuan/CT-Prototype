@@ -17,6 +17,8 @@ import {
     CircleDot,
     Maximize,
     RefreshCw,
+    Play,
+    Pause,
 } from "lucide-react";
 import * as dicomParser from "dicom-parser";
 
@@ -80,6 +82,7 @@ const cleanOverlayText = (value?: string) => {
 
 const ViewScreen = () => {
     const [selectedSeriesId, setSelectedSeriesId] = useState("series-soft");
+    const [imageMode, setImageMode] = useState<"2D" | "3D">("2D");
     const [sliceIndex, setSliceIndex] = useState(159);
     const [toolMode, setToolMode] = useState<"pan" | "wl" | "measure" | "annotate">("pan");
     const [zoom, setZoom] = useState(1);
@@ -88,6 +91,7 @@ const ViewScreen = () => {
     const [invert, setInvert] = useState(false);
     const [ww, setWw] = useState(350);
     const [wl, setWl] = useState(45);
+    const [isPlaying, setIsPlaying] = useState(false);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const viewportRef = useRef<HTMLElement | null>(null);
     const dragRef = useRef<{ dragging: boolean; x: number; y: number }>({ dragging: false, x: 0, y: 0 });
@@ -437,6 +441,14 @@ const ViewScreen = () => {
     }, []);
 
     useEffect(() => {
+        if (!isPlaying) return;
+        const timer = window.setInterval(() => {
+            setSliceIndex((prev) => (prev >= totalSlices - 1 ? 0 : prev + 1));
+        }, 250);
+        return () => window.clearInterval(timer);
+    }, [isPlaying, totalSlices]);
+
+    useEffect(() => {
         const onMove = (e: MouseEvent) => {
             if (toolMode !== "measure" || !measureStartRef.current) return;
             const point = screenPointInViewport(e.clientX, e.clientY);
@@ -552,19 +564,51 @@ const ViewScreen = () => {
                             ))}
                         </div>
 
-                        <div className="h-[44px] bg-[#F8FAFC] border-b border-t border-[#EEF2F9] px-3 flex items-center gap-2">
-                            <SlidersHorizontal size={14} className="text-[#4D94FF]" />
-                            <span className="text-[11px] font-black uppercase tracking-wider text-[#37474F]">图像参数</span>
+                        <div className="h-[44px] bg-[#F8FAFC] border-b border-t border-[#EEF2F9] px-3 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                                <SlidersHorizontal size={14} className="text-[#4D94FF]" />
+                                <span className="text-[11px] font-black uppercase tracking-wider text-[#37474F]">图像参数</span>
+                            </div>
+                            <div className="flex items-center gap-1 rounded-md border border-[#DCE6F2] bg-white p-[2px] shadow-sm">
+                                {(["2D", "3D"] as const).map((mode) => {
+                                    const active = imageMode === mode;
+                                    return (
+                                        <button
+                                            key={mode}
+                                            onClick={() => setImageMode(mode)}
+                                            className={`min-w-[34px] h-[22px] px-2 rounded text-[10px] font-black transition-all ${active
+                                                ? "bg-[#4D94FF] text-white"
+                                                : "text-[#78909C] hover:bg-[#F1F5F9]"
+                                                }`}
+                                        >
+                                            {mode}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
 
                         <div className="flex-1 bg-[#F8FAFC] overflow-hidden flex flex-col">
                             <div className="flex-1 p-3 grid grid-cols-2 gap-2 overflow-y-auto">
-                                <Param label="Kernel" value={selectedSeries.kernel} />
-                                <Param label="Slice" value={selectedSeries.thickness} />
-                                <Param label="kV" value={selectedSeries.kV} />
-                                <Param label="mAs" value={selectedSeries.mAs} />
-                                <Param label="FOV" value={selectedSeries.fov} />
-                                <Param label="Matrix" value={selectedSeries.matrix} />
+                                {imageMode === "2D" ? (
+                                    <>
+                                        <Param label="Kernel" value={selectedSeries.kernel} />
+                                        <Param label="Slice" value={selectedSeries.thickness} />
+                                        <Param label="kV" value={selectedSeries.kV} />
+                                        <Param label="mAs" value={selectedSeries.mAs} />
+                                        <Param label="FOV" value={selectedSeries.fov} />
+                                        <Param label="Matrix" value={selectedSeries.matrix} />
+                                    </>
+                                ) : (
+                                    <>
+                                        <Param label="Render" value="Volume" />
+                                        <Param label="Preset" value="Bone" />
+                                        <Param label="Slab" value="18 mm" />
+                                        <Param label="Opacity" value="72%" />
+                                        <Param label="Lighting" value="On" />
+                                        <Param label="Threshold" value="180 HU" />
+                                    </>
+                                )}
                             </div>
                             <div className="px-3 pb-3">
                                 <button className="h-[32px] w-full bg-white border border-[#B0C4DE] rounded-md text-[10px] font-bold text-[#4D94FF] hover:bg-blue-50 transition-all shadow-sm">
@@ -574,9 +618,10 @@ const ViewScreen = () => {
                         </div>
                     </aside>
 
+                    <div className="flex-1 flex gap-[2px] min-w-0">
                     <section
                         ref={viewportRef}
-                        className={`flex-1 bg-black rounded-lg border border-[#B0C4DE] shadow-sm overflow-hidden relative ${toolMode === "measure" ? "cursor-crosshair" : toolMode === "annotate" ? "cursor-cell" : toolMode === "pan" ? "cursor-grab" : "cursor-default"}`}
+                        className={`flex-1 min-w-0 m-[2px] bg-black rounded-lg border border-[#B0C4DE] shadow-sm overflow-hidden relative ${toolMode === "measure" ? "cursor-crosshair" : toolMode === "annotate" ? "cursor-cell" : toolMode === "pan" ? "cursor-grab" : "cursor-default"}`}
                         onWheel={(e) => {
                             e.preventDefault();
                             if (e.ctrlKey) {
@@ -696,98 +741,6 @@ const ViewScreen = () => {
                                 dragRef.current.dragging = false;
                             }}
                         />
-                        <div
-                            style={{
-                                position: "absolute",
-                                right: "16px",
-                                top: "50%",
-                                transform: "translateY(-50%)",
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "4px",
-                                borderRadius: "14px",
-                                border: "1px solid rgba(255,255,255,0.07)",
-                                background: "rgba(10,10,10,0.88)",
-                                padding: "6px",
-                                boxShadow: "0 20px 50px rgba(0,0,0,0.7)",
-                                backdropFilter: "blur(20px)",
-                                WebkitBackdropFilter: "blur(20px)",
-                            }}
-                            onPointerDown={(e) => e.stopPropagation()}
-                        >
-                            {(["pan", "wl", "measure", "annotate"] as const).map((mode, i) => {
-                                const icons = [
-                                    <Hand size={20} strokeWidth={1.5} key="hand" />,
-                                    <CircleDot size={20} strokeWidth={1.5} key="circle" />,
-                                    <Ruler size={20} strokeWidth={1.5} key="ruler" />,
-                                    <Pencil size={20} strokeWidth={1.5} key="pencil" />,
-                                ];
-                                const titles = ["Pan", "WW/WL", "Measure", "Annotate"];
-                                const active = toolMode === mode;
-                                return (
-                                    <button
-                                        key={mode}
-                                        title={titles[i]}
-                                        onClick={() => setToolMode(mode)}
-                                        style={{
-                                            width: "44px",
-                                            height: "44px",
-                                            borderRadius: "10px",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            border: "none",
-                                            cursor: "pointer",
-                                            transition: "all 0.15s ease",
-                                            background: active ? "#3B82F6" : "transparent",
-                                            color: active ? "#ffffff" : "#94A3B8",
-                                            boxShadow: active ? "0 0 15px rgba(59,130,246,0.55)" : "none",
-                                        }}
-                                    >
-                                        {icons[i]}
-                                    </button>
-                                );
-                            })}
-
-                            <div style={{ height: "1px", background: "rgba(255,255,255,0.07)", margin: "4px 4px" }} />
-
-                            {[
-                                { title: "Zoom In", icon: <ZoomIn size={20} strokeWidth={1.5} />, action: () => setZoom((z) => Math.min(4, z + 0.1)) },
-                                { title: "Zoom Out", icon: <ZoomOut size={20} strokeWidth={1.5} />, action: () => setZoom((z) => Math.max(0.3, z - 0.1)) },
-                                {
-                                    title: "Fit to Screen", icon: <Maximize size={20} strokeWidth={1.5} />, action: () => {
-                                        setZoom(1);
-                                        setPan({ x: 0, y: 0 });
-                                    }
-                                },
-                                {
-                                    title: "Reset", icon: <RefreshCw size={20} strokeWidth={1.5} />, action: () => {
-                                        handleResetAll();
-                                    }
-                                },
-                            ].map(({ title, icon, action }) => (
-                                <button
-                                    key={title}
-                                    title={title}
-                                    onClick={action}
-                                    style={{
-                                        width: "44px",
-                                        height: "44px",
-                                        borderRadius: "10px",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        border: "none",
-                                        cursor: "pointer",
-                                        transition: "all 0.15s ease",
-                                        background: "transparent",
-                                        color: "#94A3B8",
-                                    }}
-                                >
-                                    {icon}
-                                </button>
-                            ))}
-                        </div>
                         <svg className="absolute inset-0 w-full h-full pointer-events-none">
                             {measures
                                 .filter((a) => a.slice === sliceIndex)
@@ -858,6 +811,95 @@ const ViewScreen = () => {
                             <div>{meta.institution} | {meta.manufacturer}</div>
                         </div>
                     </section>
+                    <aside className="w-[72px] bg-[#111827] rounded-lg border border-[#B0C4DE] shadow-sm overflow-hidden shrink-0 flex flex-col">
+                        <div className="h-[44px] bg-[#0F172A] border-b border-white/10 flex items-center justify-center">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-[#CBD5E1]">Tools</span>
+                        </div>
+                        <div className="flex-1 flex flex-col gap-1 p-2" onPointerDown={(e) => e.stopPropagation()}>
+                            {(["pan", "wl", "measure", "annotate"] as const).map((mode, i) => {
+                                const icons = [
+                                    <Hand size={20} strokeWidth={1.5} key="hand" />,
+                                    <CircleDot size={20} strokeWidth={1.5} key="circle" />,
+                                    <Ruler size={20} strokeWidth={1.5} key="ruler" />,
+                                    <Pencil size={20} strokeWidth={1.5} key="pencil" />,
+                                ];
+                                const titles = ["Pan", "WW/WL", "Measure", "Annotate"];
+                                const active = toolMode === mode;
+                                return (
+                                    <button
+                                        key={mode}
+                                        title={titles[i]}
+                                        onClick={() => setToolMode(mode)}
+                                        style={{
+                                            width: "44px",
+                                            height: "44px",
+                                            borderRadius: "10px",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            border: "none",
+                                            cursor: "pointer",
+                                            transition: "all 0.15s ease",
+                                            background: active ? "#3B82F6" : "transparent",
+                                            color: active ? "#ffffff" : "#94A3B8",
+                                            boxShadow: active ? "0 0 15px rgba(59,130,246,0.55)" : "none",
+                                        }}
+                                    >
+                                        {icons[i]}
+                                    </button>
+                                );
+                            })}
+
+                            <div style={{ height: "1px", background: "rgba(255,255,255,0.07)", margin: "4px 4px" }} />
+
+                            {[
+                                { title: "Zoom In", icon: <ZoomIn size={20} strokeWidth={1.5} />, action: () => setZoom((z) => Math.min(4, z + 0.1)) },
+                                { title: "Zoom Out", icon: <ZoomOut size={20} strokeWidth={1.5} />, action: () => setZoom((z) => Math.max(0.3, z - 0.1)) },
+                                {
+                                    title: "Fit to Screen", icon: <Maximize size={20} strokeWidth={1.5} />, action: () => {
+                                        setZoom(1);
+                                        setPan({ x: 0, y: 0 });
+                                    }
+                                },
+                                {
+                                    title: "Reset", icon: <RefreshCw size={20} strokeWidth={1.5} />, action: () => {
+                                        handleResetAll();
+                                    }
+                                },
+                                {
+                                    title: isPlaying ? "Pause" : "Play",
+                                    icon: isPlaying ? <Pause size={20} strokeWidth={1.5} /> : <Play size={20} strokeWidth={1.5} />,
+                                    action: () => {
+                                        setIsPlaying((prev) => !prev);
+                                    },
+                                    active: isPlaying,
+                                },
+                            ].map(({ title, icon, action, active }) => (
+                                <button
+                                    key={title}
+                                    title={title}
+                                    onClick={action}
+                                    style={{
+                                        width: "44px",
+                                        height: "44px",
+                                        borderRadius: "10px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        transition: "all 0.15s ease",
+                                        background: active ? "#3B82F6" : "transparent",
+                                        color: active ? "#ffffff" : "#94A3B8",
+                                        boxShadow: active ? "0 0 15px rgba(59,130,246,0.55)" : "none",
+                                    }}
+                                >
+                                    {icon}
+                                </button>
+                            ))}
+                        </div>
+                    </aside>
+                    </div>
                 </main>
 
                 <footer className="h-[80px] bg-[#E8EAF1] border-t border-[#B0C4DE] flex items-center shrink-0 px-8 z-10">
