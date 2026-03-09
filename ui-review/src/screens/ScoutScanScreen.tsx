@@ -11,13 +11,13 @@ import {
     UserCheck,
     FilePlus,
     Trash2,
-    Clock,
     Circle,
     ArrowUpDown,
     AlertTriangle,
     Activity,
     TrendingUp,
-    AlertCircle
+    AlertCircle,
+    Check
 } from "lucide-react";
 
 interface Sequence {
@@ -143,13 +143,9 @@ const ScoutScanScreen = ({
                 id: 'g1',
                 name: 'Head_FacialBoneVolume',
                 sequences: [
-                    { id: 's1', name: 'Scout', steps: [firstStepLabel, '确认参数', '执行扫描'] }
+                    { id: 's1', name: 'Scout', steps: [firstStepLabel, '确认参数', '执行扫描'] },
+                    { id: 's2', name: 'Helical Scan' }
                 ]
-            },
-            {
-                id: 'g2',
-                name: 'Helical Scan',
-                sequences: []
             }
         ]);
 
@@ -157,11 +153,45 @@ const ScoutScanScreen = ({
     const [isTreeCollapsed, setIsTreeCollapsed] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [showAbortConfirm, setShowAbortConfirm] = useState(false);
+    const [selectedPosition, setSelectedPosition] = useState<"start" | "end" | null>(null);
+    const [activeStepIdx, setActiveStepIdx] = useState(0); // Add state for active step tracking
 
     const toggleSelection = (id: string) => {
-        setSelectedIds(prev =>
-            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-        );
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+
+            // 1. Handle Group Selection (Find by id)
+            const group = groups.find(item => item.id === id);
+            if (group) {
+                const childIds = group.sequences.map(seq => seq.id);
+                const allRelatedIds = [group.id, ...childIds];
+
+                // If anything in this group is NOT selected, select all. Otherwise, deselect all.
+                const shouldSelectAll = !allRelatedIds.every(itemId => next.has(itemId));
+
+                allRelatedIds.forEach(itemId => {
+                    if (shouldSelectAll) next.add(itemId);
+                    else next.delete(itemId);
+                });
+                return Array.from(next);
+            }
+
+            // 2. Handle Sequence Selection
+            const parentGroup = groups.find(g => g.sequences.some(seq => seq.id === id));
+            if (parentGroup) {
+                if (next.has(id)) next.delete(id);
+                else next.add(id);
+
+                // Sync parent group status
+                const sequenceIds = parentGroup.sequences.map(seq => seq.id);
+                const allSequencesSelected = sequenceIds.every(seqId => next.has(seqId));
+
+                if (allSequencesSelected) next.add(parentGroup.id);
+                else next.delete(parentGroup.id);
+            }
+
+            return Array.from(next);
+        });
     };
 
     const handleDeleteClick = () => {
@@ -176,7 +206,7 @@ const ScoutScanScreen = ({
                 ...g,
                 sequences: g.sequences.filter(s => !selectedIds.includes(s.id))
             }))
-            .filter(g => g.sequences.length > 0 || !['g1', 'g2'].includes(g.id))
+            .filter(g => g.sequences.length > 0)
         );
         setSelectedIds([]);
         setShowDeleteConfirm(false);
@@ -197,15 +227,15 @@ const ScoutScanScreen = ({
                             <span className="text-[12px] text-[#546E7A] font-medium leading-none mt-0.5">ID: 67890</span>
                         </div>
                         <div className="ml-auto flex flex-col gap-0.5 text-[#546E7A] opacity-60">
-                            <div className="text-[9px] font-bold italic">⊥ 0</div>
-                            <div className="text-[9px] font-bold">∠ 0</div>
+                            <div className="text-[9px] font-bold italic">M0</div>
+                            <div className="text-[9px] font-bold">F0</div>
                         </div>
                     </div>
                 </div>
 
                 <div className="text-center">
                     <div className="text-[28px] font-bold tracking-tight text-[#37474F] leading-none">13:52</div>
-                    <div className="text-[12px] text-[#546E7A] font-medium mt-1 uppercase opacity-80">2月26日 周四</div>
+                    <div className="text-[12px] text-[#546E7A] font-medium mt-1 uppercase opacity-80">2026 周四</div>
                 </div>
 
                 <div className="flex items-center gap-5 pr-2">
@@ -226,15 +256,16 @@ const ScoutScanScreen = ({
             </header>
 
             {/* 2. Main Content Area - Card Partitioning */}
-            <main className="flex-1 flex overflow-hidden p-4 gap-4">
+            <main className="flex-1 flex overflow-hidden p-2 gap-1">
 
                 {/* Left Sidebar Card */}
-                <aside className="w-[264px] bg-white rounded-lg border border-[#B0C4DE] shadow-sm flex flex-col overflow-hidden shrink-0">
+                <aside className="w-[240px] bg-white rounded-lg border border-[#B0C4DE] shadow-sm flex flex-col overflow-hidden shrink-0">
                     {/* Sidebar Toolbar - Card Header Style */}
                     <div className="h-[48px] bg-[#F8FAFC] border-b border-[#EEF2F9] flex items-center justify-between px-3 shrink-0">
                         <div className="flex items-center gap-2">
                             <button className="p-1.5 text-[#546E7A] hover:bg-[#EEF2F9] rounded transition-all"><FilePlus size={18} /></button>
                             <button
+                                disabled={selectedIds.length === 0}
                                 onClick={handleDeleteClick}
                                 className={`p-1.5 transition-all rounded ${selectedIds.length > 0 ? 'text-red-500 hover:bg-red-50' : 'text-[#546E7A]/40 cursor-not-allowed'}`}
                             >
@@ -253,10 +284,16 @@ const ScoutScanScreen = ({
                     <div className={`overflow-y-auto p-2 flex flex-col gap-1 transition-all duration-300 ${isTreeCollapsed ? 'h-[48px] opacity-40 grayscale overflow-hidden' : 'flex-1'}`}>
                         {groups.map(group => (
                             <div key={group.id} className="flex flex-col">
-                                <div className="flex items-center gap-2 px-2 py-2 text-[#37474F]">
+                                <div
+                                    onClick={() => toggleSelection(group.id)}
+                                    className="flex items-center gap-2 px-2 py-2 text-[#37474F] cursor-pointer rounded-md hover:bg-[#EEF2F9] transition-all"
+                                >
                                     <ChevronDown size={14} className="opacity-70" />
                                     <div
-                                        onClick={() => toggleSelection(group.id)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleSelection(group.id);
+                                        }}
                                         className={`w-4 h-4 rounded-sm border border-[#B0C4DE] cursor-pointer flex items-center justify-center transition-all ${selectedIds.includes(group.id) ? 'bg-[#4D94FF] border-[#4D94FF]' : 'bg-white'}`}
                                     >
                                         {selectedIds.includes(group.id) && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
@@ -264,45 +301,83 @@ const ScoutScanScreen = ({
                                     <span className="text-[13px] font-bold truncate opacity-70">{group.name}</span>
                                 </div>
 
-                                <div className="flex flex-col">
+                                <div className="flex flex-col gap-2">
                                     {group.sequences.map(seq => (
                                         <div key={seq.id}>
-                                            {/* Active/Sequence Style */}
-                                            <div className={`flex items-center gap-2 px-2 py-2 rounded-md ml-4 mb-1 transition-all ${seq.name === '呼吸采集' ? 'bg-[#7EAAFF] text-white shadow-sm' : 'text-[#37474F] hover:bg-gray-50'}`}>
-                                                <ChevronDown size={14} className={seq.name === '呼吸采集' ? 'text-black' : 'text-[#37474F]'} />
-                                                <div
-                                                    onClick={(e) => { e.stopPropagation(); toggleSelection(seq.id); }}
-                                                    className={`w-4 h-4 rounded-sm border cursor-pointer flex items-center justify-center transition-all ${seq.name === '呼吸采集' ? 'border-white bg-white/20' : 'border-[#B0C4DE] bg-white'} ${selectedIds.includes(seq.id) ? (seq.name === '呼吸采集' ? 'bg-white' : 'bg-[#4D94FF] border-[#4D94FF]') : ''}`}
-                                                >
-                                                    {selectedIds.includes(seq.id) && <div className={`w-1.5 h-1.5 rounded-full ${seq.name === '呼吸采集' ? 'bg-[#7EAAFF]' : 'bg-white'}`}></div>}
-                                                </div>
-                                                <span className="text-[13px] font-bold">{seq.name}</span>
-                                            </div>
+                                            {(() => {
+                                                const isActiveSequence = bottomPanelMode === 'breathing'
+                                                    ? seq.name === '呼吸采集'
+                                                    : seq.name === 'Scout';
+                                                const shouldShowSteps = !!seq.steps?.length && (isActiveSequence || selectedIds.includes(seq.id));
 
-                                            {/* Workflow Steps - Only for active/expanded sequences or specifically for breathing mode */}
-                                            {(seq.steps && seq.steps.length > 0 && (seq.name === '呼吸采集' || selectedIds.includes(seq.id))) && (
-                                                <div className="flex flex-col ml-10 mt-2 gap-4 relative pb-4">
-                                                    <div className="absolute left-[7px] top-0 bottom-6 w-[1px] bg-[#B0C4DE]/30"></div>
-                                                    {seq.steps.map((step, idx) => {
-                                                        const isActive = (step.includes('训练') && breathingPhase === 'training') ||
-                                                            (step.includes('平稳') && breathingPhase === 'stable');
-                                                        return (
-                                                            <div key={`${seq.id}-step-${idx}`} className={`flex items-center gap-3 z-10 group transition-all duration-300 ${isActive ? 'scale-105 origin-left' : 'opacity-30 grayscale'}`}>
-                                                                {step.includes('训练') ? (
-                                                                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${isActive ? 'bg-[#7EAAFF] border-[#7EAAFF] shadow-md animate-pulse' : 'bg-white border-[#B0C4DE]'}`}>
-                                                                        <Clock size={10} className={isActive ? 'text-white' : 'text-[#37474F]'} />
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center translate-x-[1px] transition-all ${isActive ? 'bg-[#43A047] border-[#43A047] shadow-md' : 'bg-white border-[#66BB6A]'}`}>
-                                                                        <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                                                                    </div>
+                                                return (
+                                                    <>
+                                                        {/* Sequence Row - Simplified to matched refined WT32 aesthetic */}
+                                                        <div
+                                                            onClick={() => toggleSelection(seq.id)}
+                                                            className={`flex items-center gap-2 px-3 py-2.5 rounded-lg mb-1 transition-all relative cursor-pointer border ${isActiveSequence
+                                                                ? 'bg-[#4D94FF] border-[#4D94FF] text-white shadow-md'
+                                                                : 'bg-transparent border-transparent text-[#546E7A] hover:bg-[#EEF2F9]'
+                                                                }`}
+                                                        >
+                                                            <ChevronDown size={14} className={isActiveSequence ? 'text-white' : 'text-[#90A4AE]'} />
+                                                            <div
+                                                                onClick={(e) => { e.stopPropagation(); toggleSelection(seq.id); }}
+                                                                className={`w-4 h-4 rounded-md border cursor-pointer flex items-center justify-center transition-all ${isActiveSequence
+                                                                    ? 'border-white/40 bg-white/20'
+                                                                    : 'border-[#B0C4DE] bg-white'
+                                                                    }`}
+                                                            >
+                                                                {selectedIds.includes(seq.id) && (
+                                                                    <div className={`w-2 h-2 rounded-sm ${isActiveSequence ? 'bg-white' : 'bg-[#4D94FF]'}`}></div>
                                                                 )}
-                                                                <span className={`text-[13px] font-bold ${isActive ? 'text-[#37474F]' : 'text-[#37474F]/40'}`}>{step}</span>
                                                             </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
+                                                            <span className="text-[14px] font-bold">{seq.name}</span>
+                                                        </div>
+
+                                                        {/* Workflow Steps - Prominent icons & connecting line */}
+                                                        {shouldShowSteps && (
+                                                            <div className="flex flex-col ml-9 mt-1 gap-4 relative pb-4">
+                                                                <div className="absolute left-[8px] top-0 bottom-6 w-[1px] bg-[#4D94FF]/30"></div>
+                                                                {seq.steps?.map((step, idx) => {
+                                                                    const isCompleted = bottomPanelMode === 'breathing'
+                                                                        ? (step.includes('训练') && breathingPhase === 'stable')
+                                                                        : (isActiveSequence && idx < activeStepIdx);
+
+                                                                    const isActive = bottomPanelMode === 'breathing'
+                                                                        ? ((step.includes('训练') && breathingPhase === 'training') || (step.includes('平稳') && breathingPhase === 'stable'))
+                                                                        : (isActiveSequence && idx === activeStepIdx);
+
+                                                                    return (
+                                                                        <div
+                                                                            key={`${seq.id}-step-${idx}`}
+                                                                            onClick={() => isActiveSequence && setActiveStepIdx(idx)}
+                                                                            className={`flex items-center gap-3 z-10 transition-all duration-300 cursor-pointer ${isActive || isCompleted ? 'opacity-100' : 'opacity-40'}`}
+                                                                        >
+                                                                            <div className="flex items-center justify-center w-[18px] h-[18px]">
+                                                                                {isCompleted ? (
+                                                                                    <div className="w-5 h-5 rounded-full bg-white border border-[#66BB6A] flex items-center justify-center">
+                                                                                        <Check size={12} className="text-[#66BB6A]" strokeWidth={3} />
+                                                                                    </div>
+                                                                                ) : isActive ? (
+                                                                                    <div className="w-4.5 h-4.5 rounded-full bg-white border-2 border-[#4D94FF] flex items-center justify-center">
+                                                                                        <div className="w-2 h-2 rounded-full bg-[#4D94FF]/0" />
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <div className="w-4 h-4 rounded-full bg-white border border-[#B0C4DE]" />
+                                                                                )}
+                                                                            </div>
+                                                                            <span className={`text-[13px] font-bold ${isActive || isCompleted ? 'text-[#37474F]' : 'text-[#78909C]'}`}>
+                                                                                {step}
+                                                                            </span>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                );
+                                            })()}
                                         </div>
                                     ))}
                                 </div>
@@ -344,7 +419,7 @@ const ScoutScanScreen = ({
                             <div className="space-y-4">
                                 <MetricRow
                                     icon={<Circle size={14} fill="#4D94FF" className="text-[#4D94FF]" />}
-                                    label="原始数据主频率"
+                                    label="原始数据主频"
                                     value="15"
                                 />
                                 <MetricRow
@@ -366,41 +441,72 @@ const ScoutScanScreen = ({
                             </div>
                         </div>
                     ) : (
-                        <div className={`border-t border-[#EEF2F9] bg-[#F8FAFC] px-4 flex items-center gap-3 shrink-0 transition-all duration-300 ${isTreeCollapsed ? 'flex-1 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]' : 'h-[140px]'}`}>
-                            <div className="flex flex-col items-center self-stretch justify-center py-4 shrink-0">
-                                <Circle size={11} className="text-[#90A4AE] shrink-0" />
-                                <div className="w-px flex-1 bg-[#C5D5E8] my-1" />
-                                <button
-                                    onClick={handleSwap}
-                                    title="交换起始/结束位置"
-                                    className="w-[20px] h-[20px] rounded-full bg-white border border-[#B0C4DE] flex items-center justify-center text-[#78A0BF] hover:text-[#4D94FF] hover:border-[#4D94FF] hover:bg-[#EEF6FF] transition-all active:scale-90 shadow-sm shrink-0"
-                                >
-                                    <ArrowUpDown size={10} />
-                                </button>
-                                <div className="w-px flex-1 bg-[#C5D5E8] my-1" />
-                                <div className="w-3 h-3 rounded-full bg-[#66BB6A] border-2 border-white flex items-center justify-center p-[2px] shrink-0">
-                                    <div className="w-full h-full bg-white rounded-full" />
+                        <div className={`mt-auto border-t border-[#EEF2F9] bg-[#F8FAFC] px-4 py-3 shrink-0 transition-all duration-300 ${isTreeCollapsed ? 'flex-1 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]' : 'h-[168px]'}`}>
+                            <div className="mb-3 text-[12px] font-bold text-[#546E7A]">请打开激光灯获取定位</div>
+                            <div className="flex items-stretch gap-3 h-[calc(100%-28px)]">
+                                <div className="flex flex-col items-center self-stretch justify-center py-2 shrink-0">
+                                    <button
+                                        onClick={() => setSelectedPosition('start')}
+                                        className={`w-3 h-3 rounded-full border-2 flex items-center justify-center p-[2px] shrink-0 transition-all ${selectedPosition === 'start' ? 'bg-[#4D94FF] border-white shadow-sm' : 'bg-white border-[#B0C4DE]'}`}
+                                    >
+                                        {selectedPosition === 'start' && <div className="w-full h-full bg-white rounded-full" />}
+                                    </button>
+                                    <div className="w-px flex-1 bg-[#C5D5E8] my-1" />
+                                    <button
+                                        onClick={handleSwap}
+                                        title="交换起始/结束位置"
+                                        className="w-[20px] h-[20px] rounded-full bg-white border border-[#B0C4DE] flex items-center justify-center text-[#78A0BF] hover:text-[#4D94FF] hover:border-[#4D94FF] hover:bg-[#EEF6FF] transition-all active:scale-90 shadow-sm shrink-0"
+                                    >
+                                        <ArrowUpDown size={10} />
+                                    </button>
+                                    <div className="w-px flex-1 bg-[#C5D5E8] my-1" />
+                                    <button
+                                        onClick={() => setSelectedPosition('end')}
+                                        className={`w-3 h-3 rounded-full border-2 flex items-center justify-center p-[2px] shrink-0 transition-all ${selectedPosition === 'end' ? 'bg-[#66BB6A] border-white shadow-sm' : 'bg-white border-[#B0C4DE]'}`}
+                                    >
+                                        {selectedPosition === 'end' && <div className="w-full h-full bg-white rounded-full" />}
+                                    </button>
                                 </div>
-                            </div>
 
-                            <div className="flex flex-col flex-1 min-w-0 self-stretch justify-between py-4">
-                                <div className="flex items-center gap-2 h-[32px] min-w-0">
-                                    <span className="text-[12px] font-bold text-[#90A4AE] w-[60px] shrink-0">起始位置 :</span>
-                                    <input
-                                        type="text"
-                                        value={startPos}
-                                        onChange={(e) => setStartPos(e.target.value)}
-                                        className="flex-1 min-w-0 h-[32px] bg-white border border-[#B0C4DE] rounded px-2 text-[13px] font-bold text-[#90A4AE] outline-none focus:border-[#4D94FF]"
-                                    />
-                                </div>
-                                <div className="flex items-center gap-2 h-[32px] min-w-0">
-                                    <span className="text-[12px] font-bold text-[#66BB6A] w-[60px] shrink-0">结束位置 :</span>
-                                    <input
-                                        type="text"
-                                        value={endPos}
-                                        onChange={(e) => setEndPos(e.target.value)}
-                                        className="flex-1 min-w-0 h-[32px] bg-white border border-[#B0C4DE] rounded px-2 text-[13px] font-bold text-[#66BB6A] outline-none focus:border-[#4D94FF]"
-                                    />
+                                <div className="flex flex-col flex-1 min-w-0 self-stretch justify-between py-4">
+                                    <div
+                                        onClick={() => setSelectedPosition('start')}
+                                        className="flex items-center gap-2 h-[32px] min-w-0 cursor-pointer"
+                                    >
+                                        <span className={`text-[12px] font-bold w-[60px] shrink-0 transition-colors ${selectedPosition === 'start' ? 'text-[#4D94FF]' : 'text-[#90A4AE]'}`}>起始位置 :</span>
+                                        <input
+                                            type="text"
+                                            value={startPos}
+                                            onChange={(e) => {
+                                                setSelectedPosition('start');
+                                                setStartPos(e.target.value);
+                                            }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedPosition('start');
+                                            }}
+                                            className={`flex-1 min-w-0 h-[32px] bg-white border rounded px-2 text-[13px] font-bold outline-none transition-colors ${selectedPosition === 'start' ? 'border-[#4D94FF] text-[#4D94FF]' : 'border-[#B0C4DE] text-[#90A4AE]'} focus:border-[#4D94FF]`}
+                                        />
+                                    </div>
+                                    <div
+                                        onClick={() => setSelectedPosition('end')}
+                                        className="flex items-center gap-2 h-[32px] min-w-0 cursor-pointer"
+                                    >
+                                        <span className={`text-[12px] font-bold w-[60px] shrink-0 transition-colors ${selectedPosition === 'end' ? 'text-[#66BB6A]' : 'text-[#90A4AE]'}`}>结束位置 :</span>
+                                        <input
+                                            type="text"
+                                            value={endPos}
+                                            onChange={(e) => {
+                                                setSelectedPosition('end');
+                                                setEndPos(e.target.value);
+                                            }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedPosition('end');
+                                            }}
+                                            className={`flex-1 min-w-0 h-[32px] bg-white border rounded px-2 text-[13px] font-bold outline-none transition-colors ${selectedPosition === 'end' ? 'border-[#66BB6A] text-[#66BB6A]' : 'border-[#B0C4DE] text-[#90A4AE]'} focus:border-[#4D94FF]`}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -414,7 +520,7 @@ const ScoutScanScreen = ({
                             {/* Parameter Sliders */}
                             <div className="grid grid-cols-2 gap-x-12 gap-y-4 px-4 py-2">
                                 <BreathSliderItem
-                                    label="最小间距"
+                                    label="最小间隔"
                                     value={breathingEditableParams.minSpacing}
                                     onChange={(v) => setBreathingEditableParams(p => ({ ...p, minSpacing: v }))}
                                     unit="S"
@@ -483,11 +589,11 @@ const ScoutScanScreen = ({
                                 {/* Scroll Indicator */}
                                 <div className="absolute right-4 top-4 flex items-center gap-1.5 px-2 py-1 bg-[#E8F5E9] rounded border border-[#C8E6C9]">
                                     <div className="w-1.5 h-1.5 rounded-full bg-[#4CAF50] animate-pulse"></div>
-                                    <span className="text-[10px] font-bold text-[#2E7D32]">实时监测中</span>
+                                    <span className="text-[10px] font-bold text-[#2E7D32]">实时监测</span>
                                 </div>
                                 <div className="absolute left-[70%] top-[40%] bg-white shadow-xl border border-[#B0C4DE]/50 p-2 rounded z-10 scale-90">
                                     <div className="text-[10px] font-bold text-[#546E7A]">实时数据</div>
-                                    <div className="text-[10px] text-[#90A4AE]">采样值 : {waveData[waveData.length - 1].toFixed(1)}</div>
+                                    <div className="text-[10px] text-[#90A4AE]">采样值: {waveData[waveData.length - 1].toFixed(1)}</div>
                                 </div>
                             </div>
                         </div>
@@ -546,7 +652,7 @@ const ScoutScanScreen = ({
                             </div>
                             <div>
                                 <div className="text-[14px] font-black text-[#37474F]">确认删除</div>
-                                <div className="text-[11px] text-[#78909C] mt-0.5">已选 {selectedIds.length} 项，此操作不可恢复</div>
+                                <div className="text-[11px] text-[#78909C] mt-0.5">已选择 {selectedIds.length} 项，此操作不可恢复</div>
                             </div>
                         </div>
                         <div className="flex gap-2 px-5 py-4">
@@ -622,7 +728,7 @@ const BreathSliderItem = ({ label, value, unit, dropdownOptions, rawValue, onCha
     let min = 0;
     let max = 2; // Default max
     if (label === "增益") max = 5;
-    else if (label === "最小间距") max = 10;
+    else if (label === "最小间隔") max = 10;
     else if (label === "波峰阈值" || label === "波谷阈值") {
         min = 0.5; // Assuming thresholds are factors, not raw values
         max = 1.5;
