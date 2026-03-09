@@ -299,7 +299,7 @@ const AirCalibrationScreen = () => {
                 </main>
 
                 {/* 3. Footer */}
-                <footer className="h-[84px] bg-[#E8EAF1] border-t border-[#B0C4DE] flex items-center px-8 shrink-0">
+                <footer className="h-[80px] bg-[#E8EAF1] border-t border-[#B0C4DE] flex items-center px-8 shrink-0">
                     <button className="h-[52px] px-10 bg-white border-2 border-[#B0C4DE] rounded-md text-[14px] font-bold text-[#37474F] hover:bg-gray-50 shadow-sm transition-all active:scale-95">
                         首页
                     </button>

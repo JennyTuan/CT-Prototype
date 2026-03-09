@@ -267,7 +267,7 @@ const ScoutScanScreen = ({
                             <button
                                 disabled={selectedIds.length === 0}
                                 onClick={handleDeleteClick}
-                                className={`p-1.5 transition-all rounded ${selectedIds.length > 0 ? 'text-red-500 hover:bg-red-50' : 'text-[#546E7A]/40 cursor-not-allowed'}`}
+                                className={`p-1.5 transition-all rounded relative ${selectedIds.length > 0 ? 'text-red-500 hover:bg-red-50' : 'text-[#546E7A]/40 cursor-not-allowed'}`}
                             >
                                 <Trash2 size={18} />
                             </button>
@@ -294,11 +294,11 @@ const ScoutScanScreen = ({
                                             e.stopPropagation();
                                             toggleSelection(group.id);
                                         }}
-                                        className={`w-4 h-4 rounded-sm border border-[#B0C4DE] cursor-pointer flex items-center justify-center transition-all ${selectedIds.includes(group.id) ? 'bg-[#4D94FF] border-[#4D94FF]' : 'bg-white'}`}
+                                        className={`w-4 h-4 rounded-sm border-2 cursor-pointer flex items-center justify-center transition-all ${selectedIds.includes(group.id) ? 'bg-[#4D94FF] border-[#4D94FF]' : 'bg-white border-[#B0C4DE]'}`}
                                     >
-                                        {selectedIds.includes(group.id) && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                                        {selectedIds.includes(group.id) && <Check size={12} className="text-white stroke-[3]" />}
                                     </div>
-                                    <span className="text-[13px] font-bold truncate opacity-70">{group.name}</span>
+                                    <span className={`text-[13px] font-bold truncate transition-all ${selectedIds.includes(group.id) ? 'text-[#4D94FF]' : 'text-[#37474F]'}`}>{group.name}</span>
                                 </div>
 
                                 <div className="flex flex-col gap-2">
@@ -317,7 +317,7 @@ const ScoutScanScreen = ({
                                                             onClick={() => toggleSelection(seq.id)}
                                                             className={`flex items-center gap-2 px-3 py-2.5 rounded-lg mb-1 transition-all relative cursor-pointer border ${isActiveSequence
                                                                 ? 'bg-[#4D94FF] border-[#4D94FF] text-white shadow-md'
-                                                                : 'bg-transparent border-transparent text-[#546E7A] hover:bg-[#EEF2F9]'
+                                                                : (selectedIds.includes(seq.id) ? 'bg-[#E3F2FD] border-[#4D94FF]/30 text-[#4D94FF]' : 'bg-transparent border-transparent text-[#546E7A] hover:bg-[#EEF2F9]')
                                                                 }`}
                                                         >
                                                             <ChevronDown size={14} className={isActiveSequence ? 'text-white' : 'text-[#90A4AE]'} />
@@ -608,7 +608,7 @@ const ScoutScanScreen = ({
             </main>
 
             {/* 3. Footer (Nav Buttons) */}
-            <footer className="h-[84px] bg-[#E8EAF1] border-t border-[#B0C4DE] flex items-center shrink-0 px-8 z-10">
+            <footer className="h-[80px] bg-[#E8EAF1] border-t border-[#B0C4DE] flex items-center shrink-0 px-8 z-10">
                 <div className="flex-1">
                     <button className="flex items-center gap-2 px-10 h-[52px] bg-white text-[#4D94FF] font-bold rounded-md border-2 border-[#4D94FF] hover:bg-solid shadow-sm transition-all uppercase text-[13px] active:scale-95">
                         <ChevronLeft size={20} /> 上一步

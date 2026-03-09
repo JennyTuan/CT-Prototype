@@ -515,8 +515,8 @@ const ViewScreen = () => {
                     </div>
                 </header>
 
-                <main className="flex-1 flex overflow-hidden p-4 gap-4">
-                    <aside className="w-[300px] bg-white rounded-lg border border-[#B0C4DE] shadow-sm flex flex-col overflow-hidden shrink-0">
+                <main className="flex-1 flex overflow-hidden p-2 gap-2">
+                    <aside className="w-[240px] bg-white rounded-lg border border-[#B0C4DE] shadow-sm flex flex-col overflow-hidden shrink-0">
                         <div className="h-[44px] bg-[#F8FAFC] border-b border-[#EEF2F9] px-3 flex items-center gap-2">
                             <Layers3 size={14} className="text-[#4D94FF]" />
                             <span className="text-[11px] font-black uppercase tracking-wider text-[#37474F]">图像序列</span>
@@ -860,7 +860,7 @@ const ViewScreen = () => {
                     </section>
                 </main>
 
-                <footer className="h-[84px] bg-[#E8EAF1] border-t border-[#B0C4DE] flex items-center shrink-0 px-8 z-10">
+                <footer className="h-[80px] bg-[#E8EAF1] border-t border-[#B0C4DE] flex items-center shrink-0 px-8 z-10">
                     <div className="flex-1">
                         <button className="flex items-center gap-2 px-10 h-[52px] bg-white text-[#4D94FF] font-bold rounded-md border-2 border-[#4D94FF] hover:bg-solid shadow-sm transition-all uppercase text-[13px] active:scale-95">
                             <ChevronLeft size={20} /> 高级处理

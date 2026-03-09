@@ -333,7 +333,7 @@ const MockScanScreen = () => {
                     </section>
                 </main>
 
-                <footer className={`h-[84px] bg-[#E8EAF1] border-t border-[#B0C4DE] flex items-center shrink-0 px-8 z-10 ${interactionLocked ? "pointer-events-none opacity-60" : ""}`}>
+                <footer className={`h-[80px] bg-[#E8EAF1] border-t border-[#B0C4DE] flex items-center shrink-0 px-8 z-10 ${interactionLocked ? "pointer-events-none opacity-60" : ""}`}>
                     <div className="flex-1">
                         <button className="flex items-center gap-2 px-10 h-[52px] bg-white text-[#4D94FF] font-bold rounded-md border-2 border-[#4D94FF] hover:bg-solid shadow-sm transition-all uppercase text-[13px] active:scale-95">
                             <ChevronLeft size={20} /> 上一步

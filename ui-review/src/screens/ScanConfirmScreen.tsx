@@ -56,11 +56,29 @@ const ScanConfirmScreen = () => {
     const [showAbortConfirm, setShowAbortConfirm] = useState(false);
     const [showPatientConfirm, setShowPatientConfirm] = useState(false);
 
-    const toggleCheckSeq = (seqId: string, e: React.MouseEvent) => {
+    const toggleCheck = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        setCheckedSeqIds(prev =>
-            prev.includes(seqId) ? prev.filter(id => id !== seqId) : [...prev, seqId]
-        );
+        setCheckedSeqIds(prev => {
+            const next = new Set(prev);
+
+            // Check if it's a group
+            const group = groups.find(g => g.id === id);
+            if (group) {
+                const childIds = group.sequences.map(s => s.id);
+                const allSelected = childIds.every(cid => next.has(cid));
+
+                if (allSelected) {
+                    childIds.forEach(cid => next.delete(cid));
+                } else {
+                    childIds.forEach(cid => next.add(cid));
+                }
+            } else {
+                // It's a sequence
+                if (next.has(id)) next.delete(id);
+                else next.add(id);
+            }
+            return Array.from(next);
+        });
     };
 
     const handleDeleteClick = () => {
@@ -121,10 +139,10 @@ const ScanConfirmScreen = () => {
             </header>
 
             {/* 2. Main Content Area */}
-            <main className="flex-1 flex overflow-hidden p-4 gap-4">
+            <main className="flex-1 flex overflow-hidden p-2 gap-4">
 
                 {/* Left Sidebar Card */}
-                <aside className="w-[264px] bg-white rounded-lg border border-[#B0C4DE] shadow-sm flex flex-col overflow-hidden shrink-0">
+                <aside className="w-[240px] bg-white rounded-lg border border-[#B0C4DE] shadow-sm flex flex-col overflow-hidden shrink-0">
                     {/* Sidebar Toolbar - Precise match to screenshot */}
                     <div className="h-[48px] bg-[#F8FAFC] border-b border-[#EEF2F9] flex items-center justify-between px-3 shrink-0">
                         <div className="flex items-center gap-2">
@@ -137,11 +155,6 @@ const ScanConfirmScreen = () => {
                                     }`}
                             >
                                 <Trash2 size={18} />
-                                {checkedSeqIds.length > 0 && (
-                                    <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-[#D32F2F] text-white text-[8px] font-bold rounded-full flex items-center justify-center">
-                                        {checkedSeqIds.length}
-                                    </span>
-                                )}
                             </button>
                         </div>
                         <button
@@ -156,10 +169,22 @@ const ScanConfirmScreen = () => {
                     <div className={`overflow-y-auto p-2 flex flex-col gap-0 transition-all duration-300 ${isTreeCollapsed ? 'h-[48px] opacity-40 grayscale overflow-hidden' : 'h-[240px]'}`}>
                         {groups.map(group => (
                             <div key={group.id} className="flex flex-col">
-                                <div className="flex items-center gap-2 px-2 py-1.5 text-[#37474F]">
+                                <div
+                                    onClick={(e) => toggleCheck(group.id, e as React.MouseEvent)}
+                                    className="flex items-center gap-2 px-2 py-1.5 text-[#37474F] cursor-pointer hover:bg-[#EEF2F9] rounded-md transition-all"
+                                >
                                     <ChevronDown size={14} className="opacity-40" />
-                                    <div className="w-3.5 h-3.5 rounded-sm border border-[#B0C4DE] bg-white"></div>
-                                    <span className="text-[13px] font-bold truncate text-[#37474F]">{group.name}</span>
+                                    <div
+                                        onClick={(e) => toggleCheck(group.id, e as React.MouseEvent)}
+                                        className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center shrink-0 transition-all ${group.sequences.every(s => checkedSeqIds.includes(s.id))
+                                            ? 'bg-[#4D94FF] border-[#4D94FF]'
+                                            : 'bg-white border-[#B0C4DE]'
+                                            }`}
+                                    >
+                                        {group.sequences.every(s => checkedSeqIds.includes(s.id)) && <Check size={9} className="text-white stroke-[3]" />}
+                                    </div>
+                                    <span className={`text-[13px] font-bold truncate transition-all ${group.sequences.every(s => checkedSeqIds.includes(s.id)) ? 'text-[#4D94FF]' : 'text-[#37474F]'
+                                        }`}>{group.name}</span>
                                 </div>
                                 <div className="flex flex-col">
                                     {group.sequences.map(seq => {
@@ -170,30 +195,25 @@ const ScanConfirmScreen = () => {
                                             <div key={seq.id} className="mb-1">
                                                 <div
                                                     onClick={() => setExpandedSeqId(isExpanded ? null : seq.id)}
-                                                    className={`flex items-center gap-2 px-2 py-1.5 rounded-md ml-4 shadow-sm cursor-pointer transition-all ${checkedSeqIds.includes(seq.id)
-                                                        ? 'bg-[#FFF3E0] text-[#D32F2F]'
-                                                        : isActive
-                                                            ? 'bg-[#4D94FF] text-white'
-                                                            : 'text-[#37474F] hover:bg-gray-50 mr-1'
+                                                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg mb-1 transition-all relative cursor-pointer border ${isActive
+                                                        ? 'bg-[#4D94FF] border-[#4D94FF] text-white shadow-md'
+                                                        : (checkedSeqIds.includes(seq.id) ? 'bg-[#E3F2FD] border-[#4D94FF]/30 text-[#4D94FF]' : 'bg-transparent border-transparent text-[#546E7A] hover:bg-[#EEF2F9]')
                                                         }`}
                                                 >
-                                                    {isExpanded ? <ChevronDown size={14} className={checkedSeqIds.includes(seq.id) ? 'text-[#D32F2F]/60' : isActive ? "text-white/70" : "text-gray-400"} /> : <ChevronRight size={14} className={checkedSeqIds.includes(seq.id) ? 'text-[#D32F2F]/60' : isActive ? "text-white/70" : "text-gray-400"} />}
+                                                    {isExpanded ? <ChevronDown size={14} className={checkedSeqIds.includes(seq.id) ? 'text-[#4D94FF]/60' : isActive ? "text-white/70" : "text-gray-400"} /> : <ChevronRight size={14} className={checkedSeqIds.includes(seq.id) ? 'text-[#4D94FF]/60' : isActive ? "text-white/70" : "text-gray-400"} />}
 
                                                     {/* Checkbox */}
                                                     <div
-                                                        onClick={(e) => toggleCheckSeq(seq.id, e)}
+                                                        onClick={(e) => toggleCheck(seq.id, e)}
                                                         className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center shrink-0 transition-all ${checkedSeqIds.includes(seq.id)
-                                                            ? 'bg-[#D32F2F] border-[#D32F2F]'
-                                                            : isActive
-                                                                ? 'bg-white/20 border-white/30'
-                                                                : 'bg-white border-[#B0C4DE] hover:border-[#D32F2F]'
+                                                            ? (isActive ? 'bg-white border-white/30' : 'bg-[#4D94FF] border-[#4D94FF]')
+                                                            : (isActive ? 'bg-white/20 border-white/30' : 'bg-white border-[#B0C4DE]')
                                                             }`}
                                                     >
-                                                        {checkedSeqIds.includes(seq.id) && <Check size={9} className="text-white stroke-[3]" />}
+                                                        {checkedSeqIds.includes(seq.id) && <Check size={9} className={`${isActive ? 'text-[#4D94FF]' : 'text-white'} stroke-[3]`} />}
                                                     </div>
 
-                                                    <span className={`text-[13px] font-bold ${checkedSeqIds.includes(seq.id) ? 'line-through opacity-60' : ''
-                                                        }`}>{seq.name}</span>
+                                                    <span className="text-[13px] font-bold">{seq.name}</span>
                                                 </div>
 
                                                 {/* Toggleable Workflow Steps */}
@@ -254,7 +274,7 @@ const ScanConfirmScreen = () => {
                         </div>
 
                         {/* Reorganized Parameter Grid - 2 Column Layout */}
-                        <div className="flex-1 px-4 py-3 flex flex-col gap-4 overflow-y-auto">
+                        <div className="flex-1 p-2 flex flex-col gap-4 overflow-y-auto">
                             <div className="grid grid-cols-2 gap-2">
                                 {/* Scan Length */}
                                 <div className="p-2 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm">
@@ -304,7 +324,7 @@ const ScanConfirmScreen = () => {
                         </div>
 
                         {/* Details Button */}
-                        <div className="p-4 pt-1 flex justify-center shrink-0">
+                        <div className="p-2 flex justify-center shrink-0">
                             <button className="h-[32px] w-full bg-white border border-[#B0C4DE] rounded-md text-[10px] font-bold text-[#4D94FF] flex items-center justify-center gap-1 hover:bg-blue-50 transition-all shadow-sm active:scale-95">
                                 <Info size={14} /> 更多详情
                             </button>
@@ -324,7 +344,7 @@ const ScanConfirmScreen = () => {
             </main>
 
             {/* 3. Footer (Nav Buttons) */}
-            <footer className="h-[84px] bg-[#E8EAF1] border-t border-[#B0C4DE] flex items-center shrink-0 px-8 z-10">
+            <footer className="h-[80px] bg-[#E8EAF1] border-t border-[#B0C4DE] flex items-center shrink-0 px-8 z-10">
                 <div className="flex-1">
                     <button className="flex items-center gap-2 px-10 h-[52px] bg-white text-[#4D94FF] font-bold rounded-md border-2 border-[#4D94FF] hover:bg-solid shadow-sm transition-all uppercase text-[13px] active:scale-95">
                         <ChevronLeft size={20} /> 上一步
