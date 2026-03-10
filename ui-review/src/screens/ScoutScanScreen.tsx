@@ -17,7 +17,8 @@ import {
     Activity,
     TrendingUp,
     AlertCircle,
-    Check
+    Check,
+    CheckCircle
 } from "lucide-react";
 
 interface Sequence {
@@ -77,40 +78,49 @@ const ScoutScanScreen = ({
     };
 
     // Waveform simulation state (increased buffer for longer period)
-    const [waveData, setWaveData] = useState<number[]>(new Array(500).fill(100));
+    const [rawWaveData, setRawWaveData] = useState<number[]>(new Array(500).fill(100));
+    const [filteredWaveData, setFilteredWaveData] = useState<number[]>(new Array(500).fill(100));
     const [metrics, setMetrics] = useState({ bpm: "14.8", peakErr: "1.7", freqErr: "1.9" });
     const timerRef = useRef<number | null>(null);
+    const tRef = useRef(0); // Persistent time counter to prevent resets on re-render
 
     useEffect(() => {
         if (bottomPanelMode !== 'breathing') return;
 
-        let t = 0;
         const update = () => {
-            t += 0.05; // Slightly slower increment for smoother rolling
-            // Create a realistic breathing-like wave
-            const newVal = 100 + Math.sin(t) * 45 + Math.sin(t * 0.3) * 12 + (Math.random() - 0.5) * 2;
-            setWaveData(prev => {
-                const updated = [...prev.slice(1), newVal];
-                return updated;
-            });
+            tRef.current += 0.05; // Standard speed for ~15 bpm breaths
+            const t = tRef.current;
 
-            // Update metrics periodically (every few frames for stability)
-            if (Math.random() > 0.95) {
-                setWaveData(currentData => {
+            // Simulate a more realistic respiratory signal
+            const cycle = Math.sin(t);
+            const filteredVal = 500 + cycle * 200 + Math.sin(t * 0.3) * 30 + (Math.random() - 0.5) * 5;
+
+            // Raw signal: very sharp high frequency spikes aligned with the cycle
+            const pulse = Math.pow(Math.max(0, Math.sin(t * 1.0 + 0.1)), 24) * 400;
+            const rawVal = 480 + cycle * 80 + pulse + (Math.random() - 0.5) * 15;
+
+            setRawWaveData(prev => [...prev.slice(1), rawVal]);
+            setFilteredWaveData(prev => [...prev.slice(1), filteredVal]);
+
+            // Update metrics periodically using stable logic
+            if (Math.random() > 0.98) {
+                setFilteredWaveData(currentData => {
                     let peaks = 0;
-                    for (let i = 2; i < currentData.length - 2; i++) {
+                    for (let i = 4; i < currentData.length - 4; i++) {
                         if (currentData[i] > currentData[i - 1] && currentData[i] > currentData[i + 1] &&
-                            currentData[i] > currentData[i - 2] && currentData[i] > currentData[i + 2] && currentData[i] > 125) {
+                            currentData[i] > currentData[i - 2] && currentData[i] > currentData[i + 2] &&
+                            currentData[i] > 650) {
                             peaks++;
                         }
                     }
-                    const baseBpm = (peaks / currentData.length) * 1200;
+                    const baseBpm = (peaks / 500) * 1200;
                     const bpm = Math.max(14.2, Math.min(15.8, baseBpm + (Math.random() - 0.5) * 0.2));
-                    setMetrics({
+                    setMetrics(m => ({
+                        ...m,
                         bpm: bpm.toFixed(1),
-                        peakErr: (1.5 + Math.random() * 0.4).toFixed(1),
-                        freqErr: (1.8 + Math.random() * 0.3).toFixed(1)
-                    });
+                        peakErr: (1.2 + Math.random() * 0.6).toFixed(1),
+                        freqErr: (1.5 + Math.random() * 0.5).toFixed(1)
+                    }));
                     return currentData;
                 });
             }
@@ -122,7 +132,7 @@ const ScoutScanScreen = ({
         return () => {
             if (timerRef.current !== null) cancelAnimationFrame(timerRef.current);
         };
-    }, [bottomPanelMode]);
+    }, [bottomPanelMode]); // Removed wave states from dependencies to stop re-running/resetting
 
     // Metrics are now handled in the update loop state
 
@@ -133,7 +143,7 @@ const ScoutScanScreen = ({
                 id: 'g1',
                 name: 'Head_FacialBoneVolume',
                 sequences: [
-                    { id: 's1', name: '呼吸采集', steps: ['呼吸训练', '呼吸平稳'] },
+                    { id: 's1', name: '呼吸采集', steps: [] },
                     { id: 's2', name: '定位像' },
                     { id: 's3', name: '螺旋采集' }
                 ]
@@ -155,6 +165,7 @@ const ScoutScanScreen = ({
     const [showAbortConfirm, setShowAbortConfirm] = useState(false);
     const [selectedPosition, setSelectedPosition] = useState<"start" | "end" | null>(null);
     const [activeStepIdx, setActiveStepIdx] = useState(0); // Add state for active step tracking
+    const [expandedSeqId, setExpandedSeqId] = useState<string | null>("s1");
 
     const toggleSelection = (id: string) => {
         setSelectedIds(prev => {
@@ -280,94 +291,96 @@ const ScoutScanScreen = ({
                         </button>
                     </div>
 
-                    {/* Protocol Tree Area - Collapsible */}
-                    <div className={`overflow-y-auto p-2 flex flex-col gap-1 transition-all duration-300 ${isTreeCollapsed ? 'h-[48px] opacity-40 grayscale overflow-hidden' : 'flex-1'}`}>
+                    {/* Protocol Tree Area - Match ScanConfirm implementation */}
+                    <div className={`overflow-y-auto p-2 flex flex-col gap-0 transition-all duration-300 ${isTreeCollapsed ? 'h-[48px] opacity-40 grayscale overflow-hidden' : 'h-[240px]'}`}>
                         {groups.map(group => (
                             <div key={group.id} className="flex flex-col">
                                 <div
                                     onClick={() => toggleSelection(group.id)}
-                                    className="flex items-center gap-2 px-2 py-2 text-[#37474F] cursor-pointer rounded-md hover:bg-[#EEF2F9] transition-all"
+                                    className="flex items-center gap-2 px-2 py-1.5 text-[#37474F] cursor-pointer hover:bg-[#EEF2F9] rounded-md transition-all"
                                 >
-                                    <ChevronDown size={14} className="opacity-70" />
+                                    <ChevronDown size={14} className="opacity-40" />
                                     <div
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             toggleSelection(group.id);
                                         }}
-                                        className={`w-4 h-4 rounded-sm border-2 cursor-pointer flex items-center justify-center transition-all ${selectedIds.includes(group.id) ? 'bg-[#4D94FF] border-[#4D94FF]' : 'bg-white border-[#B0C4DE]'}`}
+                                        className={`w-3.5 h-3.5 rounded border-2 cursor-pointer flex items-center justify-center shrink-0 transition-all ${group.sequences.every(s => selectedIds.includes(s.id))
+                                            ? 'bg-[#4D94FF] border-[#4D94FF]'
+                                            : 'bg-white border-[#B0C4DE]'
+                                            }`}
                                     >
-                                        {selectedIds.includes(group.id) && <Check size={12} className="text-white stroke-[3]" />}
+                                        {group.sequences.every(s => selectedIds.includes(s.id)) && <Check size={9} className="text-white stroke-[3]" />}
                                     </div>
-                                    <span className={`text-[13px] font-bold truncate transition-all ${selectedIds.includes(group.id) ? 'text-[#4D94FF]' : 'text-[#37474F]'}`}>{group.name}</span>
+                                    <span className={`text-[13px] font-bold truncate transition-all ${group.sequences.every(s => selectedIds.includes(s.id)) ? 'text-[#4D94FF]' : 'text-[#37474F]'}`}>{group.name}</span>
                                 </div>
 
-                                <div className="flex flex-col gap-2">
+                                <div className="flex flex-col">
                                     {group.sequences.map(seq => (
                                         <div key={seq.id}>
                                             {(() => {
                                                 const isActiveSequence = bottomPanelMode === 'breathing'
                                                     ? seq.name === '呼吸采集'
                                                     : seq.name === 'Scout';
-                                                const shouldShowSteps = !!seq.steps?.length && (isActiveSequence || selectedIds.includes(seq.id));
+                                                const isExpanded = expandedSeqId === seq.id;
+                                                const shouldShowSteps = !!seq.steps?.length && isExpanded;
 
                                                 return (
                                                     <>
                                                         {/* Sequence Row - Simplified to matched refined WT32 aesthetic */}
                                                         <div
-                                                            onClick={() => toggleSelection(seq.id)}
-                                                            className={`flex items-center gap-2 px-3 py-2.5 rounded-lg mb-1 transition-all relative cursor-pointer border ${isActiveSequence
+                                                            onClick={() => setExpandedSeqId(isExpanded ? null : seq.id)}
+                                                            className={`flex items-center gap-2 px-3 rounded-lg mb-1 transition-all relative cursor-pointer border ${seq.name === 'Scout' || seq.name === 'Helical Scan' ? 'h-[28px]' : 'py-2.5'} ${isActiveSequence
                                                                 ? 'bg-[#4D94FF] border-[#4D94FF] text-white shadow-md'
                                                                 : (selectedIds.includes(seq.id) ? 'bg-[#E3F2FD] border-[#4D94FF]/30 text-[#4D94FF]' : 'bg-transparent border-transparent text-[#546E7A] hover:bg-[#EEF2F9]')
                                                                 }`}
                                                         >
-                                                            <ChevronDown size={14} className={isActiveSequence ? 'text-white' : 'text-[#90A4AE]'} />
+                                                            {isExpanded ? <ChevronDown size={14} className={selectedIds.includes(seq.id) ? 'text-[#4D94FF]/60' : isActiveSequence ? "text-white/70" : "text-gray-400"} /> : <ChevronRight size={14} className={selectedIds.includes(seq.id) ? 'text-[#4D94FF]/60' : isActiveSequence ? "text-white/70" : "text-gray-400"} />}
                                                             <div
                                                                 onClick={(e) => { e.stopPropagation(); toggleSelection(seq.id); }}
-                                                                className={`w-4 h-4 rounded-md border cursor-pointer flex items-center justify-center transition-all ${isActiveSequence
-                                                                    ? 'border-white/40 bg-white/20'
-                                                                    : 'border-[#B0C4DE] bg-white'
+                                                                className={`w-3.5 h-3.5 rounded border-2 cursor-pointer flex items-center justify-center shrink-0 transition-all ${selectedIds.includes(seq.id)
+                                                                    ? (isActiveSequence ? 'bg-white border-white/30' : 'bg-[#4D94FF] border-[#4D94FF]')
+                                                                    : (isActiveSequence ? 'bg-white/20 border-white/30' : 'bg-white border-[#B0C4DE]')
                                                                     }`}
                                                             >
                                                                 {selectedIds.includes(seq.id) && (
-                                                                    <div className={`w-2 h-2 rounded-sm ${isActiveSequence ? 'bg-white' : 'bg-[#4D94FF]'}`}></div>
+                                                                    <Check size={9} className={`${isActiveSequence ? 'text-[#4D94FF]' : 'text-white'} stroke-[3]`} />
                                                                 )}
                                                             </div>
-                                                            <span className="text-[14px] font-bold">{seq.name}</span>
+                                                            <span className="text-[13px] font-bold">{seq.name}</span>
+
+
                                                         </div>
 
                                                         {/* Workflow Steps - Prominent icons & connecting line */}
                                                         {shouldShowSteps && (
-                                                            <div className="flex flex-col ml-9 mt-1 gap-4 relative pb-4">
-                                                                <div className="absolute left-[8px] top-0 bottom-6 w-[1px] bg-[#4D94FF]/30"></div>
+                                                            <div className="flex flex-col ml-12 mt-2 gap-4 relative pb-4">
+                                                                <div className="absolute left-[7px] top-2 bottom-6 w-[1px] bg-[#B0C4DE]"></div>
                                                                 {seq.steps?.map((step, idx) => {
                                                                     const isCompleted = bottomPanelMode === 'breathing'
-                                                                        ? (step.includes('训练') && breathingPhase === 'stable')
+                                                                        ? false
                                                                         : (isActiveSequence && idx < activeStepIdx);
 
                                                                     const isActive = bottomPanelMode === 'breathing'
-                                                                        ? ((step.includes('训练') && breathingPhase === 'training') || (step.includes('平稳') && breathingPhase === 'stable'))
+                                                                        ? (step === '呼吸信号采集')
                                                                         : (isActiveSequence && idx === activeStepIdx);
 
                                                                     return (
                                                                         <div
                                                                             key={`${seq.id}-step-${idx}`}
                                                                             onClick={() => isActiveSequence && setActiveStepIdx(idx)}
-                                                                            className={`flex items-center gap-3 z-10 transition-all duration-300 cursor-pointer ${isActive || isCompleted ? 'opacity-100' : 'opacity-40'}`}
+                                                                            className="flex items-center gap-3 z-10"
                                                                         >
-                                                                            <div className="flex items-center justify-center w-[18px] h-[18px]">
-                                                                                {isCompleted ? (
-                                                                                    <div className="w-5 h-5 rounded-full bg-white border border-[#66BB6A] flex items-center justify-center">
-                                                                                        <Check size={12} className="text-[#66BB6A]" strokeWidth={3} />
-                                                                                    </div>
-                                                                                ) : isActive ? (
-                                                                                    <div className="w-4.5 h-4.5 rounded-full bg-white border-2 border-[#4D94FF] flex items-center justify-center">
-                                                                                        <div className="w-2 h-2 rounded-full bg-[#4D94FF]/0" />
-                                                                                    </div>
-                                                                                ) : (
-                                                                                    <div className="w-4 h-4 rounded-full bg-white border border-[#B0C4DE]" />
-                                                                                )}
-                                                                            </div>
-                                                                            <span className={`text-[13px] font-bold ${isActive || isCompleted ? 'text-[#37474F]' : 'text-[#78909C]'}`}>
+                                                                            {isCompleted ? (
+                                                                                <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center">
+                                                                                    <CheckCircle size={16} className="text-[#66BB6A]" />
+                                                                                </div>
+                                                                            ) : isActive ? (
+                                                                                <div className="w-3.5 h-3.5 rounded-full bg-white border-2 border-[#4D94FF] translate-x-[1px] shadow-[0_0_8px_rgba(77,148,255,0.3)]"></div>
+                                                                            ) : (
+                                                                                <div className="w-3.5 h-3.5 rounded-full bg-white border border-[#B0C4DE] translate-x-[1px]"></div>
+                                                                            )}
+                                                                            <span className={`text-[12px] font-bold ${isActive ? 'text-[#37474F]' : 'text-[#37474F]/60'}`}>
                                                                                 {step}
                                                                             </span>
                                                                         </div>
@@ -410,16 +423,16 @@ const ScoutScanScreen = ({
                                             }`} />
                                         <span className={`text-[11px] font-bold ${breathingPhase === 'stable' ? 'text-[#2E7D32]' : 'text-orange-700'
                                             }`}>
-                                            {breathingPhase === 'stable' ? '呼吸平稳' : `呼吸训练 (${trainingTimer}s)`}
+                                            {breathingPhase === 'stable' ? '呼吸采集(已就绪)' : `呼吸采集(训练中)`}
                                         </span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-3">
                                 <MetricRow
                                     icon={<Circle size={14} fill="#4D94FF" className="text-[#4D94FF]" />}
-                                    label="原始数据主频"
+                                    label="原始主频"
                                     value="15"
                                 />
                                 <MetricRow
@@ -514,7 +527,7 @@ const ScoutScanScreen = ({
                 </aside>
 
                 {/* Right Viewport Card - Redesigned for Breathing */}
-                <section className="flex-1 bg-white rounded-lg border border-[#B0C4DE] shadow-sm flex flex-col overflow-hidden relative">
+                <section className="flex-1 bg-[#1A222B] rounded-lg border border-[#B0C4DE] shadow-sm flex flex-col overflow-hidden relative">
                     {bottomPanelMode === 'breathing' ? (
                         <div className="flex-1 flex flex-col p-4 gap-4 bg-[#EEF2F9]/50">
                             {/* Parameter Sliders */}
@@ -552,48 +565,103 @@ const ScoutScanScreen = ({
                             </div>
 
                             {/* Waveform Chart Area - Dynamic */}
-                            <div className="flex-1 bg-white rounded-md border border-[#B0C4DE]/40 shadow-inner mt-2 p-4 relative overflow-hidden">
-                                <div className="absolute inset-x-8 top-4 bottom-8 flex flex-col justify-between pointer-events-none opacity-20">
+                            <div className="flex-1 bg-white rounded-md border border-[#B0C4DE]/40 shadow-inner mt-2 p-10 relative overflow-hidden">
+                                {/* Legend */}
+                                <div className="absolute left-10 top-2 flex items-center gap-6 z-10">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full bg-[#B0BEC5]"></div>
+                                        <span className="text-[11px] font-bold text-[#546E7A]">原始数据</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full bg-[#4D94FF]"></div>
+                                        <span className="text-[11px] font-bold text-[#546E7A]">滤波数据</span>
+                                    </div>
+                                </div>
+
+                                <div className="absolute inset-x-12 top-10 bottom-12 flex flex-col justify-between pointer-events-none">
                                     {[1100, 1000, 800, 600, 400, 200, 0].map(val => (
-                                        <div key={val} className="flex items-center gap-2">
-                                            <span className="text-[10px] w-6 text-right font-mono">{val}</span>
-                                            <div className="flex-1 h-[1px] bg-[#B0C4DE]"></div>
+                                        <div key={val} className="flex items-center gap-4">
+                                            <span className="text-[10px] w-10 text-right font-mono text-[#90A4AE] font-bold">
+                                                {val >= 1000 ? val.toLocaleString() : val}
+                                            </span>
+                                            <div className="flex-1 h-[1px] bg-[#EEF2F9]"></div>
                                         </div>
                                     ))}
                                 </div>
-                                <div className="absolute inset-x-0 inset-y-4 flex flex-col justify-end px-14">
+
+                                {/* X-axis labels - Real-time 10s window */}
+                                <div className="absolute inset-x-24 bottom-4 flex justify-between px-2 text-[10px] font-bold text-[#90A4AE]">
+                                    <span>10s</span>
+                                    <span>8s</span>
+                                    <span>6s</span>
+                                    <span>4s</span>
+                                    <span>2s</span>
+                                    <span className="text-[#4D94FF]">0s (实时)</span>
+                                </div>
+
+                                <div className="absolute inset-x-8 top-10 bottom-12 px-12">
                                     <svg viewBox="0 0 800 200" className="w-full h-full overflow-visible" preserveAspectRatio="none">
+                                        {/* Original/Raw Wave - Pulse spikes */}
                                         <path
-                                            d={`M ${waveData.map((val, i) => `${(i / (waveData.length - 1)) * 800},${200 - val}`).join(' L ')}`}
+                                            d={`M ${rawWaveData.map((val, i) => `${(i / (rawWaveData.length - 1)) * 800},${200 - (val / 1100) * 200}`).join(' L ')}`}
+                                            fill="none"
+                                            stroke="#B0BEC5"
+                                            strokeWidth="1.2"
+                                            className="opacity-40"
+                                        />
+                                        {/* Filtered Wave - Smooth breathing */}
+                                        <path
+                                            d={`M ${filteredWaveData.map((val, i) => `${(i / (filteredWaveData.length - 1)) * 800},${200 - (val / 1100) * 200}`).join(' L ')}`}
                                             fill="none"
                                             stroke="#4D94FF"
                                             strokeWidth="2.5"
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
                                         />
-                                        {/* Dynamic Peak/Valley markers with neighborhood check for density */}
-                                        {waveData.map((val, i) => {
-                                            // Only show markers for the visible window and check neighborhood to avoid noise
-                                            if (i < 5 || i > waveData.length - 5) return null;
-                                            const isPeak = val > waveData[i - 1] && val > waveData[i + 1] &&
-                                                val > waveData[i - 2] && val > waveData[i + 2] && val > 125;
-                                            const isValley = val < waveData[i - 1] && val < waveData[i + 1] &&
-                                                val < waveData[i - 2] && val < waveData[i + 2] && val < 75;
+                                        {/* Markers */}
+                                        {filteredWaveData.map((val, i) => {
+                                            if (i < 10 || i > filteredWaveData.length - 10) return null;
 
-                                            if (isPeak) return <circle key={i} cx={(i / (waveData.length - 1)) * 800} cy={200 - val} r="3.5" fill="#D32F2F" />;
-                                            if (isValley) return <circle key={i} cx={(i / (waveData.length - 1)) * 800} cy={200 - val} r="3.5" fill="#FBC02D" />;
+                                            // Stable peak/valley detection with 3-point neighborhood
+                                            const isLocalMax = val > filteredWaveData[i - 1] && val > filteredWaveData[i + 1] &&
+                                                val > filteredWaveData[i - 2] && val > filteredWaveData[i + 2] &&
+                                                val > filteredWaveData[i - 3] && val > filteredWaveData[i + 3];
+                                            const isLocalMin = val < filteredWaveData[i - 1] && val < filteredWaveData[i + 1] &&
+                                                val < filteredWaveData[i - 2] && val < filteredWaveData[i + 2] &&
+                                                val < filteredWaveData[i - 3] && val < filteredWaveData[i + 3];
+
+                                            const isPeak = isLocalMax && val >= 650;
+                                            const isValley = isLocalMin && val <= 380;
+
+                                            if (isPeak) return (
+                                                <circle
+                                                    key={`pk-${i}`}
+                                                    cx={(i / (filteredWaveData.length - 1)) * 800}
+                                                    cy={200 - (val / 1100) * 200}
+                                                    r="4"
+                                                    fill="#FF1744"
+                                                    stroke="#FFF"
+                                                    strokeWidth="1.5"
+                                                />
+                                            );
+                                            if (isValley) return (
+                                                <circle
+                                                    key={`vl-${i}`}
+                                                    cx={(i / (filteredWaveData.length - 1)) * 800}
+                                                    cy={200 - (val / 1100) * 200}
+                                                    r="3.5"
+                                                    fill="#FFD600"
+                                                    stroke="#FFF"
+                                                    strokeWidth="1"
+                                                />
+                                            );
                                             return null;
                                         })}
                                     </svg>
                                 </div>
-                                {/* Scroll Indicator */}
-                                <div className="absolute right-4 top-4 flex items-center gap-1.5 px-2 py-1 bg-[#E8F5E9] rounded border border-[#C8E6C9]">
+                                <div className="absolute right-6 top-6 flex items-center gap-1.5 px-2.5 py-1 bg-[#E8F5E9] rounded-full border border-[#C8E6C9] shadow-sm">
                                     <div className="w-1.5 h-1.5 rounded-full bg-[#4CAF50] animate-pulse"></div>
-                                    <span className="text-[10px] font-bold text-[#2E7D32]">实时监测</span>
-                                </div>
-                                <div className="absolute left-[70%] top-[40%] bg-white shadow-xl border border-[#B0C4DE]/50 p-2 rounded z-10 scale-90">
-                                    <div className="text-[10px] font-bold text-[#546E7A]">实时数据</div>
-                                    <div className="text-[10px] text-[#90A4AE]">采样值: {waveData[waveData.length - 1].toFixed(1)}</div>
+                                    <span className="text-[10px] font-black text-[#2E7D32]">实时监测</span>
                                 </div>
                             </div>
                         </div>
@@ -792,16 +860,36 @@ const MetricRow = ({ icon, label, value, isMain }: {
     label: string,
     value: string,
     isMain?: boolean
-}) => (
-    <div className={`group flex flex-col gap-1 p-3 rounded-lg transition-all bg-white border border-[#B0C4DE]/30 shadow-sm ${isMain ? 'ring-2 ring-[#4D94FF]/20 border-[#4D94FF]/40' : ''}`}>
-        <div className="flex items-center gap-2">
-            <span className="text-[#4D94FF]">{icon}</span>
-            <span className="text-[11px] font-bold text-[#90A4AE] tracking-wide uppercase">{label}</span>
+}) => {
+    const parts = String(value).split(' ');
+    const numValue = parts[0];
+    const unit = parts.slice(1).join(' ');
+
+    return (
+        <div className={`group flex flex-col gap-1.5 p-3 rounded-lg border transition-all ${isMain
+            ? 'bg-white border-[#4D94FF] shadow-md ring-1 ring-[#4D94FF]/10'
+            : 'bg-white border-[#B0C4DE]/40 shadow-sm'
+            }`}>
+            <div className="flex items-center gap-1.5 min-w-0">
+                <span className={`shrink-0 ${isMain ? 'text-[#4D94FF]' : 'text-[#90A4AE]'}`}>
+                    {icon}
+                </span>
+                <span className={`text-[11px] font-bold ${isMain ? 'text-[#4D94FF]' : 'text-[#90A4AE]'} uppercase truncate`}>
+                    {label}
+                </span>
+            </div>
+            <div className="flex items-baseline gap-1 whitespace-nowrap overflow-hidden">
+                <span className={`text-[18px] font-black ${isMain ? 'text-[#4D94FF]' : 'text-[#37474F]'} leading-tight`}>
+                    {numValue}
+                </span>
+                {unit && (
+                    <span className={`text-[10px] font-bold ${isMain ? 'text-[#4D94FF]/80' : 'text-[#90A4AE]'} uppercase`}>
+                        {unit}
+                    </span>
+                )}
+            </div>
         </div>
-        <div className={`text-[17px] font-black ${isMain ? 'text-[#4D94FF]' : 'text-[#37474F]'} pl-5`}>
-            {value}
-        </div>
-    </div>
-);
+    );
+};
 
 export default ScoutScanScreen;

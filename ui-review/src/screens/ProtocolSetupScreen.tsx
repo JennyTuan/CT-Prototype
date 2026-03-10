@@ -325,6 +325,26 @@ const toUiPlan = (entry: RawProtocolCase): UiPlan => ({
     })),
 });
 
+const cloneReconPlan = (recon: UiReconPlan): UiReconPlan => ({
+    ...recon,
+    params: recon.params.map((param) => ({ ...param })),
+});
+
+const cloneSequence = (sequence: UiSequence, idSuffix: string): UiSequence => ({
+    ...sequence,
+    id: `${sequence.id}__copy__${idSuffix}`,
+    name: `${sequence.name} Copy`,
+    scanParams: sequence.scanParams.map((param) => ({ ...param })),
+    reconPlans: sequence.reconPlans.map(cloneReconPlan),
+});
+
+const clonePlan = (plan: UiPlan, idSuffix: string): UiPlan => ({
+    ...plan,
+    id: `${plan.id}__copy__${idSuffix}`,
+    title: `${plan.title} Copy`,
+    sequences: plan.sequences.map((sequence, index) => cloneSequence(sequence, `${idSuffix}-${index}`)),
+});
+
 const ProtocolSetupScreen = () => {
     const [activeTab, setActiveTab] = useState<"scan" | "recon">("scan");
     const [libraryTab, setLibraryTab] = useState<"spiral" | "axial">("spiral");
@@ -424,6 +444,49 @@ const ProtocolSetupScreen = () => {
     const handleDeleteClick = () => {
         if (checkedSeqIds.length === 0 && checkedPlanIds.length === 0) return;
         setShowDeleteConfirm(true);
+    };
+
+    const handleCopyClick = () => {
+        if (checkedSeqIds.length === 0 && checkedPlanIds.length === 0) return;
+
+        const checkedPlanSet = new Set(checkedPlanIds);
+        const checkedSeqSet = new Set(checkedSeqIds);
+        const copySeed = Date.now().toString(36);
+        const nextPlans: UiPlan[] = [];
+        let firstCopiedSeqId = "";
+
+        scanPlans.forEach((plan, planIndex) => {
+            const isWholePlanSelected = checkedPlanSet.has(plan.id);
+            const updatedSequences = isWholePlanSelected
+                ? plan.sequences
+                : plan.sequences.flatMap((sequence, seqIndex) => {
+                    if (!checkedSeqSet.has(sequence.id)) return [sequence];
+                    const copiedSequence = cloneSequence(sequence, `${copySeed}-${planIndex}-${seqIndex}`);
+                    if (!firstCopiedSeqId) firstCopiedSeqId = copiedSequence.id;
+                    return [sequence, copiedSequence];
+                });
+
+            const updatedPlan = updatedSequences === plan.sequences
+                ? plan
+                : { ...plan, sequences: updatedSequences };
+
+            nextPlans.push(updatedPlan);
+
+            if (isWholePlanSelected) {
+                const copiedPlan = clonePlan(plan, `${copySeed}-${planIndex}`);
+                nextPlans.push(copiedPlan);
+                if (!firstCopiedSeqId) {
+                    firstCopiedSeqId = copiedPlan.sequences[0]?.id ?? "";
+                }
+            }
+        });
+
+        setScanPlans(nextPlans);
+        setSelectedSeqId(firstCopiedSeqId || nextPlans.flatMap((plan) => plan.sequences)[0]?.id || "");
+        setCheckedPlanIds([]);
+        setCheckedSeqIds([]);
+        setSelectedReconIndex(0);
+        setPlanListOpen(true);
     };
 
     const togglePlanCollapse = (planId: string) => {
@@ -564,7 +627,11 @@ const ProtocolSetupScreen = () => {
                                 {/* 复制序列 */}
                                 <button
                                     title="复制序列"
-                                    className="w-[44px] h-[44px] flex items-center justify-center rounded-md text-[#4D94FF] hover:bg-[#E3F2FD] active:bg-[#BBDEFB] transition-colors"
+                                    onClick={handleCopyClick}
+                                    className={`relative w-[44px] h-[44px] flex items-center justify-center rounded-md transition-colors ${checkedSeqIds.length > 0 || checkedPlanIds.length > 0
+                                        ? 'text-[#4D94FF] hover:bg-[#E3F2FD] active:bg-[#BBDEFB]'
+                                        : 'text-[#B0C4DE] cursor-not-allowed'
+                                        }`}
                                 >
                                     <Copy size={18} />
                                 </button>
@@ -765,7 +832,7 @@ const ProtocolSetupScreen = () => {
                         {/* 协议列表 */}
                         <div className="flex-1 overflow-y-auto">
                             <table className="w-full text-left border-collapse">
-                                <thead className="bg-[#4D94FF] text-white sticky top-0 h-[44px] text-[11px] uppercase font-bold tracking-wider">
+                                <thead className="bg-[#4D94FF] text-white sticky top-0 h-[32px] text-[11px] uppercase font-bold tracking-wider">
                                     <tr>
                                         <th className="w-[50px] text-center border-r border-white/10">多选</th>
                                         <th className="px-4 border-r border-white/10">协议名称</th>
@@ -777,7 +844,7 @@ const ProtocolSetupScreen = () => {
                                         <tr
                                             key={item.id}
                                             onClick={() => toggleProtocolSelection(item.id)}
-                                            className={`h-[52px] cursor-pointer transition-colors ${selectedProtocolIds.includes(item.id) ? "bg-[#E3F2FD]" : "hover:bg-[#F9FBFC]"
+                                            className={`h-[40px] cursor-pointer transition-colors ${selectedProtocolIds.includes(item.id) ? "bg-[#E3F2FD]" : "hover:bg-[#F9FBFC]"
                                                 }`}
                                         >
                                             <td className="text-center">
@@ -973,12 +1040,6 @@ const ParamBox = ({ label, value, highlight = false, options, onChange }: ParamB
 
 
 export default ProtocolSetupScreen;
-
-
-
-
-
-
 
 
 

@@ -139,7 +139,7 @@ const ScanConfirmScreen = () => {
             </header>
 
             {/* 2. Main Content Area */}
-            <main className="flex-1 flex overflow-hidden p-2 gap-4">
+            <main className="flex-1 flex overflow-hidden p-2 gap-1">
 
                 {/* Left Sidebar Card */}
                 <aside className="w-[240px] bg-white rounded-lg border border-[#B0C4DE] shadow-sm flex flex-col overflow-hidden shrink-0">
@@ -195,7 +195,7 @@ const ScanConfirmScreen = () => {
                                             <div key={seq.id} className="mb-1">
                                                 <div
                                                     onClick={() => setExpandedSeqId(isExpanded ? null : seq.id)}
-                                                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg mb-1 transition-all relative cursor-pointer border ${isActive
+                                                    className={`flex items-center gap-2 px-3 rounded-lg mb-1 transition-all relative cursor-pointer border ${seq.name === 'Scout' || seq.name === 'Helical Scan' ? 'h-[28px]' : 'py-2.5'} ${isActive
                                                         ? 'bg-[#4D94FF] border-[#4D94FF] text-white shadow-md'
                                                         : (checkedSeqIds.includes(seq.id) ? 'bg-[#E3F2FD] border-[#4D94FF]/30 text-[#4D94FF]' : 'bg-transparent border-transparent text-[#546E7A] hover:bg-[#EEF2F9]')
                                                         }`}

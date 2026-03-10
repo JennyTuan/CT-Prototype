@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     User,
     Settings,
@@ -353,7 +353,7 @@ const ViewScreen = () => {
         const parsed = Number(raw);
         return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
     })();
-    const clampSliceIndex = (value: number) => Math.max(0, Math.min(totalSlices - 1, value));
+    const clampSliceIndex = useCallback((value: number) => Math.max(0, Math.min(totalSlices - 1, value)), [totalSlices]);
     const buildVolumeProjection = (
         volume: VolumeData,
         mode: string,
@@ -384,9 +384,10 @@ const ViewScreen = () => {
                     for (let z = 0; z < depth; z += 1) {
                         const sample = hu[z * rows * cols + pixelIndex];
                         const normalized = Math.min(1, Math.max(0, (sample + 1000) / 1800));
-                        const opacity = normalized * 0.085;
+                        const opacity = Math.pow(normalized, 1.8) * 0.12;
                         composed += (sample - composed) * opacity * (1 - alpha);
                         alpha = Math.min(0.98, alpha + opacity * (1 - alpha));
+                        if (alpha >= 0.98) break;
                     }
                     output[pixelIndex] = composed;
                     continue;
@@ -407,14 +408,14 @@ const ViewScreen = () => {
 
         return output;
     };
-    const buildOrthoProjection = (
+    const buildOrthoProjection = useCallback((
         volume: VolumeData,
         axis: ProjectionAxis,
         mode: string,
         currentSlice: number
     ) => {
         const { rows, cols, depth, hu } = volume;
-        const centerZ = Math.max(0, Math.min(depth - 1, currentSlice));
+
         const centerY = Math.max(0, Math.min(rows - 1, Math.round((currentSlice / Math.max(depth - 1, 1)) * (rows - 1))));
         const centerX = Math.max(0, Math.min(cols - 1, Math.round((currentSlice / Math.max(depth - 1, 1)) * (cols - 1))));
         const slabRadius = mode === "MPR" ? 4 : 0;
@@ -447,7 +448,7 @@ const ViewScreen = () => {
                                 if (sample < value) value = sample;
                             } else if (mode === "VR") {
                                 const normalized = Math.min(1, Math.max(0, (sample + 1000) / 1800));
-                                const opacity = normalized * 0.08;
+                                const opacity = Math.pow(normalized, 1.8) * 0.12;
                                 value += (sample - value) * opacity;
                             } else if (sample > value) {
                                 value = sample;
@@ -479,7 +480,7 @@ const ViewScreen = () => {
                             if (sample < value) value = sample;
                         } else if (mode === "VR") {
                             const normalized = Math.min(1, Math.max(0, (sample + 1000) / 1800));
-                            const opacity = normalized * 0.08;
+                            const opacity = Math.pow(normalized, 1.8) * 0.12;
                             value += (sample - value) * opacity;
                         } else if (sample > value) {
                             value = sample;
@@ -490,7 +491,7 @@ const ViewScreen = () => {
             }
         }
         return { width: rows, height: depth, pixels: output };
-    };
+    }, []);
     const buildCoronalBodyMask = (volume: VolumeData) => {
         const { rows, cols, depth, hu } = volume;
         const mask = new Uint8Array(cols * depth);
@@ -559,7 +560,7 @@ const ViewScreen = () => {
         dragRef.current = { dragging: false, x: 0, y: 0 };
     };
 
-    const createColorizedCanvas = (
+    const createColorizedCanvas = useCallback((
         width: number,
         height: number,
         pixels: Float32Array,
@@ -595,7 +596,7 @@ const ViewScreen = () => {
 
         offCtx.putImageData(imageData, 0, 0);
         return offscreen;
-    };
+    }, [wl, ww, invert]);
     const createMaskCanvas = (width: number, height: number, mask: Uint8Array) => {
         const offscreen = document.createElement("canvas");
         offscreen.width = width;
@@ -617,7 +618,7 @@ const ViewScreen = () => {
         return offscreen;
     };
 
-    const renderGrayscaleToCanvas = (
+    const renderGrayscaleToCanvas = useCallback((
         canvas: HTMLCanvasElement | null,
         viewport: HTMLElement | null,
         width: number,
@@ -692,7 +693,7 @@ const ViewScreen = () => {
         drawCornerBlock(options?.corners?.topRight, viewW - 10, 18, "right");
         drawCornerBlock(options?.corners?.bottomLeft, 10, viewH - 30, "left");
         drawCornerBlock(options?.corners?.bottomRight, viewW - 10, viewH - 30, "right");
-    };
+    }, [createColorizedCanvas]);
 
     const screenToImage = (clientX: number, clientY: number) => {
         const viewport = viewportRef.current;
@@ -789,8 +790,8 @@ const ViewScreen = () => {
                         hu,
                         rows,
                         cols,
-                        pixelSpacingX: pixelSpacing[0] || 1,
-                        pixelSpacingY: pixelSpacing[1] || 1,
+                        pixelSpacingX: pixelSpacing[1] || 1,
+                        pixelSpacingY: pixelSpacing[0] || 1,
                         sliceThickness: Number.isFinite(sliceThickness) && sliceThickness > 0 ? sliceThickness : 1,
                     });
                 }
@@ -827,7 +828,7 @@ const ViewScreen = () => {
         };
 
         loadVolume();
-    }, []);
+    }, [clampSliceIndex]);
 
     useEffect(() => {
         const loadSlice = async () => {
@@ -933,7 +934,7 @@ const ViewScreen = () => {
         };
 
         loadSlice();
-    }, [sliceIndex, selectedSeriesId, selectedSeries.name]);
+    }, [sliceIndex, selectedSeriesId, selectedSeries.name, clampSliceIndex]);
 
     useEffect(() => {
         const renderCurrentSlice = () => {
@@ -1014,7 +1015,7 @@ const ViewScreen = () => {
         };
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
-    }, []);
+    }, [totalSlices]);
 
     useEffect(() => {
         if (!isPlaying) return;
@@ -1090,7 +1091,7 @@ const ViewScreen = () => {
             {
                 overlayTitle: "Coronal",
                 overlayDetail: `Y ${yIndex + 1}/${rows}`,
-                physicalWidth: cols * volume.pixelSpacingY,
+                physicalWidth: cols * volume.pixelSpacingX,
                 physicalHeight: depth * volume.sliceSpacing,
                 corners: {
                     topLeft: [
@@ -1125,7 +1126,7 @@ const ViewScreen = () => {
             {
                 overlayTitle: "Sagittal",
                 overlayDetail: `X ${xIndex + 1}/${cols}`,
-                physicalWidth: rows * volume.pixelSpacingX,
+                physicalWidth: rows * volume.pixelSpacingY,
                 physicalHeight: depth * volume.sliceSpacing,
                 corners: {
                     topLeft: [
@@ -1151,7 +1152,7 @@ const ViewScreen = () => {
                 },
             }
         );
-    }, [sliceIndex, renderTick, ww, wl, invert, meta]);
+    }, [sliceIndex, renderTick, ww, wl, invert, meta, renderGrayscaleToCanvas]);
 
     useEffect(() => {
         const volume = volumeDataRef.current;
@@ -1161,23 +1162,9 @@ const ViewScreen = () => {
         const viewport = volumeViewportRef.current;
         if (!canvas || !viewport) return;
 
-        const frontProjection = buildOrthoProjection(volume, "coronal", selectedRenderMode, sliceIndex);
-        const sideProjection = buildOrthoProjection(volume, "sagittal", selectedRenderMode, sliceIndex);
-        const coronalBodyMask = buildCoronalBodyMask(volume);
-        const frontCanvas = createColorizedCanvas(
-            frontProjection.width,
-            frontProjection.height,
-            frontProjection.pixels,
-            { pseudoColorMode: selectedPseudoColor }
-        );
-        const sideCanvas = createColorizedCanvas(
-            sideProjection.width,
-            sideProjection.height,
-            sideProjection.pixels,
-            { pseudoColorMode: selectedPseudoColor }
-        );
-        const frontMaskCanvas = createMaskCanvas(coronalBodyMask.width, coronalBodyMask.height, coronalBodyMask.mask);
-        if (!frontCanvas || !sideCanvas || !frontMaskCanvas) return;
+        const projection = buildOrthoProjection(volume, "coronal", selectedRenderMode, sliceIndex);
+        const physicalW = volume.cols * volume.pixelSpacingX;
+        const physicalH = volume.depth * volume.sliceSpacing;
 
         const viewW = Math.max(1, Math.floor(viewport.clientWidth));
         const viewH = Math.max(1, Math.floor(viewport.clientHeight));
@@ -1188,189 +1175,94 @@ const ViewScreen = () => {
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 
-        const physicalFrontW = volume.cols * volume.pixelSpacingY;
-        const physicalFrontH = volume.depth * volume.sliceSpacing;
-        const physicalDepth = volume.rows * volume.pixelSpacingX;
-        const depthTiltX = 0.62;
-        const depthTiltY = 0.34;
-        const scale = Math.min(
-            (viewW - 28) / Math.max(physicalFrontW + physicalDepth * depthTiltX, 1),
-            (viewH - 28) / Math.max(physicalFrontH + physicalDepth * depthTiltY, 1)
-        );
-        const frontW = physicalFrontW * scale;
-        const frontH = physicalFrontH * scale;
-        const depthPx = physicalDepth * scale;
-        const offsetX = depthPx * depthTiltX;
-        const offsetY = depthPx * depthTiltY;
-        const frontX = (viewW - (frontW + offsetX)) / 2;
-        const frontY = (viewH - (frontH + offsetY)) / 2 + offsetY;
+        const scale = Math.min((viewW - 40) / physicalW, (viewH - 40) / physicalH);
+        const drawW = physicalW * scale;
+        const drawH = physicalH * scale;
+        const x = (viewW - drawW) / 2;
+        const y = (viewH - drawH) / 2;
 
-        ctx.clearRect(0, 0, viewW, viewH);
         ctx.fillStyle = "#020617";
         ctx.fillRect(0, 0, viewW, viewH);
 
-        const maskedFrontCanvas = document.createElement("canvas");
-        maskedFrontCanvas.width = frontProjection.width;
-        maskedFrontCanvas.height = frontProjection.height;
-        const maskedFrontCtx = maskedFrontCanvas.getContext("2d");
-        if (!maskedFrontCtx) return;
-        maskedFrontCtx.drawImage(frontCanvas, 0, 0);
-        maskedFrontCtx.globalCompositeOperation = "destination-in";
-        maskedFrontCtx.drawImage(frontMaskCanvas, 0, 0);
-        maskedFrontCtx.globalCompositeOperation = "source-over";
+        const colorized = createColorizedCanvas(projection.width, projection.height, projection.pixels, {
+            pseudoColorMode: selectedPseudoColor
+        });
 
-        const topPath = new Path2D();
-        topPath.moveTo(frontX + 10, frontY + 8);
-        topPath.lineTo(frontX + offsetX + 14, frontY - offsetY + 6);
-        topPath.lineTo(frontX + offsetX + frontW - 18, frontY - offsetY + 6);
-        topPath.lineTo(frontX + frontW - 8, frontY + 8);
-        topPath.quadraticCurveTo(frontX + frontW * 0.52, frontY - 8, frontX + 10, frontY + 8);
-        topPath.closePath();
+        if (colorized) {
+            ctx.imageSmoothingEnabled = true;
 
-        const sidePath = new Path2D();
-        sidePath.moveTo(frontX + frontW - 2, frontY + 8);
-        sidePath.lineTo(frontX + frontW + offsetX - 8, frontY - offsetY + 6);
-        sidePath.lineTo(frontX + frontW + offsetX - 10, frontY - offsetY + frontH - 10);
-        sidePath.quadraticCurveTo(frontX + frontW + offsetX - 18, frontY - offsetY + frontH + 8, frontX + frontW - 6, frontY + frontH - 4);
-        sidePath.closePath();
+            if (selectedRenderMode === "VR" || selectedRenderMode === "MIP") {
+                const overlayCanvas = document.createElement("canvas");
+                overlayCanvas.width = projection.width;
+                overlayCanvas.height = projection.height;
+                const overlayCtx = overlayCanvas.getContext("2d");
+                if (overlayCtx) {
+                    overlayCtx.drawImage(colorized, 0, 0);
 
-        const centerX = frontX + frontW / 2;
+                    const mask = buildCoronalBodyMask(volume);
+                    const maskCanvas = createMaskCanvas(mask.width, mask.height, mask.mask);
+                    if (maskCanvas) {
+                        overlayCtx.globalCompositeOperation = "destination-in";
+                        overlayCtx.drawImage(maskCanvas, 0, 0);
+                        overlayCtx.globalCompositeOperation = "source-over";
+                    }
 
-        const stackCount = Math.max(10, Math.min(22, Math.round(depthPx / 8)));
-        const haloGradient = ctx.createRadialGradient(
-            centerX,
-            frontY + frontH * 0.42,
-            frontW * 0.08,
-            centerX,
-            frontY + frontH * 0.42,
-            frontW * 0.82
-        );
-        haloGradient.addColorStop(0, "rgba(56,189,248,0.16)");
-        haloGradient.addColorStop(0.45, "rgba(34,197,94,0.08)");
-        haloGradient.addColorStop(1, "rgba(2,6,23,0)");
-        ctx.fillStyle = haloGradient;
-        ctx.fillRect(frontX - frontW * 0.2, frontY - offsetY - 30, frontW + offsetX + frontW * 0.4, frontH + offsetY + 60);
+                    ctx.shadowBlur = 25;
+                    ctx.shadowColor = "rgba(0,0,0,0.8)";
+                    ctx.drawImage(overlayCanvas, x, y, drawW, drawH);
+                    ctx.shadowBlur = 0;
 
-        ctx.save();
-        for (let i = stackCount; i >= 1; i -= 1) {
-            const t = i / stackCount;
-            const layerScaleX = 1 - t * 0.035;
-            const layerScaleY = 1 - t * 0.01;
-            const layerW = frontW * layerScaleX;
-            const layerH = frontH * layerScaleY;
-            const layerX = centerX - layerW / 2 + offsetX * t * 0.9;
-            const layerY = frontY - offsetY * t * 0.9 + (frontH - layerH) * 0.5;
-            ctx.globalAlpha = 0.018 + t * 0.03;
-            if (selectedRenderMode === "VR") {
-                ctx.filter = `blur(${0.8 + t * 1.8}px) saturate(1.1)`;
+                    const gradient = ctx.createLinearGradient(x, y, x + drawW, y + drawH);
+                    gradient.addColorStop(0, "rgba(255,255,255,0.06)");
+                    gradient.addColorStop(0.5, "rgba(255,255,255,0)");
+                    gradient.addColorStop(1, "rgba(0,0,0,0.1)");
+                    ctx.fillStyle = gradient;
+                    ctx.globalCompositeOperation = "source-atop";
+                    ctx.fillRect(x, y, drawW, drawH);
+                    ctx.globalCompositeOperation = "source-over";
+                }
             } else {
-                ctx.filter = `blur(${0.35 + t * 0.75}px)`;
+                ctx.drawImage(colorized, x, y, drawW, drawH);
             }
-            ctx.drawImage(maskedFrontCanvas, layerX, layerY, layerW, layerH);
         }
-        ctx.filter = "none";
-        ctx.globalAlpha = 1;
-        ctx.drawImage(maskedFrontCanvas, frontX, frontY, frontW, frontH);
-        const frontShade = ctx.createLinearGradient(frontX, frontY, frontX + frontW, frontY + frontH);
-        frontShade.addColorStop(0, "rgba(255,255,255,0.1)");
-        frontShade.addColorStop(0.4, "rgba(255,255,255,0.02)");
-        frontShade.addColorStop(1, "rgba(2,6,23,0.2)");
-        ctx.fillStyle = frontShade;
-        ctx.fillRect(frontX, frontY, frontW, frontH);
-        ctx.globalCompositeOperation = "destination-in";
-        ctx.drawImage(frontMaskCanvas, frontX, frontY, frontW, frontH);
-        ctx.globalCompositeOperation = "source-over";
-        ctx.restore();
-
-        ctx.save();
-        ctx.clip(sidePath);
-        const sideStackCount = Math.max(8, Math.round(stackCount * 0.72));
-        for (let i = sideStackCount; i >= 1; i -= 1) {
-            const t = i / sideStackCount;
-            ctx.globalAlpha = 0.03 + t * 0.03;
-            ctx.filter = `blur(${0.4 + t * 0.9}px)`;
-            ctx.drawImage(
-                sideCanvas,
-                frontX + frontW + offsetX * (t - 1) * 0.25,
-                frontY - offsetY + offsetY * (1 - t) * 0.3,
-                offsetX * 1.08,
-                frontH + offsetY * 0.9
-            );
-        }
-        ctx.filter = "none";
-        ctx.globalAlpha = 0.38;
-        ctx.drawImage(sideCanvas, frontX + frontW, frontY - offsetY, offsetX, frontH + offsetY);
-        ctx.restore();
-        ctx.globalAlpha = 1;
-
-        const topGradient = ctx.createLinearGradient(frontX, frontY - offsetY, frontX + frontW, frontY + 10);
-        topGradient.addColorStop(0, "rgba(148,163,184,0.12)");
-        topGradient.addColorStop(0.55, "rgba(96,165,250,0.03)");
-        topGradient.addColorStop(1, "rgba(15,23,42,0.01)");
-        ctx.fillStyle = topGradient;
-        ctx.fill(topPath);
-
-        const sideGradient = ctx.createLinearGradient(frontX + frontW, frontY, frontX + frontW + offsetX, frontY + frontH * 0.2);
-        sideGradient.addColorStop(0, "rgba(51,65,85,0.1)");
-        sideGradient.addColorStop(0.5, "rgba(15,23,42,0.22)");
-        sideGradient.addColorStop(1, "rgba(2,6,23,0.4)");
-        ctx.fillStyle = sideGradient;
-        ctx.fill(sidePath);
-
-        ctx.strokeStyle = "rgba(148,163,184,0.18)";
-        ctx.lineWidth = 0.9;
-        ctx.stroke(topPath);
-        ctx.stroke(sidePath);
-        ctx.save();
-        ctx.globalAlpha = 0.22;
-        ctx.filter = "blur(0.8px)";
-        ctx.drawImage(frontMaskCanvas, frontX, frontY, frontW, frontH);
-        ctx.restore();
 
         const title = selectedRenderMode === "VR" ? "Volume" : selectedRenderMode;
-        const detail = selectedRenderMode === "MPR"
-            ? `Coronal body length view | ${selectedPseudoColor}`
-            : `${volume.depth} slices composited | ${selectedPseudoColor}`;
-        ctx.fillStyle = "rgba(0,0,0,0.55)";
-        ctx.fillRect(8, 8, 176, 34);
-        ctx.fillStyle = "#E2E8F0";
-        ctx.font = "700 10px monospace";
-        ctx.fillText(title, 14, 21);
-        ctx.font = "400 10px monospace";
-        ctx.fillText(detail, 14, 34);
+        const detail = `${volume.depth} slices composited | ${selectedPseudoColor}`;
 
-        const drawCornerBlock = (lines: string[] | undefined, x: number, y: number, align: CanvasTextAlign) => {
-            if (!lines || lines.length === 0) return;
-            ctx.fillStyle = "#CFD8DC";
-            ctx.font = "10px monospace";
+        ctx.fillStyle = "rgba(0,0,0,0.65)";
+        ctx.fillRect(10, 10, 180, 40);
+        ctx.fillStyle = "#F8FAFC";
+        ctx.font = "bold 12px Inter, system-ui, sans-serif";
+        ctx.fillText(title, 20, 26);
+        ctx.font = "400 11px Inter, system-ui, sans-serif";
+        ctx.fillStyle = "#94A3B8";
+        ctx.fillText(detail, 20, 41);
+
+        const drawCornerBlock = (lines: string[], x: number, y: number, align: CanvasTextAlign) => {
+            ctx.fillStyle = "#94A3B8";
+            ctx.font = "11px monospace";
             ctx.textAlign = align;
             lines.forEach((line, index) => {
-                ctx.fillText(line, x, y + index * 13);
+                ctx.fillText(line, x, y + index * 15);
             });
         };
 
         drawCornerBlock([
             meta.patientName,
             `${meta.patientSex} ${meta.patientAge}`,
-            `${meta.modality} | ${meta.studyDate} ${meta.studyTime}`,
-        ], 10, 58, "left");
+            `${meta.modality} | ${meta.studyDate}`,
+        ], 12, 65, "left");
+
         drawCornerBlock([
-            selectedRenderMode === "VR" ? "Pseudo VR Box" : `${selectedRenderMode} Body Preview`,
-            meta.seriesDescription,
-            `Layout ${selectedLayout}`,
-            `Palette ${selectedPseudoColor}`,
-        ], viewW - 10, 18, "right");
+            `WW/WL ${Math.round(ww)}/${Math.round(wl)}`,
+            `FOV ${physicalW.toFixed(0)}mm x ${physicalH.toFixed(0)}mm`,
+        ], 12, viewH - 45, "left");
+
         drawCornerBlock([
-            `WW/WL ${Math.round(ww)} / ${Math.round(wl)}`,
-            `W ${physicalFrontW.toFixed(0)}mm | H ${physicalFrontH.toFixed(0)}mm`,
-            `Depth ${physicalDepth.toFixed(0)}mm`,
-        ], 10, viewH - 42, "left");
-        drawCornerBlock([
-            `Source Slice ${sliceIndex + 1}/${volume.depth}`,
-            `Phys ratio ${physicalFrontW.toFixed(0)}:${physicalFrontH.toFixed(0)}:${physicalDepth.toFixed(0)}`,
-            `${meta.institution} | ${meta.manufacturer}`,
-        ], viewW - 10, viewH - 42, "right");
-    }, [sliceIndex, selectedRenderMode, selectedLayout, selectedPseudoColor, renderTick, ww, wl, invert, meta]);
+            `Slice ${sliceIndex + 1}/${volume.depth}`,
+            `${meta.institution}`,
+        ], viewW - 12, viewH - 45, "right");
+    }, [sliceIndex, selectedRenderMode, selectedLayout, selectedPseudoColor, renderTick, ww, wl, invert, meta, buildOrthoProjection, createColorizedCanvas]);
 
     return (
         <div className="flex flex-col w-[1024px] h-[768px] bg-[#EEF2F9] overflow-hidden rounded-md border border-[#B0C4DE] shadow-2xl">
