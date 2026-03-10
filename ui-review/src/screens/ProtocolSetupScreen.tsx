@@ -23,7 +23,7 @@ import {
     AlertTriangle,
     Activity,
 } from "lucide-react";
-import { loadProtocolCasesFromDb, seedProtocolCasesIfEmpty } from "../lib/protocolDb";
+import { ensureBusinessSnapshotImported, loadProtocolCasesFromDb } from "../lib/protocolDb";
 
 type RawProtocol = {
     id: string;
@@ -82,6 +82,10 @@ type UiPlan = {
     title: string;
     sequences: UiSequence[];
 };
+
+const bodyRegions = ["头部", "颈部", "胸腔", "脊柱", "腹部", "四肢"] as const;
+type BodyRegion = typeof bodyRegions[number];
+
 const protocolCaseData: RawProtocolCase[] = [
     {
         protocol: {
@@ -348,6 +352,7 @@ const clonePlan = (plan: UiPlan, idSuffix: string): UiPlan => ({
 const ProtocolSetupScreen = () => {
     const [activeTab, setActiveTab] = useState<"scan" | "recon">("scan");
     const [libraryTab, setLibraryTab] = useState<"spiral" | "axial">("spiral");
+    const [selectedBodyRegion, setSelectedBodyRegion] = useState<BodyRegion>("头部");
     const [selectedProtocolIds, setSelectedProtocolIds] = useState<number[]>([1]);
     const [positioning, setPositioning] = useState<"HFS" | "FFS" | "HFP" | "FFP" | "HFDR" | "FFDR" | "HFDL" | "FFDL">("HFS");
     const [positionGroupIndex, setPositionGroupIndex] = useState<0 | 1>(0);
@@ -368,7 +373,25 @@ const ProtocolSetupScreen = () => {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     useEffect(() => {
-        void seedProtocolCasesIfEmpty(protocolCaseData);
+        let cancelled = false;
+
+        const importSnapshot = async () => {
+            try {
+                const response = await fetch("/db_business_4tables_for_ai.json");
+                if (!response.ok) return;
+                const snapshot = await response.json();
+                if (cancelled) return;
+                await ensureBusinessSnapshotImported(snapshot);
+            } catch {
+                // Keep local mock data as a fallback if the snapshot is unavailable.
+            }
+        };
+
+        void importSnapshot();
+
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     const dbProtocolCases = useLiveQuery(
@@ -386,16 +409,17 @@ const ProtocolSetupScreen = () => {
     const libraryData = useMemo(
         () => protocolCatalog
             .filter(({ entry }) =>
-                libraryTab === "spiral"
+                entry.protocol.region === selectedBodyRegion
+                && (libraryTab === "spiral"
                     ? entry.protocol.supportedModes.includes("螺旋扫描")
-                    : entry.protocol.supportedModes.includes("断层扫描")
+                    : entry.protocol.supportedModes.includes("断层扫描"))
             )
             .map(({ id, entry }) => ({
                 id,
                 name: entry.protocol.name,
                 region: entry.protocol.region,
             })),
-        [protocolCatalog, libraryTab]
+        [protocolCatalog, libraryTab, selectedBodyRegion]
     );
 
     const buildPlansFromIds = (ids: number[]): UiPlan[] =>
@@ -404,6 +428,62 @@ const ProtocolSetupScreen = () => {
             .map((item) => toUiPlan(item.entry));
 
     const [scanPlans, setScanPlans] = useState<UiPlan[]>(() => buildPlansFromIds(selectedProtocolIds));
+
+    useEffect(() => {
+        if (protocolCatalog.length === 0) {
+            setScanPlans([]);
+            setSelectedProtocolIds([]);
+            setSelectedSeqId("");
+            return;
+        }
+
+        const validSelectedIds = selectedProtocolIds.filter((id) => protocolCatalog.some((item) => item.id === id));
+        const nextSelectedIds = validSelectedIds.length > 0 ? validSelectedIds : [protocolCatalog[0].id];
+        const nextPlans = buildPlansFromIds(nextSelectedIds);
+        const nextSelectedSeqId = nextPlans.flatMap((plan) => plan.sequences)[0]?.id || "";
+
+        if (
+            nextSelectedIds.length !== selectedProtocolIds.length ||
+            nextSelectedIds.some((id, index) => id !== selectedProtocolIds[index])
+        ) {
+            setSelectedProtocolIds(nextSelectedIds);
+        }
+
+        setScanPlans(nextPlans);
+        setSelectedSeqId((current) =>
+            nextPlans.some((plan) => plan.sequences.some((sequence) => sequence.id === current)) ? current : nextSelectedSeqId
+        );
+    }, [protocolCatalog]);
+
+    useEffect(() => {
+        if (libraryData.length === 0) {
+            setSelectedProtocolIds([]);
+            setScanPlans([]);
+            setSelectedSeqId("");
+            setCheckedPlanIds([]);
+            setCheckedSeqIds([]);
+            return;
+        }
+
+        const visibleIds = new Set(libraryData.map((item) => item.id));
+        const nextSelectedIds = selectedProtocolIds.filter((id) => visibleIds.has(id));
+        const resolvedSelectedIds = nextSelectedIds.length > 0 ? nextSelectedIds : [libraryData[0].id];
+
+        if (
+            resolvedSelectedIds.length !== selectedProtocolIds.length ||
+            resolvedSelectedIds.some((id, index) => id !== selectedProtocolIds[index])
+        ) {
+            setSelectedProtocolIds(resolvedSelectedIds);
+            const nextPlans = buildPlansFromIds(resolvedSelectedIds);
+            setScanPlans(nextPlans);
+            setSelectedSeqId(nextPlans.flatMap((plan) => plan.sequences)[0]?.id || "");
+            setSelectedReconIndex(0);
+            setCollapsedPlanIds([]);
+            setCheckedPlanIds([]);
+            setCheckedSeqIds([]);
+            setPlanListOpen(true);
+        }
+    }, [libraryData]);
 
     const toggleProtocolSelection = (protocolId: number) => {
         const nextIds = selectedProtocolIds.includes(protocolId)
@@ -801,7 +881,62 @@ const ProtocolSetupScreen = () => {
                         </span>
                     </div>
 
-                    <div className="flex-1 bg-white"></div>
+                    <div className="flex-1 bg-white p-4">
+                        <div className="h-full rounded-[18px] border border-[#D9E3EE] bg-[linear-gradient(180deg,#F8FBFF_0%,#F3F7FC_48%,#EEF3F9_100%)] p-4 flex gap-5 overflow-hidden">
+                            <div className="w-[150px] shrink-0 rounded-[16px] border border-[#DCE6F2] bg-white/80 backdrop-blur-sm px-3 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+                                <div className="text-[10px] font-black tracking-[0.24em] text-[#7A8FA6] text-center">
+                                    REGION NAV
+                                </div>
+                                <div className="relative mt-4 flex flex-col gap-3">
+                                    <div className="absolute left-[19px] top-3 bottom-3 w-[2px] rounded-full bg-[linear-gradient(180deg,#CFE0F5_0%,#AFC9ED_100%)]"></div>
+                                    {bodyRegions.map((region) => (
+                                        <button
+                                            key={region}
+                                            onClick={() => setSelectedBodyRegion(region)}
+                                            className={`group relative flex min-h-[42px] items-center gap-3 rounded-[14px] border px-3 text-left transition-all ${selectedBodyRegion === region
+                                                ? "border-[#4D94FF] bg-[linear-gradient(135deg,#4D94FF_0%,#72B4FF_100%)] text-white shadow-[0_8px_18px_rgba(77,148,255,0.28)]"
+                                                : "border-[#D7E1EC] bg-[#F9FBFD] text-[#546E7A] hover:border-[#8FB7EA] hover:bg-white"
+                                                }`}
+                                        >
+                                            <span className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${selectedBodyRegion === region
+                                                ? "border-white/40 bg-white/18"
+                                                : "border-[#B9CCE1] bg-white"
+                                                }`}>
+                                                <span className={`h-2.5 w-2.5 rounded-full ${selectedBodyRegion === region ? "bg-white" : "bg-[#7CA7D8]"}`}></span>
+                                            </span>
+                                            <span className="relative z-10 text-[12px] font-black tracking-[0.08em]">
+                                                {region}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="flex-1 relative rounded-[18px] border border-dashed border-[#D7E1EC] bg-[radial-gradient(circle_at_top,#FFFFFF_0%,#F7FAFD_40%,#EEF4FA_100%)] overflow-hidden">
+                                <div className="absolute inset-x-0 top-0 h-20 bg-[linear-gradient(180deg,rgba(255,255,255,0.75)_0%,rgba(255,255,255,0)_100%)]"></div>
+                                <div className="absolute left-1/2 top-[56px] bottom-[56px] w-[4px] -translate-x-1/2 rounded-full bg-[linear-gradient(180deg,#D6E4F5_0%,#B7D0EC_35%,#B7D0EC_65%,#D6E4F5_100%)]"></div>
+                                <div className="absolute left-1/2 top-[72px] h-[54px] w-[54px] -translate-x-1/2 rounded-full border border-[#D4E2F2] bg-white/75 shadow-[0_10px_25px_rgba(160,183,210,0.18)]"></div>
+                                <div className="absolute left-1/2 top-[134px] h-[104px] w-[88px] -translate-x-1/2 rounded-[42px] border border-[#D4E2F2] bg-white/70 shadow-[0_12px_32px_rgba(160,183,210,0.16)]"></div>
+                                <div className="absolute left-1/2 top-[248px] h-[92px] w-[118px] -translate-x-1/2 rounded-[36px] border border-[#D4E2F2] bg-white/68 shadow-[0_10px_30px_rgba(160,183,210,0.14)]"></div>
+                                <div className="absolute left-1/2 top-[350px] h-[118px] w-[78px] -translate-x-1/2 rounded-[34px] border border-[#D4E2F2] bg-white/64 shadow-[0_10px_26px_rgba(160,183,210,0.12)]"></div>
+
+                                <div className="absolute right-5 top-5 rounded-[14px] border border-white/70 bg-white/72 px-4 py-3 text-right shadow-[0_10px_30px_rgba(170,188,210,0.18)] backdrop-blur-sm">
+                                    <div className="text-[10px] font-black tracking-[0.24em] text-[#7A8FA6]">
+                                        CURRENT REGION
+                                    </div>
+                                    <div className="mt-1 text-[18px] font-black tracking-[0.12em] text-[#2E4A67]">
+                                        {selectedBodyRegion}
+                                    </div>
+                                </div>
+
+                                <div className="absolute inset-x-0 bottom-0 px-8 pb-6 text-center">
+                                    <div className="text-[11px] leading-5 text-[#78909C]">
+                                        这里后续替换为人体示意图。当前先用解剖中轴和区域导航承接部位切换，右侧协议列表会跟随当前部位过滤。
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </section >
 
                 {/* Right */}
@@ -1040,9 +1175,6 @@ const ParamBox = ({ label, value, highlight = false, options, onChange }: ParamB
 
 
 export default ProtocolSetupScreen;
-
-
-
 
 
 
