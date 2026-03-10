@@ -68,6 +68,13 @@ type VolumeData = {
     pixelSpacingY: number;
     sliceSpacing: number;
 };
+type PanelId = "axial" | "coronal" | "sagittal" | "volume";
+type LayoutSpec = {
+    containerClassName: string;
+    panels: Record<PanelId, string>;
+};
+type PseudoColorMode = "灰阶" | "Hot Iron" | "PET" | "Spectrum" | "Bone" | "Rainbow" | "Blue-Orange";
+type ProjectionAxis = "axial" | "coronal" | "sagittal";
 
 const formatPersonName = (value?: string) => (value ? value.replace(/\^/g, " ").trim() : "N/A");
 
@@ -88,6 +95,137 @@ const cleanOverlayText = (value?: string) => {
         .replace(/\s+/g, " ")
         .trim();
     return normalized || "N/A";
+};
+
+const DEFAULT_PANEL_CLASS = "relative overflow-hidden bg-black";
+const HIDDEN_PANEL_CLASS = "hidden";
+const PSEUDO_COLOR_OPTIONS: PseudoColorMode[] = ["灰阶", "Hot Iron", "PET", "Spectrum", "Bone", "Rainbow", "Blue-Orange"];
+
+const applyPseudoColor = (mode: PseudoColorMode, normalized: number) => {
+    const t = Math.min(1, Math.max(0, normalized));
+    if (mode === "灰阶") {
+        const value = Math.round(t * 255);
+        return [value, value, value] as const;
+    }
+    if (mode === "Hot Iron") {
+        const r = Math.round(255 * Math.min(1, t * 1.35));
+        const g = Math.round(255 * Math.min(1, Math.max(0, (t - 0.28) / 0.55)));
+        const b = Math.round(255 * Math.min(1, Math.max(0, (t - 0.72) / 0.28)));
+        return [r, g, b] as const;
+    }
+    if (mode === "PET") {
+        const r = Math.round(255 * Math.min(1, Math.max(0, (t - 0.18) / 0.62)));
+        const g = Math.round(255 * Math.sin(Math.PI * Math.min(1, t)) ** 1.1);
+        const b = Math.round(255 * Math.min(1, Math.max(0, 1.15 - t * 1.55)));
+        return [r, g, b] as const;
+    }
+    if (mode === "Bone") {
+        const lifted = t ** 0.72;
+        const r = Math.round(255 * Math.min(1, 0.2 + lifted * 0.95));
+        const g = Math.round(255 * Math.min(1, 0.18 + lifted * 0.9));
+        const b = Math.round(255 * Math.min(1, 0.12 + lifted * 0.78));
+        return [r, g, b] as const;
+    }
+    if (mode === "Rainbow") {
+        const hue = (1 - t) * 240;
+        const saturation = 0.95;
+        const lightness = 0.52;
+        const c = (1 - Math.abs(2 * lightness - 1)) * saturation;
+        const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
+        const m = lightness - c / 2;
+        let rPrime = 0;
+        let gPrime = 0;
+        let bPrime = 0;
+        if (hue < 60) {
+            rPrime = c;
+            gPrime = x;
+        } else if (hue < 120) {
+            rPrime = x;
+            gPrime = c;
+        } else if (hue < 180) {
+            gPrime = c;
+            bPrime = x;
+        } else {
+            gPrime = x;
+            bPrime = c;
+        }
+        return [
+            Math.round((rPrime + m) * 255),
+            Math.round((gPrime + m) * 255),
+            Math.round((bPrime + m) * 255),
+        ] as const;
+    }
+    if (mode === "Blue-Orange") {
+        const cool = [30, 78, 170] as const;
+        const warm = [255, 168, 38] as const;
+        const mix = t ** 0.9;
+        return [
+            Math.round(cool[0] + (warm[0] - cool[0]) * mix),
+            Math.round(cool[1] + (warm[1] - cool[1]) * mix),
+            Math.round(cool[2] + (warm[2] - cool[2]) * mix),
+        ] as const;
+    }
+    const r = Math.round(255 * Math.min(1, Math.max(0, 1.5 * t - 0.15)));
+    const g = Math.round(255 * Math.sin(Math.PI * t));
+    const b = Math.round(255 * Math.min(1, Math.max(0, 1.25 - 1.45 * t)));
+    return [r, g, b] as const;
+};
+
+const LAYOUT_SPECS: Record<string, LayoutSpec> = {
+    "多平面重建": {
+        containerClassName: "flex-1 min-w-0 grid grid-cols-2 grid-rows-2 gap-px overflow-hidden rounded-lg border border-[#B0C4DE] bg-[#0F172A]",
+        panels: {
+            axial: DEFAULT_PANEL_CLASS,
+            coronal: DEFAULT_PANEL_CLASS,
+            sagittal: DEFAULT_PANEL_CLASS,
+            volume: DEFAULT_PANEL_CLASS,
+        },
+    },
+    "三维四窗": {
+        containerClassName: "flex-1 min-w-0 grid grid-cols-2 grid-rows-2 gap-px overflow-hidden rounded-lg border border-[#B0C4DE] bg-[#0F172A]",
+        panels: {
+            axial: DEFAULT_PANEL_CLASS,
+            coronal: DEFAULT_PANEL_CLASS,
+            sagittal: DEFAULT_PANEL_CLASS,
+            volume: DEFAULT_PANEL_CLASS,
+        },
+    },
+    "三维主视图 (顶)": {
+        containerClassName: "flex-1 min-w-0 grid grid-cols-2 grid-rows-2 gap-px overflow-hidden rounded-lg border border-[#B0C4DE] bg-[#0F172A]",
+        panels: {
+            axial: `${DEFAULT_PANEL_CLASS} hidden`,
+            coronal: DEFAULT_PANEL_CLASS,
+            sagittal: DEFAULT_PANEL_CLASS,
+            volume: `${DEFAULT_PANEL_CLASS} col-span-2`,
+        },
+    },
+    "轴状面主视图": {
+        containerClassName: "flex-1 min-w-0 grid grid-cols-2 grid-rows-2 gap-px overflow-hidden rounded-lg border border-[#B0C4DE] bg-[#0F172A]",
+        panels: {
+            axial: `${DEFAULT_PANEL_CLASS} row-span-2`,
+            coronal: DEFAULT_PANEL_CLASS,
+            sagittal: DEFAULT_PANEL_CLASS,
+            volume: HIDDEN_PANEL_CLASS,
+        },
+    },
+    "仅三维视图": {
+        containerClassName: "flex-1 min-w-0 grid grid-cols-2 grid-rows-2 gap-px overflow-hidden rounded-lg border border-[#B0C4DE] bg-[#0F172A]",
+        panels: {
+            axial: HIDDEN_PANEL_CLASS,
+            coronal: HIDDEN_PANEL_CLASS,
+            sagittal: HIDDEN_PANEL_CLASS,
+            volume: `${DEFAULT_PANEL_CLASS} col-span-2 row-span-2`,
+        },
+    },
+    "三维主视图 (右)": {
+        containerClassName: "flex-1 min-w-0 grid grid-cols-2 grid-rows-2 gap-px overflow-hidden rounded-lg border border-[#B0C4DE] bg-[#0F172A]",
+        panels: {
+            axial: DEFAULT_PANEL_CLASS,
+            coronal: DEFAULT_PANEL_CLASS,
+            sagittal: HIDDEN_PANEL_CLASS,
+            volume: `${DEFAULT_PANEL_CLASS} row-span-2 col-start-2 row-start-1`,
+        },
+    },
 };
 
 const REAL_LUNG_SERIES = {
@@ -125,6 +263,8 @@ const ViewScreen = () => {
     const coronalViewportRef = useRef<HTMLDivElement | null>(null);
     const sagittalCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const sagittalViewportRef = useRef<HTMLDivElement | null>(null);
+    const volumeCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    const volumeViewportRef = useRef<HTMLDivElement | null>(null);
     const dragRef = useRef<{ dragging: boolean; x: number; y: number }>({ dragging: false, x: 0, y: 0 });
     const measureStartRef = useRef<{ x: number; y: number } | null>(null);
     const huDataRef = useRef<Float32Array | null>(null);
@@ -169,8 +309,14 @@ const ViewScreen = () => {
 
     const [selectedLayout, setSelectedLayout] = useState("三维四窗");
     const [selectedRenderMode, setSelectedRenderMode] = useState("MPR");
+    const [selectedPseudoColor, setSelectedPseudoColor] = useState<PseudoColorMode>("灰阶");
     const [isLayoutOpen, setIsLayoutOpen] = useState(false);
     const [isRenderModeOpen, setIsRenderModeOpen] = useState(false);
+    const [isPseudoColorOpen, setIsPseudoColorOpen] = useState(false);
+    const currentLayoutSpec = useMemo(
+        () => LAYOUT_SPECS[selectedLayout] ?? LAYOUT_SPECS["三维四窗"],
+        [selectedLayout]
+    );
 
     const studyTree = useMemo<Study[]>(
         () => [
@@ -208,6 +354,196 @@ const ViewScreen = () => {
         return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
     })();
     const clampSliceIndex = (value: number) => Math.max(0, Math.min(totalSlices - 1, value));
+    const buildVolumeProjection = (
+        volume: VolumeData,
+        mode: string,
+        currentSlice: number
+    ) => {
+        const { rows, cols, depth, hu } = volume;
+        const output = new Float32Array(rows * cols);
+        const centerSlice = Math.max(0, Math.min(depth - 1, currentSlice));
+        const slabRadius = mode === "MPR" ? 4 : 0;
+
+        for (let y = 0; y < rows; y += 1) {
+            for (let x = 0; x < cols; x += 1) {
+                const pixelIndex = y * cols + x;
+                if (mode === "MPR") {
+                    let acc = 0;
+                    let count = 0;
+                    for (let z = Math.max(0, centerSlice - slabRadius); z <= Math.min(depth - 1, centerSlice + slabRadius); z += 1) {
+                        acc += hu[z * rows * cols + pixelIndex];
+                        count += 1;
+                    }
+                    output[pixelIndex] = acc / Math.max(count, 1);
+                    continue;
+                }
+
+                if (mode === "VR") {
+                    let composed = -1000;
+                    let alpha = 0;
+                    for (let z = 0; z < depth; z += 1) {
+                        const sample = hu[z * rows * cols + pixelIndex];
+                        const normalized = Math.min(1, Math.max(0, (sample + 1000) / 1800));
+                        const opacity = normalized * 0.085;
+                        composed += (sample - composed) * opacity * (1 - alpha);
+                        alpha = Math.min(0.98, alpha + opacity * (1 - alpha));
+                    }
+                    output[pixelIndex] = composed;
+                    continue;
+                }
+
+                let projected = hu[pixelIndex];
+                for (let z = 1; z < depth; z += 1) {
+                    const sample = hu[z * rows * cols + pixelIndex];
+                    if (mode === "MinIP") {
+                        if (sample < projected) projected = sample;
+                    } else if (sample > projected) {
+                        projected = sample;
+                    }
+                }
+                output[pixelIndex] = projected;
+            }
+        }
+
+        return output;
+    };
+    const buildOrthoProjection = (
+        volume: VolumeData,
+        axis: ProjectionAxis,
+        mode: string,
+        currentSlice: number
+    ) => {
+        const { rows, cols, depth, hu } = volume;
+        const centerZ = Math.max(0, Math.min(depth - 1, currentSlice));
+        const centerY = Math.max(0, Math.min(rows - 1, Math.round((currentSlice / Math.max(depth - 1, 1)) * (rows - 1))));
+        const centerX = Math.max(0, Math.min(cols - 1, Math.round((currentSlice / Math.max(depth - 1, 1)) * (cols - 1))));
+        const slabRadius = mode === "MPR" ? 4 : 0;
+
+        if (axis === "axial") {
+            return {
+                width: cols,
+                height: rows,
+                pixels: buildVolumeProjection(volume, mode, currentSlice),
+            };
+        }
+
+        if (axis === "coronal") {
+            const output = new Float32Array(cols * depth);
+            for (let z = 0; z < depth; z += 1) {
+                for (let x = 0; x < cols; x += 1) {
+                    let value = hu[z * rows * cols + centerY * cols + x];
+                    if (mode === "MPR") {
+                        let acc = 0;
+                        let count = 0;
+                        for (let y = Math.max(0, centerY - slabRadius); y <= Math.min(rows - 1, centerY + slabRadius); y += 1) {
+                            acc += hu[z * rows * cols + y * cols + x];
+                            count += 1;
+                        }
+                        value = acc / Math.max(count, 1);
+                    } else {
+                        for (let y = 1; y < rows; y += 1) {
+                            const sample = hu[z * rows * cols + y * cols + x];
+                            if (mode === "MinIP") {
+                                if (sample < value) value = sample;
+                            } else if (mode === "VR") {
+                                const normalized = Math.min(1, Math.max(0, (sample + 1000) / 1800));
+                                const opacity = normalized * 0.08;
+                                value += (sample - value) * opacity;
+                            } else if (sample > value) {
+                                value = sample;
+                            }
+                        }
+                    }
+                    output[z * cols + x] = value;
+                }
+            }
+            return { width: cols, height: depth, pixels: output };
+        }
+
+        const output = new Float32Array(rows * depth);
+        for (let z = 0; z < depth; z += 1) {
+            for (let y = 0; y < rows; y += 1) {
+                let value = hu[z * rows * cols + y * cols + centerX];
+                if (mode === "MPR") {
+                    let acc = 0;
+                    let count = 0;
+                    for (let x = Math.max(0, centerX - slabRadius); x <= Math.min(cols - 1, centerX + slabRadius); x += 1) {
+                        acc += hu[z * rows * cols + y * cols + x];
+                        count += 1;
+                    }
+                    value = acc / Math.max(count, 1);
+                } else {
+                    for (let x = 1; x < cols; x += 1) {
+                        const sample = hu[z * rows * cols + y * cols + x];
+                        if (mode === "MinIP") {
+                            if (sample < value) value = sample;
+                        } else if (mode === "VR") {
+                            const normalized = Math.min(1, Math.max(0, (sample + 1000) / 1800));
+                            const opacity = normalized * 0.08;
+                            value += (sample - value) * opacity;
+                        } else if (sample > value) {
+                            value = sample;
+                        }
+                    }
+                }
+                output[z * rows + y] = value;
+            }
+        }
+        return { width: rows, height: depth, pixels: output };
+    };
+    const buildCoronalBodyMask = (volume: VolumeData) => {
+        const { rows, cols, depth, hu } = volume;
+        const mask = new Uint8Array(cols * depth);
+        const threshold = -420;
+        const minHits = Math.max(3, Math.round(rows * 0.015));
+
+        for (let z = 0; z < depth; z += 1) {
+            let rowStart = cols;
+            let rowEnd = -1;
+            for (let x = 0; x < cols; x += 1) {
+                let hits = 0;
+                let peak = -1024;
+                for (let y = 0; y < rows; y += 1) {
+                    const value = hu[z * rows * cols + y * cols + x];
+                    if (value > peak) peak = value;
+                    if (value > threshold) hits += 1;
+                }
+                if (hits >= minHits || peak > -180) {
+                    mask[z * cols + x] = 255;
+                    rowStart = Math.min(rowStart, x);
+                    rowEnd = Math.max(rowEnd, x);
+                }
+            }
+
+            if (rowEnd >= rowStart) {
+                const pad = Math.max(2, Math.round((rowEnd - rowStart) * 0.03));
+                const paddedStart = Math.max(0, rowStart - pad);
+                const paddedEnd = Math.min(cols - 1, rowEnd + pad);
+                for (let x = paddedStart; x <= paddedEnd; x += 1) {
+                    mask[z * cols + x] = 255;
+                }
+            }
+        }
+
+        for (let pass = 0; pass < 2; pass += 1) {
+            const refined = new Uint8Array(mask);
+            for (let z = 1; z < depth - 1; z += 1) {
+                for (let x = 1; x < cols - 1; x += 1) {
+                    let neighbors = 0;
+                    for (let dz = -1; dz <= 1; dz += 1) {
+                        for (let dx = -1; dx <= 1; dx += 1) {
+                            if (mask[(z + dz) * cols + (x + dx)] > 0) neighbors += 1;
+                        }
+                    }
+                    if (neighbors >= 4) refined[z * cols + x] = 255;
+                    if (neighbors <= 2) refined[z * cols + x] = 0;
+                }
+            }
+            mask.set(refined);
+        }
+
+        return { width: cols, height: depth, mask };
+    };
     const handleResetAll = () => {
         setRotation(0);
         setZoom(1);
@@ -223,6 +559,64 @@ const ViewScreen = () => {
         dragRef.current = { dragging: false, x: 0, y: 0 };
     };
 
+    const createColorizedCanvas = (
+        width: number,
+        height: number,
+        pixels: Float32Array,
+        options?: {
+            pseudoColorMode?: PseudoColorMode;
+            invertOverride?: boolean;
+        }
+    ) => {
+        const offscreen = document.createElement("canvas");
+        offscreen.width = width;
+        offscreen.height = height;
+        const offCtx = offscreen.getContext("2d");
+        if (!offCtx) return null;
+
+        const imageData = offCtx.createImageData(width, height);
+        const out = imageData.data;
+        const minVal = wl - ww / 2;
+        const maxVal = wl + ww / 2;
+        const range = Math.max(maxVal - minVal, 1);
+        const pseudoColorMode = options?.pseudoColorMode ?? "灰阶";
+        const invertState = options?.invertOverride ?? invert;
+
+        for (let i = 0; i < pixels.length; i += 1) {
+            const normalized = Math.min(1, Math.max(0, (pixels[i] - minVal) / range));
+            const adjusted = invertState ? 1 - normalized : normalized;
+            const [red, green, blue] = applyPseudoColor(pseudoColorMode, adjusted);
+            const j = i * 4;
+            out[j] = red;
+            out[j + 1] = green;
+            out[j + 2] = blue;
+            out[j + 3] = 255;
+        }
+
+        offCtx.putImageData(imageData, 0, 0);
+        return offscreen;
+    };
+    const createMaskCanvas = (width: number, height: number, mask: Uint8Array) => {
+        const offscreen = document.createElement("canvas");
+        offscreen.width = width;
+        offscreen.height = height;
+        const offCtx = offscreen.getContext("2d");
+        if (!offCtx) return null;
+
+        const imageData = offCtx.createImageData(width, height);
+        const out = imageData.data;
+        for (let i = 0; i < mask.length; i += 1) {
+            const alpha = mask[i];
+            const j = i * 4;
+            out[j] = 255;
+            out[j + 1] = 255;
+            out[j + 2] = 255;
+            out[j + 3] = alpha;
+        }
+        offCtx.putImageData(imageData, 0, 0);
+        return offscreen;
+    };
+
     const renderGrayscaleToCanvas = (
         canvas: HTMLCanvasElement | null,
         viewport: HTMLElement | null,
@@ -233,6 +627,9 @@ const ViewScreen = () => {
             overlayTitle?: string;
             overlayDetail?: string;
             fitMode?: "contain" | "cover";
+            pseudoColorMode?: PseudoColorMode;
+            physicalWidth?: number;
+            physicalHeight?: number;
             corners?: {
                 topLeft?: string[];
                 topRight?: string[];
@@ -250,39 +647,20 @@ const ViewScreen = () => {
         }
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
-
-        const offscreen = document.createElement("canvas");
-        offscreen.width = width;
-        offscreen.height = height;
-        const offCtx = offscreen.getContext("2d");
-        if (!offCtx) return;
-
-        const imageData = offCtx.createImageData(width, height);
-        const out = imageData.data;
-        const minVal = wl - ww / 2;
-        const maxVal = wl + ww / 2;
-        const range = Math.max(maxVal - minVal, 1);
-
-        for (let i = 0; i < pixels.length; i += 1) {
-            const normalized = Math.min(1, Math.max(0, (pixels[i] - minVal) / range));
-            const gray = Math.round(normalized * 255);
-            const pixel = invert ? 255 - gray : gray;
-            const j = i * 4;
-            out[j] = pixel;
-            out[j + 1] = pixel;
-            out[j + 2] = pixel;
-            out[j + 3] = 255;
-        }
-
-        offCtx.putImageData(imageData, 0, 0);
+        const offscreen = createColorizedCanvas(width, height, pixels, {
+            pseudoColorMode: options?.pseudoColorMode,
+        });
+        if (!offscreen) return;
         ctx.fillStyle = "#000";
         ctx.fillRect(0, 0, viewW, viewH);
 
+        const physicalWidth = Math.max(options?.physicalWidth ?? width, 0.001);
+        const physicalHeight = Math.max(options?.physicalHeight ?? height, 0.001);
         const scale = options?.fitMode === "cover"
-            ? Math.max(viewW / width, viewH / height)
-            : Math.min(viewW / width, viewH / height);
-        const drawW = width * scale;
-        const drawH = height * scale;
+            ? Math.max(viewW / physicalWidth, viewH / physicalHeight)
+            : Math.min(viewW / physicalWidth, viewH / physicalHeight);
+        const drawW = physicalWidth * scale;
+        const drawH = physicalHeight * scale;
         const x = (viewW - drawW) / 2;
         const y = (viewH - drawH) / 2;
         ctx.imageSmoothingEnabled = true;
@@ -712,6 +1090,8 @@ const ViewScreen = () => {
             {
                 overlayTitle: "Coronal",
                 overlayDetail: `Y ${yIndex + 1}/${rows}`,
+                physicalWidth: cols * volume.pixelSpacingY,
+                physicalHeight: depth * volume.sliceSpacing,
                 corners: {
                     topLeft: [
                         meta.patientName,
@@ -745,6 +1125,8 @@ const ViewScreen = () => {
             {
                 overlayTitle: "Sagittal",
                 overlayDetail: `X ${xIndex + 1}/${cols}`,
+                physicalWidth: rows * volume.pixelSpacingX,
+                physicalHeight: depth * volume.sliceSpacing,
                 corners: {
                     topLeft: [
                         meta.patientName,
@@ -769,7 +1151,226 @@ const ViewScreen = () => {
                 },
             }
         );
-    }, [sliceIndex, renderTick, ww, wl, invert]);
+    }, [sliceIndex, renderTick, ww, wl, invert, meta]);
+
+    useEffect(() => {
+        const volume = volumeDataRef.current;
+        if (!volume) return;
+
+        const canvas = volumeCanvasRef.current;
+        const viewport = volumeViewportRef.current;
+        if (!canvas || !viewport) return;
+
+        const frontProjection = buildOrthoProjection(volume, "coronal", selectedRenderMode, sliceIndex);
+        const sideProjection = buildOrthoProjection(volume, "sagittal", selectedRenderMode, sliceIndex);
+        const coronalBodyMask = buildCoronalBodyMask(volume);
+        const frontCanvas = createColorizedCanvas(
+            frontProjection.width,
+            frontProjection.height,
+            frontProjection.pixels,
+            { pseudoColorMode: selectedPseudoColor }
+        );
+        const sideCanvas = createColorizedCanvas(
+            sideProjection.width,
+            sideProjection.height,
+            sideProjection.pixels,
+            { pseudoColorMode: selectedPseudoColor }
+        );
+        const frontMaskCanvas = createMaskCanvas(coronalBodyMask.width, coronalBodyMask.height, coronalBodyMask.mask);
+        if (!frontCanvas || !sideCanvas || !frontMaskCanvas) return;
+
+        const viewW = Math.max(1, Math.floor(viewport.clientWidth));
+        const viewH = Math.max(1, Math.floor(viewport.clientHeight));
+        if (canvas.width !== viewW || canvas.height !== viewH) {
+            canvas.width = viewW;
+            canvas.height = viewH;
+        }
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        const physicalFrontW = volume.cols * volume.pixelSpacingY;
+        const physicalFrontH = volume.depth * volume.sliceSpacing;
+        const physicalDepth = volume.rows * volume.pixelSpacingX;
+        const depthTiltX = 0.62;
+        const depthTiltY = 0.34;
+        const scale = Math.min(
+            (viewW - 28) / Math.max(physicalFrontW + physicalDepth * depthTiltX, 1),
+            (viewH - 28) / Math.max(physicalFrontH + physicalDepth * depthTiltY, 1)
+        );
+        const frontW = physicalFrontW * scale;
+        const frontH = physicalFrontH * scale;
+        const depthPx = physicalDepth * scale;
+        const offsetX = depthPx * depthTiltX;
+        const offsetY = depthPx * depthTiltY;
+        const frontX = (viewW - (frontW + offsetX)) / 2;
+        const frontY = (viewH - (frontH + offsetY)) / 2 + offsetY;
+
+        ctx.clearRect(0, 0, viewW, viewH);
+        ctx.fillStyle = "#020617";
+        ctx.fillRect(0, 0, viewW, viewH);
+
+        const maskedFrontCanvas = document.createElement("canvas");
+        maskedFrontCanvas.width = frontProjection.width;
+        maskedFrontCanvas.height = frontProjection.height;
+        const maskedFrontCtx = maskedFrontCanvas.getContext("2d");
+        if (!maskedFrontCtx) return;
+        maskedFrontCtx.drawImage(frontCanvas, 0, 0);
+        maskedFrontCtx.globalCompositeOperation = "destination-in";
+        maskedFrontCtx.drawImage(frontMaskCanvas, 0, 0);
+        maskedFrontCtx.globalCompositeOperation = "source-over";
+
+        const topPath = new Path2D();
+        topPath.moveTo(frontX + 10, frontY + 8);
+        topPath.lineTo(frontX + offsetX + 14, frontY - offsetY + 6);
+        topPath.lineTo(frontX + offsetX + frontW - 18, frontY - offsetY + 6);
+        topPath.lineTo(frontX + frontW - 8, frontY + 8);
+        topPath.quadraticCurveTo(frontX + frontW * 0.52, frontY - 8, frontX + 10, frontY + 8);
+        topPath.closePath();
+
+        const sidePath = new Path2D();
+        sidePath.moveTo(frontX + frontW - 2, frontY + 8);
+        sidePath.lineTo(frontX + frontW + offsetX - 8, frontY - offsetY + 6);
+        sidePath.lineTo(frontX + frontW + offsetX - 10, frontY - offsetY + frontH - 10);
+        sidePath.quadraticCurveTo(frontX + frontW + offsetX - 18, frontY - offsetY + frontH + 8, frontX + frontW - 6, frontY + frontH - 4);
+        sidePath.closePath();
+
+        const centerX = frontX + frontW / 2;
+
+        const stackCount = Math.max(10, Math.min(22, Math.round(depthPx / 8)));
+        const haloGradient = ctx.createRadialGradient(
+            centerX,
+            frontY + frontH * 0.42,
+            frontW * 0.08,
+            centerX,
+            frontY + frontH * 0.42,
+            frontW * 0.82
+        );
+        haloGradient.addColorStop(0, "rgba(56,189,248,0.16)");
+        haloGradient.addColorStop(0.45, "rgba(34,197,94,0.08)");
+        haloGradient.addColorStop(1, "rgba(2,6,23,0)");
+        ctx.fillStyle = haloGradient;
+        ctx.fillRect(frontX - frontW * 0.2, frontY - offsetY - 30, frontW + offsetX + frontW * 0.4, frontH + offsetY + 60);
+
+        ctx.save();
+        for (let i = stackCount; i >= 1; i -= 1) {
+            const t = i / stackCount;
+            const layerScaleX = 1 - t * 0.035;
+            const layerScaleY = 1 - t * 0.01;
+            const layerW = frontW * layerScaleX;
+            const layerH = frontH * layerScaleY;
+            const layerX = centerX - layerW / 2 + offsetX * t * 0.9;
+            const layerY = frontY - offsetY * t * 0.9 + (frontH - layerH) * 0.5;
+            ctx.globalAlpha = 0.018 + t * 0.03;
+            if (selectedRenderMode === "VR") {
+                ctx.filter = `blur(${0.8 + t * 1.8}px) saturate(1.1)`;
+            } else {
+                ctx.filter = `blur(${0.35 + t * 0.75}px)`;
+            }
+            ctx.drawImage(maskedFrontCanvas, layerX, layerY, layerW, layerH);
+        }
+        ctx.filter = "none";
+        ctx.globalAlpha = 1;
+        ctx.drawImage(maskedFrontCanvas, frontX, frontY, frontW, frontH);
+        const frontShade = ctx.createLinearGradient(frontX, frontY, frontX + frontW, frontY + frontH);
+        frontShade.addColorStop(0, "rgba(255,255,255,0.1)");
+        frontShade.addColorStop(0.4, "rgba(255,255,255,0.02)");
+        frontShade.addColorStop(1, "rgba(2,6,23,0.2)");
+        ctx.fillStyle = frontShade;
+        ctx.fillRect(frontX, frontY, frontW, frontH);
+        ctx.globalCompositeOperation = "destination-in";
+        ctx.drawImage(frontMaskCanvas, frontX, frontY, frontW, frontH);
+        ctx.globalCompositeOperation = "source-over";
+        ctx.restore();
+
+        ctx.save();
+        ctx.clip(sidePath);
+        const sideStackCount = Math.max(8, Math.round(stackCount * 0.72));
+        for (let i = sideStackCount; i >= 1; i -= 1) {
+            const t = i / sideStackCount;
+            ctx.globalAlpha = 0.03 + t * 0.03;
+            ctx.filter = `blur(${0.4 + t * 0.9}px)`;
+            ctx.drawImage(
+                sideCanvas,
+                frontX + frontW + offsetX * (t - 1) * 0.25,
+                frontY - offsetY + offsetY * (1 - t) * 0.3,
+                offsetX * 1.08,
+                frontH + offsetY * 0.9
+            );
+        }
+        ctx.filter = "none";
+        ctx.globalAlpha = 0.38;
+        ctx.drawImage(sideCanvas, frontX + frontW, frontY - offsetY, offsetX, frontH + offsetY);
+        ctx.restore();
+        ctx.globalAlpha = 1;
+
+        const topGradient = ctx.createLinearGradient(frontX, frontY - offsetY, frontX + frontW, frontY + 10);
+        topGradient.addColorStop(0, "rgba(148,163,184,0.12)");
+        topGradient.addColorStop(0.55, "rgba(96,165,250,0.03)");
+        topGradient.addColorStop(1, "rgba(15,23,42,0.01)");
+        ctx.fillStyle = topGradient;
+        ctx.fill(topPath);
+
+        const sideGradient = ctx.createLinearGradient(frontX + frontW, frontY, frontX + frontW + offsetX, frontY + frontH * 0.2);
+        sideGradient.addColorStop(0, "rgba(51,65,85,0.1)");
+        sideGradient.addColorStop(0.5, "rgba(15,23,42,0.22)");
+        sideGradient.addColorStop(1, "rgba(2,6,23,0.4)");
+        ctx.fillStyle = sideGradient;
+        ctx.fill(sidePath);
+
+        ctx.strokeStyle = "rgba(148,163,184,0.18)";
+        ctx.lineWidth = 0.9;
+        ctx.stroke(topPath);
+        ctx.stroke(sidePath);
+        ctx.save();
+        ctx.globalAlpha = 0.22;
+        ctx.filter = "blur(0.8px)";
+        ctx.drawImage(frontMaskCanvas, frontX, frontY, frontW, frontH);
+        ctx.restore();
+
+        const title = selectedRenderMode === "VR" ? "Volume" : selectedRenderMode;
+        const detail = selectedRenderMode === "MPR"
+            ? `Coronal body length view | ${selectedPseudoColor}`
+            : `${volume.depth} slices composited | ${selectedPseudoColor}`;
+        ctx.fillStyle = "rgba(0,0,0,0.55)";
+        ctx.fillRect(8, 8, 176, 34);
+        ctx.fillStyle = "#E2E8F0";
+        ctx.font = "700 10px monospace";
+        ctx.fillText(title, 14, 21);
+        ctx.font = "400 10px monospace";
+        ctx.fillText(detail, 14, 34);
+
+        const drawCornerBlock = (lines: string[] | undefined, x: number, y: number, align: CanvasTextAlign) => {
+            if (!lines || lines.length === 0) return;
+            ctx.fillStyle = "#CFD8DC";
+            ctx.font = "10px monospace";
+            ctx.textAlign = align;
+            lines.forEach((line, index) => {
+                ctx.fillText(line, x, y + index * 13);
+            });
+        };
+
+        drawCornerBlock([
+            meta.patientName,
+            `${meta.patientSex} ${meta.patientAge}`,
+            `${meta.modality} | ${meta.studyDate} ${meta.studyTime}`,
+        ], 10, 58, "left");
+        drawCornerBlock([
+            selectedRenderMode === "VR" ? "Pseudo VR Box" : `${selectedRenderMode} Body Preview`,
+            meta.seriesDescription,
+            `Layout ${selectedLayout}`,
+            `Palette ${selectedPseudoColor}`,
+        ], viewW - 10, 18, "right");
+        drawCornerBlock([
+            `WW/WL ${Math.round(ww)} / ${Math.round(wl)}`,
+            `W ${physicalFrontW.toFixed(0)}mm | H ${physicalFrontH.toFixed(0)}mm`,
+            `Depth ${physicalDepth.toFixed(0)}mm`,
+        ], 10, viewH - 42, "left");
+        drawCornerBlock([
+            `Source Slice ${sliceIndex + 1}/${volume.depth}`,
+            `Phys ratio ${physicalFrontW.toFixed(0)}:${physicalFrontH.toFixed(0)}:${physicalDepth.toFixed(0)}`,
+            `${meta.institution} | ${meta.manufacturer}`,
+        ], viewW - 10, viewH - 42, "right");
+    }, [sliceIndex, selectedRenderMode, selectedLayout, selectedPseudoColor, renderTick, ww, wl, invert, meta]);
 
     return (
         <div className="flex flex-col w-[1024px] h-[768px] bg-[#EEF2F9] overflow-hidden rounded-md border border-[#B0C4DE] shadow-2xl">
@@ -852,7 +1453,7 @@ const ViewScreen = () => {
                     <div className="h-[44px] bg-[#F8FAFC] border-b border-t border-[#EEF2F9] px-3 flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                             <SlidersHorizontal size={14} className="text-[#4D94FF]" />
-                            <span className="text-[11px] font-black uppercase tracking-wider text-[#37474F]">图像参数 (PARAMS)</span>
+                            <span className="text-[11px] font-black uppercase tracking-wider text-[#37474F]">PARAMS</span>
                         </div>
                         <div className="flex items-center gap-1 rounded-full border border-[#DCE6F2] bg-[#F1F5F9] p-[3px] shadow-sm overflow-hidden">
                             {(["2D", "3D"] as const).map((mode) => {
@@ -957,6 +1558,36 @@ const ViewScreen = () => {
                                             </div>
                                         )}
                                     </div>
+
+                                    <div className="h-[1px] bg-[#EEF2F9] mx-1" />
+
+                                    <div className="flex flex-col gap-2 relative">
+                                        <span className="text-[12px] font-bold text-[#546E7A]">伪彩方案 (Pseudo Color):</span>
+                                        <div
+                                            onClick={() => setIsPseudoColorOpen(!isPseudoColorOpen)}
+                                            className={`h-[40px] w-full bg-white border rounded-lg px-3 flex items-center justify-between shadow-sm cursor-pointer transition-all ${isPseudoColorOpen ? 'border-[#4D94FF] ring-2 ring-[#4D94FF]/10' : 'border-[#DCE6F2] hover:border-[#4D94FF]/50'}`}
+                                        >
+                                            <span className="text-[14px] font-bold text-[#37474F]">{selectedPseudoColor}</span>
+                                            <ChevronDown size={16} className={`text-[#94A3B8] transition-transform ${isPseudoColorOpen ? 'rotate-180 text-[#4D94FF]' : ''}`} />
+                                        </div>
+
+                                        {isPseudoColorOpen && (
+                                            <div className="absolute bottom-[calc(100%+4px)] left-0 right-0 bg-white border border-[#DCE6F2] rounded-lg shadow-xl z-50 py-1 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                                {PSEUDO_COLOR_OPTIONS.map((opt) => (
+                                                    <div
+                                                        key={opt}
+                                                        onClick={() => {
+                                                            setSelectedPseudoColor(opt);
+                                                            setIsPseudoColorOpen(false);
+                                                        }}
+                                                        className={`px-3 py-2.5 text-[14px] font-medium cursor-pointer transition-colors ${selectedPseudoColor === opt ? 'bg-[#E0E0E0] text-[#37474F]' : 'text-[#37474F] hover:bg-[#F5F5F5]'}`}
+                                                    >
+                                                        {opt}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -968,11 +1599,11 @@ const ViewScreen = () => {
                     </div>
                 </aside>
 
-                <div className="flex-1 flex gap-[2px] min-w-0">
-                    <div className={`${imageMode === "3D" ? "flex-1 min-w-0 grid grid-cols-2 grid-rows-2 gap-px overflow-hidden rounded-lg border border-[#B0C4DE] bg-[#0F172A]" : "flex-1 min-w-0 flex"}`}>
+                <div className="flex-1 flex min-w-0">
+                    <div className={imageMode === "3D" ? currentLayoutSpec.containerClassName : "flex-1 min-w-0 flex"}>
                         <section
                             ref={viewportRef}
-                            className={`flex-1 min-w-0 ${imageMode === "3D" ? "" : "m-[2px] rounded-lg border border-[#B0C4DE] shadow-sm"} bg-black overflow-hidden relative ${toolMode === "measure" ? "cursor-crosshair" : toolMode === "annotate" ? "cursor-cell" : toolMode === "pan" ? "cursor-grab" : "cursor-default"}`}
+                            className={`${imageMode === "3D" ? currentLayoutSpec.panels.axial : "flex-1 min-w-0 m-[2px] rounded-lg border border-[#B0C4DE] shadow-sm bg-black overflow-hidden relative"} ${toolMode === "measure" ? "cursor-crosshair" : toolMode === "annotate" ? "cursor-cell" : toolMode === "pan" ? "cursor-grab" : "cursor-default"}`}
                             onWheel={(e) => {
                                 e.preventDefault();
                                 if (e.ctrlKey) {
@@ -1167,27 +1798,26 @@ const ViewScreen = () => {
                                 <div>{meta.institution} | {meta.manufacturer}</div>
                             </div>
                         </section>
-                    {imageMode === "3D" && (
-                        <>
-                            <div ref={coronalViewportRef} className="relative overflow-hidden bg-black">
-                                <canvas ref={coronalCanvasRef} className="absolute inset-0 h-full w-full" />
-                            </div>
-                            <div ref={sagittalViewportRef} className="relative overflow-hidden bg-black">
-                                <canvas ref={sagittalCanvasRef} className="absolute inset-0 h-full w-full" />
-                            </div>
-                            <MprTile
-                                title="3D"
-                                accent="text-[#86EFAC]"
-                                description={selectedRenderMode === "VR" ? "Volume rendering target" : `${selectedRenderMode} preview`}
-                                    metaLine={`Layout ${selectedLayout}`}
-                                    detail={`Mode ${selectedRenderMode}`}
-                                    isVolume
-                                    seamless
-                                />
+                        {imageMode === "3D" && (
+                            <>
+                                <div ref={coronalViewportRef} className={currentLayoutSpec.panels.coronal}>
+                                    <canvas ref={coronalCanvasRef} className="absolute inset-0 h-full w-full" />
+                                </div>
+                                <div ref={sagittalViewportRef} className={currentLayoutSpec.panels.sagittal}>
+                                    <canvas ref={sagittalCanvasRef} className="absolute inset-0 h-full w-full" />
+                                </div>
+                                <div ref={volumeViewportRef} className={currentLayoutSpec.panels.volume}>
+                                    <canvas ref={volumeCanvasRef} className="absolute inset-0 h-full w-full" />
+                                    <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/55 to-transparent" />
+                                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/55 to-transparent" />
+                                    <div className="pointer-events-none absolute left-3 top-3 inline-flex items-center rounded-full border border-emerald-300/25 bg-black/45 px-2 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#86EFAC]">
+                                        {selectedRenderMode === "VR" ? "3D Volume" : selectedRenderMode}
+                                    </div>
+                                </div>
                             </>
                         )}
                     </div>
-                    <aside className="w-[72px] bg-[#111827] rounded-lg border border-[#B0C4DE] shadow-sm overflow-hidden shrink-0 flex flex-col">
+                    <aside className="w-[72px] bg-[#111827] rounded-r-lg border border-l-0 border-[#B0C4DE] shadow-sm overflow-hidden shrink-0 flex flex-col">
                         <div className="h-[44px] bg-[#0F172A] border-b border-white/10 flex items-center justify-center">
                             <span className="text-[10px] font-black uppercase tracking-widest text-[#CBD5E1]">Tools</span>
                         </div>
@@ -1298,54 +1928,6 @@ const Param = ({ label, value }: { label: string; value: string }) => (
     <div className="p-2 bg-white border border-[#B0C4DE]/30 rounded-md flex flex-col items-center justify-center shadow-sm min-h-[56px]">
         <span className="text-[8px] font-black uppercase text-[#90A4AE] tracking-tighter">{label}</span>
         <span className="text-[13px] font-black text-[#37474F] mt-1">{value}</span>
-    </div>
-);
-
-const MprTile = ({
-    title,
-    accent,
-    description,
-    metaLine,
-    detail,
-    isVolume = false,
-    seamless = false,
-}: {
-    title: string;
-    accent: string;
-    description: string;
-    metaLine: string;
-    detail: string;
-    isVolume?: boolean;
-    seamless?: boolean;
-}) => (
-    <div className={`relative overflow-hidden bg-[#020617] ${seamless ? "" : "rounded-lg border border-[#B0C4DE] shadow-sm"}`}>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.24),transparent_42%),linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,1))]" />
-        <div className="absolute inset-0 opacity-70">
-            {isVolume ? (
-                <div className="absolute inset-[14%] rounded-[24px] border border-emerald-300/20 bg-[radial-gradient(circle_at_30%_30%,rgba(134,239,172,0.35),transparent_24%),radial-gradient(circle_at_70%_38%,rgba(125,211,252,0.28),transparent_20%),radial-gradient(circle_at_50%_70%,rgba(253,224,71,0.18),transparent_28%)] shadow-[0_0_80px_rgba(16,185,129,0.14)]" />
-            ) : (
-                <>
-                    <div className="absolute left-1/2 top-[10%] bottom-[10%] w-px -translate-x-1/2 bg-white/10" />
-                    <div className="absolute top-1/2 left-[10%] right-[10%] h-px -translate-y-1/2 bg-white/10" />
-                    <div className="absolute inset-[18%] rounded-full border border-white/10" />
-                </>
-            )}
-        </div>
-        <div className="relative flex h-full flex-col justify-between p-3">
-            <div className="flex items-start justify-between gap-2">
-                <div>
-                    <div className={`text-[11px] font-black uppercase tracking-[0.22em] ${accent}`}>{title}</div>
-                    <div className="mt-1 text-[10px] font-medium text-[#94A3B8]">{description}</div>
-                </div>
-                <div className="rounded-full border border-white/10 bg-black/35 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] text-white/75">
-                    Ready
-                </div>
-            </div>
-            <div className="space-y-1 text-[10px] font-mono text-[#CBD5E1]">
-                <div>{metaLine}</div>
-                <div>{detail}</div>
-            </div>
-        </div>
     </div>
 );
 
