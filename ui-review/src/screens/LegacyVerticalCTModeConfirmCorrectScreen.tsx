@@ -1,12 +1,10 @@
 ﻿import {
-    AlertTriangle,
     ArrowRightLeft,
     CheckCircle2,
     CircleGauge,
     Download,
     MoveHorizontal,
     ScanLine,
-    ShieldAlert,
     StretchVertical,
     Telescope,
     View,
@@ -53,10 +51,10 @@ const modeMeta: Record<Mode, ModeMeta> = {
 };
 
 const hardwareParams = [
-    { label: "扫描环角度", value: "90.0°", icon: CircleGauge },
-    { label: "扫描臂角度", value: "0.0°", icon: ScanLine },
+    { label: "扫描环角度", value: "0.0°", icon: CircleGauge },
+    { label: "扫描臂角度", value: "90.0°", icon: ScanLine },
     { label: "高度", value: "1240 mm", icon: StretchVertical },
-    { label: "水平移动距离", value: "315 mm", icon: MoveHorizontal },
+    { label: "水平移动距离", value: "0 mm", icon: MoveHorizontal },
 ] as const;
 
 function ToolbarIcon({ src, alt, left }: ToolbarIconProps) {
@@ -120,14 +118,12 @@ function ImprovedModeBadge({ title, mode, active = false, subtitle }: ImprovedMo
     );
 }
 
-export default function LegacyVerticalCTModeConfirmScreen() {
+export default function LegacyVerticalCTModeConfirmCorrectScreen() {
     const scenario: { selectedMode: Mode; hardwareMode: Mode } = {
         selectedMode: "vertical",
-        hardwareMode: "horizontal",
+        hardwareMode: "vertical",
     };
     const { selectedMode, hardwareMode } = scenario;
-    const isMismatch = selectedMode !== hardwareMode;
-    const hardwareMeta = modeMeta[hardwareMode];
 
     return (
         <div className="relative h-[768px] w-[1024px] overflow-hidden bg-[#DCE0ED] text-[#535353]" style={{ fontFamily: pingFang }}>
@@ -172,36 +168,26 @@ export default function LegacyVerticalCTModeConfirmScreen() {
                     <ImprovedModeBadge title="用户选择 (计划目标)" mode={selectedMode} active subtitle="TARGET PLAN" />
 
                     <div className="flex w-[80px] flex-col items-center gap-2">
-                        <div className={`flex h-14 w-14 items-center justify-center rounded-full shadow-md ${isMismatch ? "bg-[#F37B4D] text-white" : "bg-[#3EA96F] text-white"}`}>
-                            {isMismatch ? <AlertTriangle size={28} /> : <CheckCircle2 size={28} />}
+                        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#3EA96F] text-white shadow-md">
+                            <CheckCircle2 size={28} />
                         </div>
-                        <div className={`text-[12px] font-black ${isMismatch ? "text-[#F37B4D]" : "text-[#3EA96F]"}`}>
-                            {isMismatch ? "状态不一致" : "状态一致"}
-                        </div>
+                        <div className="text-[12px] font-black text-[#3EA96F]">状态一致</div>
                     </div>
 
                     <ImprovedModeBadge title="硬件当前状态" mode={hardwareMode} active subtitle="CURRENT HARDWARE" />
                 </div>
 
-                <div
-                    className="mx-[36px] mt-5 rounded-xl border-2 p-4"
-                    style={{
-                        borderColor: isMismatch ? "#F2B79E" : "#A7D8B7",
-                        background: isMismatch ? "rgba(255, 243, 238, 0.9)" : "rgba(239, 251, 243, 0.9)",
-                    }}
-                >
+                <div className="mx-[36px] mt-5 rounded-xl border-2 border-[#A7D8B7] bg-[rgba(239,251,243,0.9)] p-4">
                     <div className="flex items-center gap-4">
-                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${isMismatch ? "bg-[#E46839] text-white" : "bg-[#2E9361] text-white"}`}>
-                            {isMismatch ? <ShieldAlert size={20} /> : <CheckCircle2 size={20} />}
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#2E9361] text-white">
+                            <CheckCircle2 size={20} />
                         </div>
                         <div className="flex-1">
-                            <div className={`text-[20px] font-bold leading-tight ${isMismatch ? "text-[#D9653B]" : "text-[#2E9361]"}`}>
-                                {isMismatch ? `硬件处于${hardwareMeta.label}，请先执行物理切换` : "硬件状态已就绪，可直接进入扫描"}
+                            <div className="text-[20px] font-bold leading-tight text-[#2E9361]">
+                                硬件状态已就绪，可直接进入扫描
                             </div>
                             <div className="mt-0.5 text-[13px] font-semibold leading-normal text-[#6E778C] opacity-90">
-                                {isMismatch
-                                    ? "检测冲突：软件计划执行垂直模式，但探测到硬件仍处于水平模式。"
-                                    : "校验通过：硬件物理位置与计划模式一致。"}
+                                校验通过：硬件物理位置与计划模式一致，无需执行模式切换。
                             </div>
                         </div>
                     </div>
