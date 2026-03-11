@@ -1,11 +1,7 @@
-﻿import {
+import {
     ArrowRightLeft,
     CheckCircle2,
-    CircleGauge,
     Download,
-    MoveHorizontal,
-    ScanLine,
-    StretchVertical,
     Telescope,
     View,
 } from "lucide-react";
@@ -51,10 +47,10 @@ const modeMeta: Record<Mode, ModeMeta> = {
 };
 
 const hardwareParams = [
-    { label: "扫描环角度", value: "0.0°", icon: CircleGauge },
-    { label: "扫描臂角度", value: "90.0°", icon: ScanLine },
-    { label: "高度", value: "1240 mm", icon: StretchVertical },
-    { label: "水平移动距离", value: "0 mm", icon: MoveHorizontal },
+    { label: "扫描环角度", value: "0.0°", iconSrc: "/扫描环角度.png", iconAlt: "扫描环角度" },
+    { label: "扫描臂角度", value: "90.0°", iconSrc: "/机械臂角度.png", iconAlt: "扫描臂角度" },
+    { label: "高度", value: "1240 mm", iconSrc: "/高度.png", iconAlt: "高度" },
+    { label: "水平移动距离", value: "0 mm", iconSrc: "/水平移动距离.png", iconAlt: "水平移动距离" },
 ] as const;
 
 function ToolbarIcon({ src, alt, left }: ToolbarIconProps) {
@@ -215,18 +211,26 @@ export default function LegacyVerticalCTModeConfirmCorrectScreen() {
                     </div>
                     <div className="grid grid-cols-4 gap-4">
                         {hardwareParams.map((item) => {
-                            const Icon = item.icon;
                             return (
                                 <div
                                     key={item.label}
-                                    className="flex h-[82px] flex-col justify-between rounded-xl border border-[#C8D6F0] bg-white/80 p-3.5 shadow-sm backdrop-blur-md"
+                                    className="flex h-[82px] items-center justify-between rounded-xl border border-[#C8D6F0] bg-white/80 px-3.5 py-3 shadow-sm backdrop-blur-md"
                                 >
-                                    <div className="flex items-center gap-2 text-[12px] font-bold text-[#7B86A0]">
-                                        <Icon size={14} className="text-[#2A6DE5]" />
-                                        <span className="truncate">{item.label}</span>
+                                    <div className="flex min-w-0 flex-1 flex-col justify-between self-stretch pr-3">
+                                        <div className="text-[12px] font-bold text-[#7B86A0]">
+                                            <span className="truncate">{item.label}</span>
+                                        </div>
+                                        <div className="text-[24px] font-black leading-none text-[#355A9C] tabular-nums">
+                                            {item.value}
+                                        </div>
                                     </div>
-                                    <div className="text-[24px] font-black leading-none text-[#355A9C] tabular-nums">
-                                        {item.value}
+                                    <div className="flex h-[48px] w-[48px] shrink-0 items-center justify-center">
+                                        <img
+                                            src={item.iconSrc}
+                                            alt={item.iconAlt}
+                                            draggable={false}
+                                            className={item.label === "扫描环角度" ? "h-[48px] w-[48px] object-contain" : "h-[38px] w-[38px] object-contain"}
+                                        />
                                     </div>
                                 </div>
                             );
