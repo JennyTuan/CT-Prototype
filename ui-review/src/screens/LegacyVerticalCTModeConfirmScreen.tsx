@@ -1,12 +1,8 @@
 ﻿import {
     AlertTriangle,
     ArrowRightLeft,
-    CircleGauge,
     Download,
-    MoveHorizontal,
-    ScanLine,
     ShieldAlert,
-    StretchVertical,
     Telescope,
     View,
 } from "lucide-react";
@@ -21,6 +17,10 @@ const imgHorizontalLeft = "https://www.figma.com/api/mcp/asset/f40f5a53-0237-411
 const imgHorizontalRight = "https://www.figma.com/api/mcp/asset/4b9efe58-947d-427b-90e4-8a05a8551143";
 const imgHorizontalBottom = "https://www.figma.com/api/mcp/asset/380a0507-e3a3-495d-9ac9-c0d76016f63c";
 const imgVertical = "https://www.figma.com/api/mcp/asset/f7d2c225-ca8f-4d34-b88b-c399b50b89ec";
+const imgParamAngle = "https://www.figma.com/api/mcp/asset/c8621c49-013a-40e8-8a90-6c7a20a047fd";
+const imgParamHeight = "https://www.figma.com/api/mcp/asset/1f1dfc3f-f7f8-4bf1-bc6c-11ffe3609e0f";
+const imgParamArmAngle = "https://www.figma.com/api/mcp/asset/2986278e-c23a-4d06-8158-78532d8d0a65";
+const imgParamMove = "https://www.figma.com/api/mcp/asset/0f354a0c-9768-434a-91b8-cf3410ac7276";
 
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
@@ -52,10 +52,10 @@ const modeMeta: Record<Mode, ModeMeta> = {
 };
 
 const hardwareParams = [
-    { label: "扫描环角度", value: "90.0°", icon: CircleGauge },
-    { label: "扫描臂角度", value: "0.0°", icon: ScanLine },
-    { label: "高度", value: "1240 mm", icon: StretchVertical },
-    { label: "水平移动距离", value: "315 mm", icon: MoveHorizontal },
+    { label: "扫描环角度", value: "90.0°", iconSrc: imgParamAngle, iconAlt: "扫描环角度" },
+    { label: "扫描臂角度", value: "0.0°", iconSrc: imgParamArmAngle, iconAlt: "扫描臂角度" },
+    { label: "高度", value: "1240 mm", iconSrc: imgParamHeight, iconAlt: "高度" },
+    { label: "水平移动距离", value: "315 mm", iconSrc: imgParamMove, iconAlt: "水平移动距离" },
 ] as const;
 
 function ToolbarIcon({ src, alt, left }: ToolbarIconProps) {
@@ -228,18 +228,21 @@ export default function LegacyVerticalCTModeConfirmScreen() {
                     </div>
                     <div className="grid grid-cols-4 gap-4">
                         {hardwareParams.map((item) => {
-                            const Icon = item.icon;
                             return (
                                 <div
                                     key={item.label}
-                                    className="flex h-[72px] flex-col justify-between rounded-xl border border-[#C8D6F0] bg-white/85 px-3.5 py-2.5 shadow-sm backdrop-blur-md"
+                                    className="flex h-[72px] items-center justify-between rounded-xl border border-[#C8D6F0] bg-white/85 px-3.5 py-2.5 shadow-sm backdrop-blur-md"
                                 >
-                                    <div className="flex items-center gap-2.5 text-[11px] font-bold text-[#7B86A0]">
-                                        <Icon size={17} className="text-[#2A6DE5]" />
-                                        <span className="truncate">{item.label}</span>
+                                    <div className="flex min-w-0 flex-1 flex-col justify-between self-stretch pr-3">
+                                        <div className="text-[11px] font-bold text-[#7B86A0]">
+                                            <span className="truncate">{item.label}</span>
+                                        </div>
+                                        <div className="text-[20px] font-black leading-none text-[#355A9C] tabular-nums">
+                                            {item.value}
+                                        </div>
                                     </div>
-                                    <div className="text-[20px] font-black leading-none text-[#355A9C] tabular-nums">
-                                        {item.value}
+                                    <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-lg bg-[#F6F8FD]">
+                                        <img src={item.iconSrc} alt={item.iconAlt} draggable={false} className="h-[26px] w-[26px] object-contain" />
                                     </div>
                                 </div>
                             );
@@ -253,8 +256,8 @@ export default function LegacyVerticalCTModeConfirmScreen() {
                             返回首页
                         </button>
                     </div>
-                    </div>
                 </div>
+            </div>
 
             <div className="absolute bottom-0 left-0 right-0 h-[80px] bg-[#88A3D2] px-[18px] pt-[8px]">
                 <div className="grid h-[64px] w-full grid-cols-4 gap-[2px]">
