@@ -1,7 +1,6 @@
 ﻿import {
     AlertTriangle,
     ArrowRightLeft,
-    CheckCircle2,
     CircleGauge,
     Download,
     MoveHorizontal,
@@ -73,11 +72,11 @@ function ToolbarIcon({ src, alt, left }: ToolbarIconProps) {
 
 function HorizontalModeGraphic() {
     return (
-        <div className="relative h-[90px] w-[80px] select-none">
-            <img src={imgHorizontalTop} alt="" draggable={false} className="absolute left-0 top-0 h-[22px] w-full object-contain" />
-            <img src={imgHorizontalLeft} alt="" draggable={false} className="absolute left-0 top-[4px] h-[75px] w-[10px] object-contain" />
-            <img src={imgHorizontalRight} alt="" draggable={false} className="absolute right-0 top-[8px] h-[75px] w-[10px] object-contain" />
-            <img src={imgHorizontalBottom} alt="" draggable={false} className="absolute bottom-0 left-[16px] h-[48px] w-[50px] object-contain" />
+        <div className="relative h-[54px] w-[48px] select-none">
+            <img src={imgHorizontalTop} alt="" draggable={false} className="absolute left-0 top-0 h-[14px] w-full object-contain" />
+            <img src={imgHorizontalLeft} alt="" draggable={false} className="absolute left-0 top-[3px] h-[44px] w-[6px] object-contain" />
+            <img src={imgHorizontalRight} alt="" draggable={false} className="absolute right-0 top-[5px] h-[44px] w-[6px] object-contain" />
+            <img src={imgHorizontalBottom} alt="" draggable={false} className="absolute bottom-0 left-[10px] h-[28px] w-[28px] object-contain" />
         </div>
     );
 }
@@ -87,7 +86,7 @@ function ImprovedModeBadge({ title, mode, active = false, subtitle }: ImprovedMo
 
     return (
         <div
-            className="relative flex h-[185px] flex-1 flex-col items-center justify-center overflow-hidden rounded-2xl border-2 transition-all"
+            className="relative flex h-[138px] flex-1 flex-col items-center overflow-hidden rounded-2xl border-2 px-4 pb-3 pt-[26px] transition-all"
             style={{
                 borderColor: active ? meta.accent : "#AFC3EA",
                 background: active ? `linear-gradient(180deg, ${meta.soft} 0%, #FFFFFF 100%)` : "#F3F6FC",
@@ -103,18 +102,43 @@ function ImprovedModeBadge({ title, mode, active = false, subtitle }: ImprovedMo
             >
                 {title}
             </div>
-            <div className="mt-4 flex h-[80px] items-center justify-center">
+            <div className="flex h-[40px] items-end justify-center">
                 {mode === "vertical" ? (
-                    <img src={imgVertical} alt="垂直模式" draggable={false} className="h-[80px] w-[80px] object-contain" />
+                    <img src={imgVertical} alt="垂直模式" draggable={false} className="h-[56px] w-[56px] object-contain" />
                 ) : (
                     <HorizontalModeGraphic />
                 )}
             </div>
-            <div className="mt-3 text-[28px] font-black leading-none" style={{ color: active ? meta.accent : "#5A6781" }}>
+            <div className="mt-4 text-[22px] font-black leading-none" style={{ color: active ? meta.accent : "#5A6781" }}>
                 {meta.label}
             </div>
-            <div className="mt-1 text-[11px] font-bold tracking-[0.2em] text-slate-500 opacity-40">
+            <div className="mt-3 text-[10px] font-bold tracking-[0.16em] text-slate-500 opacity-40">
                 {subtitle}
+            </div>
+        </div>
+    );
+}
+
+function ModeSwitchGuide() {
+    return (
+        <div className="flex w-[208px] shrink-0 items-start gap-2.5 rounded-xl border border-[#F3C5B3] bg-white/80 px-2.5 py-2">
+            <div className="relative h-[112px] w-[46px] shrink-0 overflow-hidden rounded-[14px] border border-white/80 bg-[linear-gradient(180deg,#BEC9E0_0%,#B4C1DA_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
+                <div className="absolute left-[9px] top-[9px] h-[20px] w-[20px] rounded-full border border-[#A7B2CA] bg-[#C3CEE3] shadow-[inset_0_1px_1px_rgba(255,255,255,0.5)]" />
+                <div className="absolute left-[7px] top-[46px] h-[19px] w-[19px] rounded-full border border-[#98A6C0] bg-[#AFBAD3]" />
+                <div className="absolute right-[6px] top-[34px] h-[20px] w-[20px] rounded-full border border-[#98B57F] bg-[#BADA7A] shadow-[0_0_0_4px_rgba(186,218,122,0.18)]" />
+                <div className="absolute left-[12px] top-[76px] h-[11px] w-[22px] rounded-full bg-[#96A4C1]" />
+                <div className="absolute left-[17px] top-[71px] h-[18px] w-[11px] rounded-[10px] border border-[#9BA9C3] bg-[#BBC6DC]" />
+                <div className="absolute bottom-[7px] left-[8px] h-[12px] w-[30px] rounded-full border border-[#A6B3CB] bg-[#B7C2D9]" />
+            </div>
+            <div className="flex-1">
+                <div className="text-[10px] font-black tracking-[0.06em] text-[#D66B43]">模式切换引导</div>
+                <div className="mt-1 text-[11px] font-bold leading-[1.3] text-[#6C7286]">
+                    请按绿色模式切换键，完成硬件切换。
+                </div>
+                <div className="mt-1.5 space-y-0.5 text-[10px] font-semibold leading-[1.25] text-[#7B8196]">
+                    <div>1. 找到高亮模式键</div>
+                    <div>2. 按下后等待切换完成</div>
+                </div>
             </div>
         </div>
     );
@@ -126,7 +150,6 @@ export default function LegacyVerticalCTModeConfirmScreen() {
         hardwareMode: "horizontal",
     };
     const { selectedMode, hardwareMode } = scenario;
-    const isMismatch = selectedMode !== hardwareMode;
     const hardwareMeta = modeMeta[hardwareMode];
 
     return (
@@ -168,63 +191,54 @@ export default function LegacyVerticalCTModeConfirmScreen() {
                     </div>
                 </div>
 
-                <div className="mt-5 flex items-center gap-6 px-[36px]">
+                <div className="mt-4 flex items-center gap-4 px-[36px]">
                     <ImprovedModeBadge title="用户选择 (计划目标)" mode={selectedMode} active subtitle="TARGET PLAN" />
 
-                    <div className="flex w-[80px] flex-col items-center gap-2">
-                        <div className={`flex h-14 w-14 items-center justify-center rounded-full shadow-md ${isMismatch ? "bg-[#F37B4D] text-white" : "bg-[#3EA96F] text-white"}`}>
-                            {isMismatch ? <AlertTriangle size={28} /> : <CheckCircle2 size={28} />}
+                    <div className="flex w-[64px] flex-col items-center gap-1.5">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F37B4D] text-white shadow-md">
+                            <AlertTriangle size={24} />
                         </div>
-                        <div className={`text-[12px] font-black ${isMismatch ? "text-[#F37B4D]" : "text-[#3EA96F]"}`}>
-                            {isMismatch ? "状态不一致" : "状态一致"}
-                        </div>
+                        <div className="text-[11px] font-black text-[#F37B4D]">状态不一致</div>
                     </div>
 
                     <ImprovedModeBadge title="硬件当前状态" mode={hardwareMode} active subtitle="CURRENT HARDWARE" />
                 </div>
 
-                <div
-                    className="mx-[36px] mt-5 rounded-xl border-2 p-4"
-                    style={{
-                        borderColor: isMismatch ? "#F2B79E" : "#A7D8B7",
-                        background: isMismatch ? "rgba(255, 243, 238, 0.9)" : "rgba(239, 251, 243, 0.9)",
-                    }}
-                >
-                    <div className="flex items-center gap-4">
-                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${isMismatch ? "bg-[#E46839] text-white" : "bg-[#2E9361] text-white"}`}>
-                            {isMismatch ? <ShieldAlert size={20} /> : <CheckCircle2 size={20} />}
+                <div className="mx-[36px] mt-2.5 rounded-xl border-2 border-[#F2B79E] bg-[rgba(255,243,238,0.9)] p-2.5">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#E46839] text-white">
+                            <ShieldAlert size={18} />
                         </div>
                         <div className="flex-1">
-                            <div className={`text-[20px] font-bold leading-tight ${isMismatch ? "text-[#D9653B]" : "text-[#2E9361]"}`}>
-                                {isMismatch ? `硬件处于${hardwareMeta.label}，请先执行物理切换` : "硬件状态已就绪，可直接进入扫描"}
+                            <div className="text-[16px] font-bold leading-tight text-[#D9653B]">
+                                硬件处于{hardwareMeta.label}，请先执行物理切换
                             </div>
-                            <div className="mt-0.5 text-[13px] font-semibold leading-normal text-[#6E778C] opacity-90">
-                                {isMismatch
-                                    ? "检测冲突：软件计划执行垂直模式，但探测到硬件仍处于水平模式。"
-                                    : "校验通过：硬件物理位置与计划模式一致。"}
+                            <div className="mt-0.5 text-[11px] font-semibold leading-[1.3] text-[#6E778C] opacity-90">
+                                检测冲突：软件计划执行垂直模式，但探测到硬件仍处于水平模式。
                             </div>
                         </div>
+                        <ModeSwitchGuide />
                     </div>
                 </div>
 
-                <div className="mt-auto px-[36px] pb-[28px]">
-                    <div className="mb-3 flex items-center gap-2 text-[14px] font-black text-[#5A6781]">
+                <div className="mt-2 px-[36px] pb-[16px]">
+                    <div className="mb-1.5 flex items-center gap-2 text-[13px] font-black text-[#5A6781]">
                         <span className="h-4 w-1 rounded-full bg-[#2A6DE5]" />
                         实时硬件定位参数
                     </div>
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid grid-cols-4 gap-3">
                         {hardwareParams.map((item) => {
                             const Icon = item.icon;
                             return (
                                 <div
                                     key={item.label}
-                                    className="flex h-[82px] flex-col justify-between rounded-xl border border-[#C8D6F0] bg-white/80 p-3.5 shadow-sm backdrop-blur-md"
+                                    className="flex h-[56px] flex-col justify-between rounded-xl border border-[#C8D6F0] bg-white/80 px-3 py-2 shadow-sm backdrop-blur-md"
                                 >
-                                    <div className="flex items-center gap-2 text-[12px] font-bold text-[#7B86A0]">
+                                    <div className="flex items-center gap-2 text-[11px] font-bold text-[#7B86A0]">
                                         <Icon size={14} className="text-[#2A6DE5]" />
                                         <span className="truncate">{item.label}</span>
                                     </div>
-                                    <div className="text-[24px] font-black leading-none text-[#355A9C] tabular-nums">
+                                    <div className="text-[17px] font-black leading-none text-[#355A9C] tabular-nums">
                                         {item.value}
                                     </div>
                                 </div>
@@ -269,4 +283,3 @@ export default function LegacyVerticalCTModeConfirmScreen() {
         </div>
     );
 }
-
