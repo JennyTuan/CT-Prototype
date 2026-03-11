@@ -221,32 +221,40 @@ export default function LegacyVerticalCTModeConfirmScreen() {
                     </div>
                 </div>
 
-                <div className="mt-2 px-[36px] pb-[16px]">
-                    <div className="mb-1.5 flex items-center gap-2 text-[13px] font-black text-[#5A6781]">
+                <div className="mt-3 px-[36px] pb-[14px]">
+                    <div className="mb-2 flex items-center gap-2 text-[13px] font-black text-[#5A6781]">
                         <span className="h-4 w-1 rounded-full bg-[#2A6DE5]" />
                         实时硬件定位参数
                     </div>
-                    <div className="grid grid-cols-4 gap-3">
+                    <div className="grid grid-cols-4 gap-4">
                         {hardwareParams.map((item) => {
                             const Icon = item.icon;
                             return (
                                 <div
                                     key={item.label}
-                                    className="flex h-[56px] flex-col justify-between rounded-xl border border-[#C8D6F0] bg-white/80 px-3 py-2 shadow-sm backdrop-blur-md"
+                                    className="flex h-[72px] flex-col justify-between rounded-xl border border-[#C8D6F0] bg-white/85 px-3.5 py-2.5 shadow-sm backdrop-blur-md"
                                 >
-                                    <div className="flex items-center gap-2 text-[11px] font-bold text-[#7B86A0]">
-                                        <Icon size={14} className="text-[#2A6DE5]" />
+                                    <div className="flex items-center gap-2.5 text-[11px] font-bold text-[#7B86A0]">
+                                        <Icon size={17} className="text-[#2A6DE5]" />
                                         <span className="truncate">{item.label}</span>
                                     </div>
-                                    <div className="text-[17px] font-black leading-none text-[#355A9C] tabular-nums">
+                                    <div className="text-[20px] font-black leading-none text-[#355A9C] tabular-nums">
                                         {item.value}
                                     </div>
                                 </div>
                             );
                         })}
                     </div>
+                    <div className="mt-4 flex justify-end">
+                        <button
+                            type="button"
+                            className="flex h-[38px] items-center justify-center rounded-xl border border-[#AFC3EA] bg-white/85 px-5 text-[14px] font-bold text-[#5A6781] shadow-sm"
+                        >
+                            返回首页
+                        </button>
+                    </div>
+                    </div>
                 </div>
-            </div>
 
             <div className="absolute bottom-0 left-0 right-0 h-[80px] bg-[#88A3D2] px-[18px] pt-[8px]">
                 <div className="grid h-[64px] w-full grid-cols-4 gap-[2px]">
@@ -283,3 +291,4 @@ export default function LegacyVerticalCTModeConfirmScreen() {
         </div>
     );
 }
+
