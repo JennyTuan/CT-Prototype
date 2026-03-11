@@ -193,6 +193,21 @@ export default function LegacyVerticalCTModeConfirmCorrectScreen() {
                     </div>
                 </div>
 
+
+                <div className="mt-4 flex items-center justify-end gap-3 px-[36px]">
+                    <button
+                        type="button"
+                        className="flex h-[42px] items-center justify-center rounded-xl border border-[#B8C8E9] bg-white/80 px-5 text-[14px] font-bold text-[#5A6781] shadow-sm"
+                    >
+                        返回首页
+                    </button>
+                    <button
+                        type="button"
+                        className="flex h-[42px] items-center justify-center rounded-xl bg-[#2A6DE5] px-5 text-[14px] font-bold text-white shadow-[0_10px_18px_rgba(42,109,229,0.22)]"
+                    >
+                        去患者列表选择患者
+                    </button>
+                </div>
                 <div className="mt-auto px-[36px] pb-[28px]">
                     <div className="mb-3 flex items-center gap-2 text-[14px] font-black text-[#5A6781]">
                         <span className="h-4 w-1 rounded-full bg-[#2A6DE5]" />
