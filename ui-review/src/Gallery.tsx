@@ -26,6 +26,7 @@ import CTSimulatorUIRefactor from "./screens/CTSimulatorUIRefactor";
 import CTSimulatorUIRefactorLight from "./screens/CTSimulatorUIRefactorLight";
 import CTSimulatorUIRefactorLight2 from "./screens/CTSimulatorUIRefactorLight2";
 import LegacyVerticalCTHomeScreen from "./screens/LegacyVerticalCTHomeScreen";
+import LegacyVerticalCTModeConfirmScreen from "./screens/LegacyVerticalCTModeConfirmScreen";
 
 type ScreenItem = {
     key: string;
@@ -93,6 +94,7 @@ export default function Gallery() {
                 name: "旧版垂直CT平台",
                 screens: [
                     { key: "legacy-vertical-ct-home", name: "首页", component: <LegacyVerticalCTHomeScreen /> },
+                    { key: "legacy-vertical-ct-mode-confirm", name: "模式确认", component: <LegacyVerticalCTModeConfirmScreen /> },
                 ],
             },
         ],
@@ -295,5 +297,7 @@ export default function Gallery() {
         </div>
     );
 }
+
+
 
 
