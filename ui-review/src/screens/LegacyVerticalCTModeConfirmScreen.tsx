@@ -17,9 +17,6 @@ const imgHorizontalLeft = "https://www.figma.com/api/mcp/asset/f40f5a53-0237-411
 const imgHorizontalRight = "https://www.figma.com/api/mcp/asset/4b9efe58-947d-427b-90e4-8a05a8551143";
 const imgHorizontalBottom = "https://www.figma.com/api/mcp/asset/380a0507-e3a3-495d-9ac9-c0d76016f63c";
 const imgVertical = "https://www.figma.com/api/mcp/asset/f7d2c225-ca8f-4d34-b88b-c399b50b89ec";
-const imgParamAngle = "https://www.figma.com/api/mcp/asset/c8621c49-013a-40e8-8a90-6c7a20a047fd";
-const imgParamHeight = "https://www.figma.com/api/mcp/asset/1f1dfc3f-f7f8-4bf1-bc6c-11ffe3609e0f";
-const imgParamMove = "https://www.figma.com/api/mcp/asset/0f354a0c-9768-434a-91b8-cf3410ac7276";
 
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
@@ -52,9 +49,9 @@ const modeMeta: Record<Mode, ModeMeta> = {
 
 const hardwareParams = [
     { label: "扫描环角度", value: "90.0°", iconSrc: "/扫描环角度.png", iconAlt: "扫描环角度" },
-    { label: "机械臂角度", value: "0.0°", iconSrc: imgParamMove, iconAlt: "机械臂角度" },
-    { label: "高度", value: "1240 mm", iconSrc: imgParamHeight, iconAlt: "高度" },
-    { label: "水平移动距离", value: "315 mm", iconSrc: imgParamAngle, iconAlt: "水平移动距离" },
+    { label: "机械臂角度", value: "0.0°", iconSrc: "/机械臂角度.png", iconAlt: "机械臂角度" },
+    { label: "高度", value: "1240 mm", iconSrc: "/高度.png", iconAlt: "高度" },
+    { label: "水平移动距离", value: "315 mm", iconSrc: "/水平移动距离.png", iconAlt: "水平移动距离" },
 ] as const;
 
 function ToolbarIcon({ src, alt, left }: ToolbarIconProps) {
