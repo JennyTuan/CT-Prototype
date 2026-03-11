@@ -25,6 +25,7 @@ import PerformanceEvaluationScreen from "./screens/PerformanceEvaluationScreen";
 import CTSimulatorUIRefactor from "./screens/CTSimulatorUIRefactor";
 import CTSimulatorUIRefactorLight from "./screens/CTSimulatorUIRefactorLight";
 import CTSimulatorUIRefactorLight2 from "./screens/CTSimulatorUIRefactorLight2";
+import LegacyVerticalCTHomeScreen from "./screens/LegacyVerticalCTHomeScreen";
 
 type ScreenItem = {
     key: string;
@@ -43,6 +44,7 @@ export default function Gallery() {
     const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
         wt32: true,
         "vertical-ct": true,
+        "legacy-vertical-ct": true,
     });
 
     const openProtocolDetail = () => setActiveKey("protocol_detail");
@@ -84,6 +86,13 @@ export default function Gallery() {
                     { key: "ct-simulator-ui-refactor-dark", name: "CTSimulatorUIRefactor-dark", component: <CTSimulatorUIRefactor /> },
                     { key: "CTSimulatorUIRefactor-light", name: "CTSimulatorUIRefactor-light", component: <CTSimulatorUIRefactorLight /> },
                     { key: "CTSimulatorUIRefactor-light2", name: "CTSimulatorUIRefactor-light2", component: <CTSimulatorUIRefactorLight2 /> },
+                ],
+            },
+            {
+                id: "legacy-vertical-ct",
+                name: "旧版垂直CT平台",
+                screens: [
+                    { key: "legacy-vertical-ct-home", name: "首页", component: <LegacyVerticalCTHomeScreen /> },
                 ],
             },
         ],
@@ -286,4 +295,5 @@ export default function Gallery() {
         </div>
     );
 }
+
 
