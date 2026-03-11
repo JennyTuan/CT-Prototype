@@ -19,7 +19,6 @@ const imgHorizontalBottom = "https://www.figma.com/api/mcp/asset/380a0507-e3a3-4
 const imgVertical = "https://www.figma.com/api/mcp/asset/f7d2c225-ca8f-4d34-b88b-c399b50b89ec";
 const imgParamAngle = "https://www.figma.com/api/mcp/asset/c8621c49-013a-40e8-8a90-6c7a20a047fd";
 const imgParamHeight = "https://www.figma.com/api/mcp/asset/1f1dfc3f-f7f8-4bf1-bc6c-11ffe3609e0f";
-const imgParamArmAngle = "https://www.figma.com/api/mcp/asset/2986278e-c23a-4d06-8158-78532d8d0a65";
 const imgParamMove = "https://www.figma.com/api/mcp/asset/0f354a0c-9768-434a-91b8-cf3410ac7276";
 
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
@@ -52,10 +51,10 @@ const modeMeta: Record<Mode, ModeMeta> = {
 };
 
 const hardwareParams = [
-    { label: "扫描环角度", value: "90.0°", iconSrc: imgParamAngle, iconAlt: "扫描环角度" },
-    { label: "扫描臂角度", value: "0.0°", iconSrc: imgParamArmAngle, iconAlt: "扫描臂角度" },
+    { label: "扫描环角度", value: "90.0°", iconSrc: "/扫描环角度.png", iconAlt: "扫描环角度" },
+    { label: "机械臂角度", value: "0.0°", iconSrc: imgParamMove, iconAlt: "机械臂角度" },
     { label: "高度", value: "1240 mm", iconSrc: imgParamHeight, iconAlt: "高度" },
-    { label: "水平移动距离", value: "315 mm", iconSrc: imgParamMove, iconAlt: "水平移动距离" },
+    { label: "水平移动距离", value: "315 mm", iconSrc: imgParamAngle, iconAlt: "水平移动距离" },
 ] as const;
 
 function ToolbarIcon({ src, alt, left }: ToolbarIconProps) {
@@ -121,21 +120,24 @@ function ImprovedModeBadge({ title, mode, active = false, subtitle }: ImprovedMo
 
 function ModeSwitchGuide() {
     return (
-        <div className="flex w-[208px] shrink-0 items-start gap-2.5 rounded-xl border border-[#F3C5B3] bg-white/80 px-2.5 py-2">
-            <div className="relative h-[112px] w-[46px] shrink-0 overflow-hidden rounded-[14px] border border-white/80 bg-[linear-gradient(180deg,#BEC9E0_0%,#B4C1DA_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
-                <div className="absolute left-[9px] top-[9px] h-[20px] w-[20px] rounded-full border border-[#A7B2CA] bg-[#C3CEE3] shadow-[inset_0_1px_1px_rgba(255,255,255,0.5)]" />
-                <div className="absolute left-[7px] top-[46px] h-[19px] w-[19px] rounded-full border border-[#98A6C0] bg-[#AFBAD3]" />
-                <div className="absolute right-[6px] top-[34px] h-[20px] w-[20px] rounded-full border border-[#98B57F] bg-[#BADA7A] shadow-[0_0_0_4px_rgba(186,218,122,0.18)]" />
-                <div className="absolute left-[12px] top-[76px] h-[11px] w-[22px] rounded-full bg-[#96A4C1]" />
-                <div className="absolute left-[17px] top-[71px] h-[18px] w-[11px] rounded-[10px] border border-[#9BA9C3] bg-[#BBC6DC]" />
-                <div className="absolute bottom-[7px] left-[8px] h-[12px] w-[30px] rounded-full border border-[#A6B3CB] bg-[#B7C2D9]" />
+        <div className="flex w-[218px] shrink-0 items-start gap-3 rounded-xl border border-[#F3C5B3] bg-white/85 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
+            <div className="relative h-[118px] w-[56px] shrink-0 rounded-[18px] border border-[#C8D3E8] bg-[linear-gradient(180deg,#C7D2E8_0%,#AEBBD7_100%)] shadow-[inset_0_2px_0_rgba(255,255,255,0.48),0_6px_10px_rgba(130,149,186,0.2)]">
+                <div className="absolute left-[7px] top-[7px] h-[104px] w-[42px] rounded-[14px] bg-[linear-gradient(180deg,rgba(255,255,255,0.18)_0%,rgba(147,164,198,0.18)_100%)]" />
+                <div className="absolute left-[17px] top-[12px] h-[18px] w-[18px] rounded-full border border-[#95A5C5] bg-[radial-gradient(circle_at_35%_35%,#D8E1F0_0%,#B7C4DB_72%,#A4B2CD_100%)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.55)]" />
+                <div className="absolute left-[12px] top-[42px] h-[16px] w-[16px] rounded-full border border-[#95A4C2] bg-[radial-gradient(circle_at_35%_35%,#C3CEE3_0%,#AAB7D0_78%,#97A6C2_100%)]" />
+                <div className="absolute right-[9px] top-[33px] flex h-[22px] w-[22px] items-center justify-center rounded-full border border-[#8EAF70] bg-[radial-gradient(circle_at_35%_35%,#D4E993_0%,#B9D86C_68%,#9FC14D_100%)] shadow-[0_0_0_4px_rgba(186,218,122,0.22),0_2px_6px_rgba(132,166,63,0.35)]">
+                    <div className="h-[8px] w-[8px] rounded-full bg-white/35" />
+                </div>
+                <div className="absolute left-[16px] top-[74px] h-[10px] w-[24px] rounded-full bg-[#93A1BE]" />
+                <div className="absolute left-[21px] top-[68px] h-[22px] w-[14px] rounded-[10px] border border-[#98A7C4] bg-[linear-gradient(180deg,#C6D1E6_0%,#ADB9D3_100%)]" />
+                <div className="absolute bottom-[9px] left-[11px] h-[14px] w-[34px] rounded-full border border-[#A2B0CA] bg-[linear-gradient(180deg,#BAC5DB_0%,#AAB6D0_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]" />
             </div>
             <div className="flex-1">
                 <div className="text-[10px] font-black tracking-[0.06em] text-[#D66B43]">模式切换引导</div>
                 <div className="mt-1 text-[11px] font-bold leading-[1.3] text-[#6C7286]">
                     请按绿色模式切换键，完成硬件切换。
                 </div>
-                <div className="mt-1.5 space-y-0.5 text-[10px] font-semibold leading-[1.25] text-[#7B8196]">
+                <div className="mt-2 space-y-1 text-[10px] font-semibold leading-[1.3] text-[#7B8196]">
                     <div>1. 找到高亮模式键</div>
                     <div>2. 按下后等待切换完成</div>
                 </div>
@@ -241,8 +243,8 @@ export default function LegacyVerticalCTModeConfirmScreen() {
                                             {item.value}
                                         </div>
                                     </div>
-                                    <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-lg bg-[#F6F8FD]">
-                                        <img src={item.iconSrc} alt={item.iconAlt} draggable={false} className="h-[26px] w-[26px] object-contain" />
+                                    <div className="flex h-[48px] w-[48px] shrink-0 items-center justify-center">
+                                        <img src={item.iconSrc} alt={item.iconAlt} draggable={false} className={item.label === "扫描环角度" ? "h-[48px] w-[48px] object-contain" : "h-[38px] w-[38px] object-contain"} />
                                     </div>
                                 </div>
                             );
@@ -294,4 +296,15 @@ export default function LegacyVerticalCTModeConfirmScreen() {
         </div>
     );
 }
+
+
+
+
+
+
+
+
+
+
+
 
