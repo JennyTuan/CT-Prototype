@@ -4,6 +4,7 @@ export type RawProtocol = {
     id: string;
     name: string;
     region: string;
+    patientType: "adult" | "child";
     scanLocationLabel: string;
     supportedPositions: string[];
     supportedModes: string[];
@@ -34,6 +35,7 @@ type ProtocolRow = {
     protocolId: string;
     name: string;
     region: string;
+    patientType: "adult" | "child";
     scanLocationLabel: string;
     supportedPositionsJson: string;
     supportedModesJson: string;
@@ -71,6 +73,7 @@ type BusinessProtocolRow = {
     id: string;
     name: string;
     region: string;
+    ageGroup?: string | null;
     scanLocationLabel: string;
     supportedPositions: string;
     supportedModes: string;
@@ -109,6 +112,7 @@ export type BusinessProtocolSnapshot = {
 };
 
 const SNAPSHOT_IMPORT_KEY = "protocol_snapshot_import_marker";
+const SNAPSHOT_IMPORT_VERSION = "v2";
 
 class ProtocolDb extends Dexie {
     protocols!: Table<ProtocolRow, number>;
@@ -163,10 +167,17 @@ const toSnapshotMarker = (snapshot: BusinessProtocolSnapshot): string => {
     const protocolCount = snapshot.tables.protocol.rows.length;
     const sequenceCount = snapshot.tables.protocol_queue.rows.length;
     const reconCount = snapshot.tables.protocol_recon_task.rows.length;
-    return `${generatedAt}:${protocolCount}:${sequenceCount}:${reconCount}`;
+    return `${SNAPSHOT_IMPORT_VERSION}:${generatedAt}:${protocolCount}:${sequenceCount}:${reconCount}`;
 };
 
-const toProtocolCasesFromSnapshot = (snapshot: BusinessProtocolSnapshot): RawProtocolCase[] => {
+export const mapAgeGroupToPatientType = (ageGroup?: string | null): "adult" | "child" => {
+    if (ageGroup === "儿童" || ageGroup === "婴儿") {
+        return "child";
+    }
+    return "adult";
+};
+
+export const convertBusinessSnapshotToProtocolCases = (snapshot: BusinessProtocolSnapshot): RawProtocolCase[] => {
     const protocols = [...snapshot.tables.protocol.rows].sort((left, right) => left.name.localeCompare(right.name, "zh-CN"));
     const sequences = snapshot.tables.protocol_queue.rows;
     const reconstructions = snapshot.tables.protocol_recon_task.rows;
@@ -196,6 +207,7 @@ const toProtocolCasesFromSnapshot = (snapshot: BusinessProtocolSnapshot): RawPro
                 id: protocolRow.id,
                 name: protocolRow.name,
                 region: protocolRow.region,
+                patientType: mapAgeGroupToPatientType(protocolRow.ageGroup),
                 scanLocationLabel: protocolRow.scanLocationLabel,
                 supportedPositions: toStringArray(protocolRow.supportedPositions),
                 supportedModes: toStringArray(protocolRow.supportedModes),
@@ -215,6 +227,7 @@ const saveProtocolCases = async (cases: RawProtocolCase[]): Promise<void> => {
             protocolId: protocol.id,
             name: protocol.name,
             region: protocol.region,
+            patientType: protocol.patientType,
             scanLocationLabel: protocol.scanLocationLabel,
             supportedPositionsJson: JSON.stringify(protocol.supportedPositions),
             supportedModesJson: JSON.stringify(protocol.supportedModes),
@@ -270,7 +283,7 @@ export const ensureBusinessSnapshotImported = async (snapshot: BusinessProtocolS
         return;
     }
 
-    const protocolCases = toProtocolCasesFromSnapshot(snapshot);
+    const protocolCases = convertBusinessSnapshotToProtocolCases(snapshot);
 
     await protocolDb.transaction(
         "rw",
@@ -287,6 +300,7 @@ export const ensureBusinessSnapshotImported = async (snapshot: BusinessProtocolS
                 protocolId: protocol.id,
                 name: protocol.name,
                 region: protocol.region,
+                patientType: protocol.patientType,
                 scanLocationLabel: protocol.scanLocationLabel,
                 supportedPositionsJson: JSON.stringify(protocol.supportedPositions),
                 supportedModesJson: JSON.stringify(protocol.supportedModes),
@@ -371,6 +385,7 @@ export const loadProtocolCasesFromDb = async (): Promise<RawProtocolCase[]> => {
                 id: protocolRow.protocolId,
                 name: protocolRow.name,
                 region: protocolRow.region,
+                patientType: protocolRow.patientType || "adult",
                 scanLocationLabel: protocolRow.scanLocationLabel,
                 supportedPositions: JSON.parse(protocolRow.supportedPositionsJson) as string[],
                 supportedModes: JSON.parse(protocolRow.supportedModesJson) as string[],
@@ -386,6 +401,7 @@ export const createProtocolCase = async (protocolCase: RawProtocolCase): Promise
             protocolId: protocolCase.protocol.id,
             name: protocolCase.protocol.name,
             region: protocolCase.protocol.region,
+            patientType: protocolCase.protocol.patientType,
             scanLocationLabel: protocolCase.protocol.scanLocationLabel,
             supportedPositionsJson: JSON.stringify(protocolCase.protocol.supportedPositions),
             supportedModesJson: JSON.stringify(protocolCase.protocol.supportedModes),
@@ -424,7 +440,7 @@ export const createProtocolCase = async (protocolCase: RawProtocolCase): Promise
 
 export const updateProtocolMeta = async (
     protocolId: string,
-    patch: Partial<Pick<RawProtocol, "name" | "region" | "scanLocationLabel" | "supportedPositions" | "supportedModes">>
+    patch: Partial<Pick<RawProtocol, "name" | "region" | "patientType" | "scanLocationLabel" | "supportedPositions" | "supportedModes">>
 ): Promise<void> => {
     const row = await protocolDb.protocols.where("protocolId").equals(protocolId).first();
     if (!row || row.id === undefined) return;
@@ -432,6 +448,7 @@ export const updateProtocolMeta = async (
     await protocolDb.protocols.update(row.id, {
         ...(patch.name !== undefined ? { name: patch.name } : {}),
         ...(patch.region !== undefined ? { region: patch.region } : {}),
+        ...(patch.patientType !== undefined ? { patientType: patch.patientType } : {}),
         ...(patch.scanLocationLabel !== undefined ? { scanLocationLabel: patch.scanLocationLabel } : {}),
         ...(patch.supportedPositions !== undefined ? { supportedPositionsJson: JSON.stringify(patch.supportedPositions) } : {}),
         ...(patch.supportedModes !== undefined ? { supportedModesJson: JSON.stringify(patch.supportedModes) } : {}),

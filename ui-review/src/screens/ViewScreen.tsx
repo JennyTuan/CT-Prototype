@@ -6,8 +6,6 @@ import {
     ChevronLeft,
     ChevronRight,
     ChevronDown,
-    Monitor,
-    UserCheck,
     Layers3,
     SlidersHorizontal,
     ZoomIn,
@@ -20,6 +18,9 @@ import {
     RefreshCw,
     Play,
     Pause,
+    Flame,
+    Network,
+    Siren,
 } from "lucide-react";
 import * as dicomParser from "dicom-parser";
 
@@ -1276,27 +1277,30 @@ const ViewScreen = () => {
                             <span className="text-[16px] font-bold text-[#37474F]">Roky Zhang</span>
                             <span className="text-[12px] text-[#546E7A] font-medium leading-none mt-0.5">ID: 67890</span>
                         </div>
-                        <div className="ml-auto flex flex-col gap-0.5 text-[#546E7A] opacity-60">
-                            <div className="text-[9px] font-bold italic">⊥ 0</div>
-                            <div className="text-[9px] font-bold">∠ 0</div>
+                    </div>
+                    <div className="flex flex-col gap-0.5 text-[#546E7A] opacity-60">
+                        <div className="text-[9px] font-bold italic">⊥ 0</div>
+                        <div className="text-[9px] font-bold">∠ 0</div>
+                        <div className="flex items-center gap-1 text-[11px] font-bold">
+                            <Flame size={14} />
+                            <span>0%</span>
                         </div>
                     </div>
                 </div>
 
                 <div className="text-center">
                     <div className="text-[28px] font-bold tracking-tight text-[#37474F] leading-none">13:52</div>
-                    <div className="text-[12px] text-[#546E7A] font-medium mt-1 uppercase opacity-80">View</div>
+                    <div className="text-[12px] text-[#546E7A] font-medium mt-1 uppercase opacity-80">2月26日 周四</div>
                 </div>
 
                 <div className="flex items-center gap-5 pr-2">
-                    <div className="p-1 text-[#D32F2F] cursor-pointer hover:opacity-70"><UserCheck size={32} strokeWidth={1.5} /></div>
-                    <div className="p-1 text-[#546E7A] cursor-pointer hover:opacity-70 relative">
-                        <Monitor size={24} />
-                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[9px] flex items-center justify-center rounded-full font-bold border border-white">9</span>
+                    <div className="p-1 text-[#D32F2F] cursor-pointer hover:opacity-70"><Siren size={30} strokeWidth={1.8} /></div>
+                    <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
+                        <Network size={24} />
+                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[9px] flex items-center justify-center rounded-full font-bold border border-white">5</span>
                     </div>
                     <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
                         <Sun size={24} />
-                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[9px] flex items-center justify-center rounded-full font-bold border border-white">5</span>
                     </div>
                     <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
                         <Settings size={24} />

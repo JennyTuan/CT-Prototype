@@ -13,15 +13,13 @@ const scoutFields: ScoutField[] = [
     { label: "扫描方向", type: "select", options: ["OUT", "IN"] },
     { label: "定位像 FOV", type: "input", value: "500" },
     { label: "DOM (动态扫描)", type: "input", placeholder: "0 或 1" },
-    { label: "床倾角 (ANGLE)", type: "input", value: "0" },
+    { label: "床角度 (ANGLE)", type: "input", value: "0" },
 ];
 
 export default function WT32NewProtocolScoutDetailScreen() {
     return (
         <div className="flex flex-col h-full bg-[#EEF2F9] text-[#37474F] font-sans select-none">
-            {/* Main Content Area */}
             <main className="flex-1 overflow-hidden p-2 flex gap-3">
-                {/* Left Panel - Protocol Sidebar (EXACT COPY OF Detail Screen) */}
                 <aside className="w-[310px] flex flex-col bg-white border border-[#B0C4DE] rounded-md shadow-sm overflow-hidden shrink-0">
                     <div className="h-[44px] bg-[#F8FAFC] border-b border-[#EEF2F9] flex items-center px-4 shrink-0">
                         <span className="text-[11px] font-black uppercase tracking-wider text-[#37474F]">
@@ -32,7 +30,7 @@ export default function WT32NewProtocolScoutDetailScreen() {
                     <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-4">
                         <div className="p-3 bg-[#F8FAFC] border border-[#EEF2F9] rounded-md">
                             <div className="flex items-center gap-2 mb-2">
-                                <span className="font-bold text-sm text-[#37474F]">牙齿</span>
+                                <span className="font-bold text-sm text-[#37474F]">牙颌</span>
                                 <span className="bg-[#EEF2F9] text-[#546E7A] text-[10px] px-1.5 py-0.5 rounded">头部</span>
                                 <span className="bg-[#EEF2F9] text-[#546E7A] text-[10px] px-1.5 py-0.5 rounded">成人</span>
                             </div>
@@ -45,9 +43,7 @@ export default function WT32NewProtocolScoutDetailScreen() {
                         </div>
 
                         <nav className="flex flex-col gap-2">
-                            <button
-                                className="flex items-center justify-between px-4 py-2.5 rounded-md text-[13px] font-bold text-[#546E7A] border border-transparent hover:bg-gray-50 transition-all"
-                            >
+                            <button className="flex items-center justify-between px-4 py-2.5 rounded-md text-[13px] font-bold text-[#546E7A] border border-transparent hover:bg-gray-50 transition-all">
                                 协议基本信息
                             </button>
 
@@ -60,7 +56,6 @@ export default function WT32NewProtocolScoutDetailScreen() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    {/* Selected Item in this screen */}
                                     <div className="bg-[#4D94FF] text-white px-3 py-2.5 rounded-md flex justify-between items-start cursor-pointer shadow-sm">
                                         <span className="text-[11px] font-bold">定位像</span>
                                         <span className="text-[10px] opacity-80 font-medium mt-0.5">LOCALIZER</span>
@@ -103,7 +98,6 @@ export default function WT32NewProtocolScoutDetailScreen() {
                     </div>
                 </aside>
 
-                {/* Right Panel - Parameter Editor (Scout Specific) */}
                 <section className="flex-1 bg-white border border-[#B0C4DE] rounded-md shadow-sm flex flex-col overflow-hidden">
                     <div className="h-[52px] bg-[#F8FAFC] border-b border-[#EEF2F9] flex items-center justify-between px-6 shrink-0 text-[#37474F]">
                         <span className="text-[11px] font-black uppercase tracking-widest text-[#37474F]">定位像采集参数 (Scout Params)</span>
@@ -114,12 +108,14 @@ export default function WT32NewProtocolScoutDetailScreen() {
                     </div>
 
                     <div className="flex-1 p-5 overflow-y-auto bg-white">
-                        <div className="bg-[#FFF8E1] border border-[#FFE082] rounded-md px-3 py-2 flex items-start gap-2.5 mb-4 shadow-sm shrink-0">
-                            <div className="w-5 h-5 rounded-full bg-[#F57C00]/10 flex items-center justify-center shrink-0 mt-0.5">
-                                <Info size={12} className="text-[#F57C00]" />
+                        <div className="bg-[#EEF6FF] border border-[#BFDBFE] rounded-md px-3 py-2 flex items-center gap-2.5 mb-4 shadow-sm shrink-0">
+                            <div className="w-5 h-5 rounded-full bg-[#4D94FF]/10 flex items-center justify-center shrink-0">
+                                <Info size={12} className="text-[#4D94FF]" />
                             </div>
-                            <p className="text-[10px] text-[#546E7A] leading-relaxed font-medium">
-                                定位像用于确定扫描区域，通常使用<span className="text-[#F57C00] font-bold mx-1 underline decoration-dotted underline-offset-2">较低剂量</span>参数以保障患者安全与减少辐射。
+                            <p className="text-[10px] text-[#546E7A] leading-[1.5] font-medium">
+                                定位像用于确定扫描区域，通常使用
+                                <span className="text-[#4D94FF] font-bold mx-1 underline decoration-dotted underline-offset-2">较低剂量</span>
+                                参数以保障患者安全与减少辐射。
                             </p>
                         </div>
 

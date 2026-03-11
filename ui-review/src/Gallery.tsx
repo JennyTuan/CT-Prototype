@@ -28,14 +28,18 @@ import CTSimulatorUIRefactorLight2 from "./screens/CTSimulatorUIRefactorLight2";
 
 
 export default function Gallery() {
+    const [activeKey, setActiveKey] = useState("patient_list");
+    const openProtocolDetail = () => setActiveKey("protocol_detail");
+    const backToProtocolSetup = () => setActiveKey("protocol_setup");
+
     const categories = useMemo(() => [
         {
             id: "wt32",
             name: "WT32 平台",
             screens: [
                 { key: "patient_list", name: "患者列表", component: <PatientListScreen /> },
-                { key: "protocol_setup", name: "协议选择", component: <ProtocolSetupScreen /> },
-                { key: "protocol_detail", name: "协议详情", component: <ProtocolEditorModal><WT32ProtocolDetailScreen /></ProtocolEditorModal> },
+                { key: "protocol_setup", name: "协议选择", component: <ProtocolSetupScreen onOpenProtocolDetail={openProtocolDetail} /> },
+                { key: "protocol_detail", name: "协议详情", component: <ProtocolEditorModal onCancel={backToProtocolSetup}><WT32ProtocolDetailScreen /></ProtocolEditorModal> },
                 { key: "protocol_scout_detail", name: "协议详情-定位像", component: <ProtocolEditorModal><WT32ProtocolScoutDetailScreen /></ProtocolEditorModal> },
                 { key: "protocol_helical_detail", name: "协议详情-螺旋扫描", component: <ProtocolEditorModal><WT32ProtocolHelicalDetailScreen /></ProtocolEditorModal> },
                 { key: "protocol_recon_soft", name: "协议详情-重建(软组织)", component: <ProtocolEditorModal><WT32ProtocolReconDetailScreen type="soft" /></ProtocolEditorModal> },
@@ -68,7 +72,6 @@ export default function Gallery() {
     ], []);
 
     const allScreens = useMemo(() => categories.flatMap(c => c.screens), [categories]);
-    const [activeKey, setActiveKey] = useState(allScreens[0]?.key);
     const active = allScreens.find((s) => s.key === activeKey) ?? allScreens[0];
     const wt32Keys = useMemo(() => categories.find((c) => c.id === "wt32")?.screens.map((s) => s.key) ?? [], [categories]);
     const isWt32Active = wt32Keys.includes(activeKey ?? "");

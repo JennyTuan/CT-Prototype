@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+﻿import { useState, useMemo, useEffect, useCallback } from "react";
 import type { MouseEvent, ReactElement } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import {
@@ -19,16 +19,19 @@ import {
     Target,
     CircleDot,
     Info,
-    UserCheck,
-    AlertTriangle,
     Activity,
+    Flame,
+    Network,
+    Siren,
+    AlertTriangle,
 } from "lucide-react";
-import { ensureBusinessSnapshotImported, loadProtocolCasesFromDb } from "../lib/protocolDb";
+import { convertBusinessSnapshotToProtocolCases, ensureBusinessSnapshotImported, loadProtocolCasesFromDb } from "../lib/protocolDb";
 
 type RawProtocol = {
     id: string;
     name: string;
     region: string;
+    patientType: "adult" | "child";
     scanLocationLabel: string;
     supportedPositions: string[];
     supportedModes: string[];
@@ -86,12 +89,35 @@ type UiPlan = {
 const bodyRegions = ["头部", "颈部", "胸腔", "脊柱", "腹部", "四肢"] as const;
 type BodyRegion = typeof bodyRegions[number];
 
+const normalizeRegion = (value: string | undefined): BodyRegion | "" => {
+    if (!value) return "";
+    const region = value.trim();
+    if (region.includes("头")) return "头部";
+    if (region.includes("颈")) return "颈部";
+    if (region.includes("胸")) return "胸腔";
+    if (region.includes("脊")) return "脊柱";
+    if (region.includes("腹")) return "腹部";
+    if (region.includes("肢")) return "四肢";
+    return "";
+};
+
+const normalizePatientType = (value: string | undefined): "adult" | "child" => {
+    if (!value) return "adult";
+    return value === "child" ? "child" : "adult";
+};
+
+const normalizeModeTags = (modes: string[] | undefined): string[] => {
+    if (!modes) return [];
+    return modes.map((mode) => mode.trim());
+};
+
 const protocolCaseData: RawProtocolCase[] = [
     {
         protocol: {
             id: "origin-1",
-            name: "脑部螺旋",
+            name: "脑部轴位",
             region: "头部",
+            patientType: "adult",
             scanLocationLabel: "脑部",
             supportedPositions: ["HFS"],
             supportedModes: ["定位像", "螺旋扫描"],
@@ -171,6 +197,7 @@ const protocolCaseData: RawProtocolCase[] = [
             id: "origin-2",
             name: "脑部轴位2D",
             region: "头部",
+            patientType: "adult",
             scanLocationLabel: "脑部",
             supportedPositions: ["HFS"],
             supportedModes: ["定位像", "断层扫描"],
@@ -349,15 +376,21 @@ const clonePlan = (plan: UiPlan, idSuffix: string): UiPlan => ({
     sequences: plan.sequences.map((sequence, index) => cloneSequence(sequence, `${idSuffix}-${index}`)),
 });
 
-const ProtocolSetupScreen = () => {
+type ProtocolSetupScreenProps = {
+    onOpenProtocolDetail?: () => void;
+};
+
+const ProtocolSetupScreen = ({ onOpenProtocolDetail }: ProtocolSetupScreenProps) => {
     const [activeTab, setActiveTab] = useState<"scan" | "recon">("scan");
     const [libraryTab, setLibraryTab] = useState<"spiral" | "axial">("spiral");
-    const [selectedBodyRegion, setSelectedBodyRegion] = useState<BodyRegion>("头部");
+    const [selectedBodyRegion, setSelectedBodyRegion] = useState<BodyRegion>(bodyRegions[0]);
     const [selectedProtocolIds, setSelectedProtocolIds] = useState<number[]>([1]);
     const [positioning, setPositioning] = useState<"HFS" | "FFS" | "HFP" | "FFP" | "HFDR" | "FFDR" | "HFDL" | "FFDL">("HFS");
     const [positionGroupIndex, setPositionGroupIndex] = useState<0 | 1>(0);
     const [planListOpen, setPlanListOpen] = useState(true);
     const [collapsedPlanIds, setCollapsedPlanIds] = useState<string[]>([]);
+    const [patientType, setPatientType] = useState<"adult" | "child">("adult");
+    const [snapshotProtocolCases, setSnapshotProtocolCases] = useState<RawProtocolCase[]>([]);
 
     // 选中序列 ID 和重建方案索引
     const [selectedSeqId, setSelectedSeqId] = useState(() => {
@@ -381,6 +414,7 @@ const ProtocolSetupScreen = () => {
                 if (!response.ok) return;
                 const snapshot = await response.json();
                 if (cancelled) return;
+                setSnapshotProtocolCases(convertBusinessSnapshotToProtocolCases(snapshot));
                 await ensureBusinessSnapshotImported(snapshot);
             } catch {
                 // Keep local mock data as a fallback if the snapshot is unavailable.
@@ -399,7 +433,11 @@ const ProtocolSetupScreen = () => {
         [],
         [] as RawProtocolCase[]
     );
-    const protocolSource = dbProtocolCases.length > 0 ? dbProtocolCases : protocolCaseData;
+    const protocolSource = snapshotProtocolCases.length > 0
+        ? snapshotProtocolCases
+        : dbProtocolCases.length > 0
+            ? dbProtocolCases
+            : protocolCaseData;
 
     const protocolCatalog = useMemo(
         () => protocolSource.map((entry, idx) => ({ id: idx + 1, entry })),
@@ -408,33 +446,45 @@ const ProtocolSetupScreen = () => {
 
     const libraryData = useMemo(
         () => protocolCatalog
-            .filter(({ entry }) =>
-                entry.protocol.region === selectedBodyRegion
-                && (libraryTab === "spiral"
-                    ? entry.protocol.supportedModes.includes("螺旋扫描")
-                    : entry.protocol.supportedModes.includes("断层扫描"))
-            )
+            .filter(({ entry }) => {
+                const normalizedRegion = normalizeRegion(entry.protocol.region);
+                const normalizedPatientType = normalizePatientType(entry.protocol.patientType);
+                const supportedModes = normalizeModeTags(entry.protocol.supportedModes);
+                const sequenceModes = entry.sequences.map((sequence) => sequence.mode.trim());
+                const hasSpiral = supportedModes.some((mode) => mode.includes("螺旋")) || sequenceModes.some((mode) => mode.includes("螺旋"));
+                const hasAxial = supportedModes.some((mode) => mode.includes("断层")) || sequenceModes.some((mode) => mode.includes("断层"));
+
+                return normalizedRegion === selectedBodyRegion
+                    && normalizedPatientType === patientType
+                    && (libraryTab === "spiral" ? hasSpiral : hasAxial);
+            })
+            .sort((left, right) => left.entry.protocol.name.localeCompare(right.entry.protocol.name, "zh-CN"))
             .map(({ id, entry }) => ({
                 id,
                 name: entry.protocol.name,
-                region: entry.protocol.region,
+                region: normalizeRegion(entry.protocol.region) || entry.protocol.region,
             })),
-        [protocolCatalog, libraryTab, selectedBodyRegion]
+        [protocolCatalog, libraryTab, selectedBodyRegion, patientType]
     );
 
-    const buildPlansFromIds = (ids: number[]): UiPlan[] =>
-        protocolCatalog
-            .filter((item) => ids.includes(item.id))
-            .map((item) => toUiPlan(item.entry));
+    const buildPlansFromIds = useCallback(
+        (ids: number[]): UiPlan[] =>
+            protocolCatalog
+                .filter((item) => ids.includes(item.id))
+                .map((item) => toUiPlan(item.entry)),
+        [protocolCatalog]
+    );
 
     const [scanPlans, setScanPlans] = useState<UiPlan[]>(() => buildPlansFromIds(selectedProtocolIds));
 
     useEffect(() => {
         if (protocolCatalog.length === 0) {
-            setScanPlans([]);
-            setSelectedProtocolIds([]);
-            setSelectedSeqId("");
-            return;
+            const timer = setTimeout(() => {
+                setScanPlans([]);
+                setSelectedProtocolIds([]);
+                setSelectedSeqId("");
+            }, 0);
+            return () => clearTimeout(timer);
         }
 
         const validSelectedIds = selectedProtocolIds.filter((id) => protocolCatalog.some((item) => item.id === id));
@@ -446,23 +496,32 @@ const ProtocolSetupScreen = () => {
             nextSelectedIds.length !== selectedProtocolIds.length ||
             nextSelectedIds.some((id, index) => id !== selectedProtocolIds[index])
         ) {
-            setSelectedProtocolIds(nextSelectedIds);
+            const timer = setTimeout(() => {
+                setSelectedProtocolIds(nextSelectedIds);
+                setScanPlans(nextPlans);
+                setSelectedSeqId((current) =>
+                    nextPlans.some((plan: UiPlan) => plan.sequences.some((sequence: UiSequence) => sequence.id === current)) ? current : nextSelectedSeqId
+                );
+            }, 0);
+            return () => clearTimeout(timer);
+        } else {
+            setScanPlans(nextPlans);
+            setSelectedSeqId((current) =>
+                nextPlans.some((plan: UiPlan) => plan.sequences.some((sequence: UiSequence) => sequence.id === current)) ? current : nextSelectedSeqId
+            );
         }
-
-        setScanPlans(nextPlans);
-        setSelectedSeqId((current) =>
-            nextPlans.some((plan) => plan.sequences.some((sequence) => sequence.id === current)) ? current : nextSelectedSeqId
-        );
-    }, [protocolCatalog]);
+    }, [protocolCatalog, selectedProtocolIds, buildPlansFromIds]);
 
     useEffect(() => {
         if (libraryData.length === 0) {
-            setSelectedProtocolIds([]);
-            setScanPlans([]);
-            setSelectedSeqId("");
-            setCheckedPlanIds([]);
-            setCheckedSeqIds([]);
-            return;
+            const timer = setTimeout(() => {
+                setSelectedProtocolIds([]);
+                setScanPlans([]);
+                setSelectedSeqId("");
+                setCheckedPlanIds([]);
+                setCheckedSeqIds([]);
+            }, 0);
+            return () => clearTimeout(timer);
         }
 
         const visibleIds = new Set(libraryData.map((item) => item.id));
@@ -473,17 +532,20 @@ const ProtocolSetupScreen = () => {
             resolvedSelectedIds.length !== selectedProtocolIds.length ||
             resolvedSelectedIds.some((id, index) => id !== selectedProtocolIds[index])
         ) {
-            setSelectedProtocolIds(resolvedSelectedIds);
-            const nextPlans = buildPlansFromIds(resolvedSelectedIds);
-            setScanPlans(nextPlans);
-            setSelectedSeqId(nextPlans.flatMap((plan) => plan.sequences)[0]?.id || "");
-            setSelectedReconIndex(0);
-            setCollapsedPlanIds([]);
-            setCheckedPlanIds([]);
-            setCheckedSeqIds([]);
-            setPlanListOpen(true);
+            const timer = setTimeout(() => {
+                setSelectedProtocolIds(resolvedSelectedIds);
+                const nextPlans = buildPlansFromIds(resolvedSelectedIds);
+                setScanPlans(nextPlans);
+                setSelectedSeqId(nextPlans.flatMap((plan: UiPlan) => plan.sequences)[0]?.id || "");
+                setSelectedReconIndex(0);
+                setCollapsedPlanIds([]);
+                setCheckedPlanIds([]);
+                setCheckedSeqIds([]);
+                setPlanListOpen(true);
+            }, 0);
+            return () => clearTimeout(timer);
         }
-    }, [libraryData]);
+    }, [libraryData, selectedProtocolIds, buildPlansFromIds]);
 
     const toggleProtocolSelection = (protocolId: number) => {
         const nextIds = selectedProtocolIds.includes(protocolId)
@@ -638,32 +700,36 @@ const ProtocolSetupScreen = () => {
                                 ID: 12345678
                             </span>
                         </div>
-                        <div className="ml-auto flex flex-col gap-0.5 text-[#546E7A] opacity-60">
-                            <div className="text-[9px] font-bold italic tracking-tighter">⊥ 0</div>
-                            <div className="text-[9px] font-bold tracking-tighter">∠ 0</div>
+                    </div>
+                    <div className="flex flex-col gap-0.5 text-[#546E7A] opacity-60">
+                        <div className="text-[9px] font-bold italic">⊥ 0</div>
+                        <div className="text-[9px] font-bold">∠ 0</div>
+                        <div className="flex items-center gap-1 text-[11px] font-bold">
+                            <Flame size={14} />
+                            <span>0%</span>
                         </div>
                     </div>
                 </div>
 
                 <div className="text-center">
                     <div className="text-[28px] font-bold tracking-tight text-[#37474F] leading-none">13:52</div>
-                    <div className="text-[11px] text-[#546E7A] font-bold mt-1 uppercase opacity-70">
+                    <div className="text-[12px] text-[#546E7A] font-medium mt-1 uppercase opacity-80">
                         2月26日 周四
                     </div>
                 </div>
 
                 <div className="flex items-center gap-5 pr-2">
                     <div className="p-1 text-[#D32F2F] cursor-pointer hover:opacity-70">
-                        <UserCheck size={32} strokeWidth={1.5} />
-                    </div>
-                    <div className="p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
-                        <Monitor size={24} />
+                        <Siren size={30} strokeWidth={1.8} />
                     </div>
                     <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
-                        <Sun size={24} />
+                        <Network size={24} />
                         <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[9px] flex items-center justify-center rounded-full font-bold border border-white">
                             5
                         </span>
+                    </div>
+                    <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
+                        <Sun size={24} />
                     </div>
                     <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
                         <Settings size={24} />
@@ -867,71 +933,167 @@ const ProtocolSetupScreen = () => {
                             </div>
                         </div>
 
-                        <button className="shrink-0 mt-3 h-[32px] w-full bg-white border border-[#B0C4DE] rounded-md text-[10px] font-bold text-[#4D94FF] flex items-center justify-center gap-1 hover:bg-blue-50 transition-all shadow-sm">
+                        <button
+                            onClick={onOpenProtocolDetail}
+                            className="shrink-0 mt-3 h-[32px] w-full bg-white border border-[#B0C4DE] rounded-md text-[10px] font-bold text-[#4D94FF] flex items-center justify-center gap-1 hover:bg-blue-50 transition-all shadow-sm"
+                        >
                             <Info size={14} /> 参数详情
                         </button>
                     </div>
                 </aside >
 
                 {/* Center */}
-                < section className="flex-1 bg-white border border-[#B0C4DE] rounded-md shadow-sm flex flex-col relative overflow-hidden" >
-                    <div className="h-[44px] bg-[#F8FAFC] border-b border-[#EEF2F9] flex items-center justify-center shrink-0">
+                <section className="flex-1 bg-white border border-[#B0C4DE] rounded-md shadow-sm flex flex-col relative overflow-hidden" >
+                    <div className="h-[44px] bg-[#F8FAFC] border-b border-[#EEF2F9] flex items-center justify-between px-6 shrink-0">
                         <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#37474F]">
                             解剖区域确认
                         </span>
+                        <div className="flex bg-[#EEF2F9] rounded-md p-1 border border-[#B0C4DE]/30">
+                            <button
+                                onClick={() => setPatientType("adult")}
+                                className={`px-4 py-1 text-[10px] font-black rounded-sm transition-all ${patientType === "adult" ? "bg-[#4D94FF] text-white shadow-sm" : "text-[#546E7A] hover:bg-white/50"}`}
+                            >
+                                成人
+                            </button>
+                            <button
+                                onClick={() => setPatientType("child")}
+                                className={`px-4 py-1 text-[10px] font-black rounded-sm transition-all ${patientType === "child" ? "bg-[#4D94FF] text-white shadow-sm" : "text-[#546E7A] hover:bg-white/50"}`}
+                            >
+                                儿童
+                            </button>
+                        </div>
                     </div>
 
-                    <div className="flex-1 bg-white p-4">
-                        <div className="h-full rounded-[18px] border border-[#D9E3EE] bg-[linear-gradient(180deg,#F8FBFF_0%,#F3F7FC_48%,#EEF3F9_100%)] p-4 flex gap-5 overflow-hidden">
-                            <div className="w-[150px] shrink-0 rounded-[16px] border border-[#DCE6F2] bg-white/80 backdrop-blur-sm px-3 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-                                <div className="text-[10px] font-black tracking-[0.24em] text-[#7A8FA6] text-center">
-                                    REGION NAV
-                                </div>
-                                <div className="relative mt-4 flex flex-col gap-3">
-                                    <div className="absolute left-[19px] top-3 bottom-3 w-[2px] rounded-full bg-[linear-gradient(180deg,#CFE0F5_0%,#AFC9ED_100%)]"></div>
-                                    {bodyRegions.map((region) => (
-                                        <button
-                                            key={region}
-                                            onClick={() => setSelectedBodyRegion(region)}
-                                            className={`group relative flex min-h-[42px] items-center gap-3 rounded-[14px] border px-3 text-left transition-all ${selectedBodyRegion === region
-                                                ? "border-[#4D94FF] bg-[linear-gradient(135deg,#4D94FF_0%,#72B4FF_100%)] text-white shadow-[0_8px_18px_rgba(77,148,255,0.28)]"
-                                                : "border-[#D7E1EC] bg-[#F9FBFD] text-[#546E7A] hover:border-[#8FB7EA] hover:bg-white"
-                                                }`}
-                                        >
-                                            <span className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${selectedBodyRegion === region
-                                                ? "border-white/40 bg-white/18"
-                                                : "border-[#B9CCE1] bg-white"
-                                                }`}>
-                                                <span className={`h-2.5 w-2.5 rounded-full ${selectedBodyRegion === region ? "bg-white" : "bg-[#7CA7D8]"}`}></span>
-                                            </span>
-                                            <span className="relative z-10 text-[12px] font-black tracking-[0.08em]">
-                                                {region}
-                                            </span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                    <div className="flex-1 bg-white p-3 flex flex-col min-h-0">
+                        <div className="flex-1 relative">
+                            <div className="relative h-full flex items-center justify-center py-6">
+                                {/* Human Body SVG Container */}
+                                <div className="relative h-full aspect-[2/3] max-h-[500px]">
+                                    <svg viewBox="0 0 200 600" className="w-full h-full drop-shadow-2xl overflow-visible">
+                                        <defs>
+                                            <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                                <stop offset="0%" stopColor="#E2E8F0" />
+                                                <stop offset="50%" stopColor="#F8FAFC" />
+                                                <stop offset="100%" stopColor="#E2E8F0" />
+                                            </linearGradient>
+                                            <linearGradient id="activeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                                <stop offset="0%" stopColor="#4D94FF" />
+                                                <stop offset="50%" stopColor="#80B3FF" />
+                                                <stop offset="100%" stopColor="#4D94FF" />
+                                            </linearGradient>
+                                            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                                                <feGaussianBlur stdDeviation="3" result="blur" />
+                                                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                            </filter>
+                                        </defs>
 
-                            <div className="flex-1 relative rounded-[18px] border border-dashed border-[#D7E1EC] bg-[radial-gradient(circle_at_top,#FFFFFF_0%,#F7FAFD_40%,#EEF4FA_100%)] overflow-hidden">
-                                <div className="absolute inset-x-0 top-0 h-20 bg-[linear-gradient(180deg,rgba(255,255,255,0.75)_0%,rgba(255,255,255,0)_100%)]"></div>
-                                <div className="absolute left-1/2 top-[56px] bottom-[56px] w-[4px] -translate-x-1/2 rounded-full bg-[linear-gradient(180deg,#D6E4F5_0%,#B7D0EC_35%,#B7D0EC_65%,#D6E4F5_100%)]"></div>
-                                <div className="absolute left-1/2 top-[72px] h-[54px] w-[54px] -translate-x-1/2 rounded-full border border-[#D4E2F2] bg-white/75 shadow-[0_10px_25px_rgba(160,183,210,0.18)]"></div>
-                                <div className="absolute left-1/2 top-[134px] h-[104px] w-[88px] -translate-x-1/2 rounded-[42px] border border-[#D4E2F2] bg-white/70 shadow-[0_12px_32px_rgba(160,183,210,0.16)]"></div>
-                                <div className="absolute left-1/2 top-[248px] h-[92px] w-[118px] -translate-x-1/2 rounded-[36px] border border-[#D4E2F2] bg-white/68 shadow-[0_10px_30px_rgba(160,183,210,0.14)]"></div>
-                                <div className="absolute left-1/2 top-[350px] h-[118px] w-[78px] -translate-x-1/2 rounded-[34px] border border-[#D4E2F2] bg-white/64 shadow-[0_10px_26px_rgba(160,183,210,0.12)]"></div>
+                                        {/* Spine / Core Energy Line */}
+                                        <path d="M100 80 L100 560" stroke="#94A3B8" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
+                                        <path d="M100 120 L100 420" stroke="#4D94FF" strokeWidth="4" strokeLinecap="round" opacity={selectedBodyRegion === '脊柱' ? "0.8" : "0.1"} filter="url(#glow)" className="transition-opacity duration-500" />
 
-                                <div className="absolute right-5 top-5 rounded-[14px] border border-white/70 bg-white/72 px-4 py-3 text-right shadow-[0_10px_30px_rgba(170,188,210,0.18)] backdrop-blur-sm">
-                                    <div className="text-[10px] font-black tracking-[0.24em] text-[#7A8FA6]">
-                                        CURRENT REGION
+                                        {/* Figure Paths */}
+                                        <g className="transition-all duration-300">
+                                            {/* Limbs (四肢) - Simplified organic paths */}
+                                            <g onClick={() => setSelectedBodyRegion("四肢")} className="cursor-pointer group">
+                                                {/* Right Arm */}
+                                                <path d="M135 140 Q160 220 155 320" fill="none" stroke={selectedBodyRegion === '四肢' ? "#4D94FF" : "#CBD5E1"} strokeWidth="18" strokeLinecap="round" opacity={selectedBodyRegion === '四肢' ? "0.3" : "0.2"} className="group-hover:opacity-40 transition-all" />
+                                                {/* Left Arm */}
+                                                <path d="M65 140 Q40 220 45 320" fill="none" stroke={selectedBodyRegion === '四肢' ? "#4D94FF" : "#CBD5E1"} strokeWidth="18" strokeLinecap="round" opacity={selectedBodyRegion === '四肢' ? "0.3" : "0.2"} className="group-hover:opacity-40 transition-all" />
+                                                {/* Legs */}
+                                                <path d="M85 355 Q85 450 80 580" fill="none" stroke={selectedBodyRegion === '四肢' ? "#4D94FF" : "#CBD5E1"} strokeWidth="22" strokeLinecap="round" opacity={selectedBodyRegion === '四肢' ? "0.3" : "0.2"} className="group-hover:opacity-40 transition-all" />
+                                                <path d="M115 355 Q115 450 120 580" fill="none" stroke={selectedBodyRegion === '四肢' ? "#4D94FF" : "#CBD5E1"} strokeWidth="22" strokeLinecap="round" opacity={selectedBodyRegion === '四肢' ? "0.3" : "0.2"} className="group-hover:opacity-40 transition-all" />
+                                            </g>
+
+                                            {/* Chest (胸腔) */}
+                                            <path
+                                                d="M70 125 C 65 125, 60 140, 60 170 C 60 220, 140 220, 140 170 C 140 140, 135 125, 130 125 Z"
+                                                onClick={() => setSelectedBodyRegion("胸腔")}
+                                                className={`cursor-pointer transition-all duration-300 ${selectedBodyRegion === '胸腔' ? 'fill-[#4D94FF]/10 stroke-[#4D94FF] stroke-2' : 'fill-white/70 stroke-[#CBD5E1] hover:stroke-[#94A3B8]'}`}
+                                            />
+
+                                            {/* Abdomen (腹部) */}
+                                            <path
+                                                d="M70 230 Q65 240 65 280 Q65 340 100 350 Q135 340 135 280 Q135 240 130 230 Z"
+                                                onClick={() => setSelectedBodyRegion("腹部")}
+                                                className={`cursor-pointer transition-all duration-300 ${selectedBodyRegion === '腹部' ? 'fill-[#4D94FF]/10 stroke-[#4D94FF] stroke-2' : 'fill-white/70 stroke-[#CBD5E1] hover:stroke-[#94A3B8]'}`}
+                                            />
+
+                                            {/* Neck (颈部) */}
+                                            <path
+                                                d="M88 102 Q100 120 112 102 L110 115 Q100 122 90 115 Z"
+                                                onClick={() => setSelectedBodyRegion("颈部")}
+                                                className={`cursor-pointer transition-all duration-300 ${selectedBodyRegion === '颈部' ? 'fill-[#4D94FF] stroke-[#4D94FF]' : 'fill-[#E2E8F0] stroke-none hover:fill-[#CBD5E1]'}`}
+                                            />
+
+                                            {/* Head (头部) */}
+                                            <path
+                                                d="M72 65 C72 35 128 35 128 65 C128 95 100 105 100 105 C100 105 72 95 72 65 Z"
+                                                onClick={() => setSelectedBodyRegion("头部")}
+                                                className={`cursor-pointer transition-all duration-300 ${selectedBodyRegion === '头部' ? 'fill-[#4D94FF]/20 stroke-[#4D94FF] stroke-2' : 'fill-white/70 stroke-[#CBD5E1] hover:stroke-[#94A3B8]'}`}
+                                            />
+                                        </g>
+                                    </svg>
+
+                                    {/* Interactive Labels - Left Side with Tech Connectors */}
+                                    <div className="absolute left-[-80px] top-[110px] flex items-center group cursor-pointer" onClick={() => setSelectedBodyRegion("颈部")}>
+                                        <div className={`px-2.5 py-1.5 rounded-lg border backdrop-blur-md transition-all shadow-sm ${selectedBodyRegion === '颈部' ? 'bg-[#4D94FF] border-[#4D94FF] text-white' : 'bg-white/80 border-[#CBD5E1] text-[#64748B] hover:border-[#4D94FF] hover:text-[#4D94FF]'}`}>
+                                            <span className="text-[11px] font-black tracking-wider">颈部</span>
+                                        </div>
+                                        <svg className="w-[30px] h-[20px] ml-1 overflow-visible">
+                                            <path d="M0 10 L20 10" stroke={selectedBodyRegion === '颈部' ? "#4D94FF" : "#CBD5E1"} fill="none" strokeWidth="1.5" />
+                                            <circle cx="20" cy="10" r="2.5" fill={selectedBodyRegion === '颈部' ? "#4D94FF" : "#CBD5E1"} />
+                                        </svg>
                                     </div>
-                                    <div className="mt-1 text-[18px] font-black tracking-[0.12em] text-[#2E4A67]">
-                                        {selectedBodyRegion}
-                                    </div>
-                                </div>
 
-                                <div className="absolute inset-x-0 bottom-0 px-8 pb-6 text-center">
-                                    <div className="text-[11px] leading-5 text-[#78909C]">
-                                        这里后续替换为人体示意图。当前先用解剖中轴和区域导航承接部位切换，右侧协议列表会跟随当前部位过滤。
+                                    <div className="absolute left-[-80px] top-[180px] flex items-center group cursor-pointer" onClick={() => setSelectedBodyRegion("胸腔")}>
+                                        <div className={`px-2.5 py-1.5 rounded-lg border backdrop-blur-md transition-all shadow-sm ${selectedBodyRegion === '胸腔' ? 'bg-[#4D94FF] border-[#4D94FF] text-white' : 'bg-white/80 border-[#CBD5E1] text-[#64748B] hover:border-[#4D94FF] hover:text-[#4D94FF]'}`}>
+                                            <span className="text-[11px] font-black tracking-wider">胸腔</span>
+                                        </div>
+                                        <svg className="w-[45px] h-[20px] ml-1 overflow-visible">
+                                            <path d="M0 10 L35 10" stroke={selectedBodyRegion === '胸腔' ? "#4D94FF" : "#CBD5E1"} fill="none" strokeWidth="1.5" />
+                                            <circle cx="35" cy="10" r="2.5" fill={selectedBodyRegion === '胸腔' ? "#4D94FF" : "#CBD5E1"} />
+                                        </svg>
+                                    </div>
+
+                                    <div className="absolute left-[-80px] top-[300px] flex items-center group cursor-pointer" onClick={() => setSelectedBodyRegion("腹部")}>
+                                        <div className={`px-2.5 py-1.5 rounded-lg border backdrop-blur-md transition-all shadow-sm ${selectedBodyRegion === '腹部' ? 'bg-[#4D94FF] border-[#4D94FF] text-white' : 'bg-white/80 border-[#CBD5E1] text-[#64748B] hover:border-[#4D94FF] hover:text-[#4D94FF]'}`}>
+                                            <span className="text-[11px] font-black tracking-wider">腹部</span>
+                                        </div>
+                                        <svg className="w-[40px] h-[20px] ml-1 overflow-visible">
+                                            <path d="M0 10 L30 10" stroke={selectedBodyRegion === '腹部' ? "#4D94FF" : "#CBD5E1"} fill="none" strokeWidth="1.5" />
+                                            <circle cx="30" cy="10" r="2.5" fill={selectedBodyRegion === '腹部' ? "#4D94FF" : "#CBD5E1"} />
+                                        </svg>
+                                    </div>
+
+                                    {/* Interactive Labels - Right Side */}
+                                    <div className="absolute right-[-80px] top-[60px] flex items-center group cursor-pointer" onClick={() => setSelectedBodyRegion("头部")}>
+                                        <svg className="w-[35px] h-[20px] mr-1 overflow-visible">
+                                            <path d="M35 10 L15 10" stroke={selectedBodyRegion === '头部' ? "#4D94FF" : "#CBD5E1"} fill="none" strokeWidth="1.5" />
+                                            <circle cx="15" cy="10" r="2.5" fill={selectedBodyRegion === '头部' ? "#4D94FF" : "#CBD5E1"} />
+                                        </svg>
+                                        <div className={`px-2.5 py-1.5 rounded-lg border backdrop-blur-md transition-all shadow-sm ${selectedBodyRegion === '头部' ? 'bg-[#4D94FF] border-[#4D94FF] text-white' : 'bg-white/80 border-[#CBD5E1] text-[#64748B] hover:border-[#4D94FF] hover:text-[#4D94FF]'}`}>
+                                            <span className="text-[11px] font-black tracking-wider">头部</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="absolute right-[-80px] top-[240px] flex items-center group cursor-pointer" onClick={() => setSelectedBodyRegion("脊柱")}>
+                                        <svg className="w-[45px] h-[20px] mr-1 overflow-visible">
+                                            <path d="M45 10 L25 10" stroke={selectedBodyRegion === '脊柱' ? "#4D94FF" : "#CBD5E1"} fill="none" strokeWidth="1.5" />
+                                            <circle cx="25" cy="10" r="2.5" fill={selectedBodyRegion === '脊柱' ? "#4D94FF" : "#CBD5E1"} />
+                                        </svg>
+                                        <div className={`px-2.5 py-1.5 rounded-lg border backdrop-blur-md transition-all shadow-sm ${selectedBodyRegion === '脊柱' ? 'bg-[#4D94FF] border-[#4D94FF] text-white' : 'bg-white/80 border-[#CBD5E1] text-[#64748B] hover:border-[#4D94FF] hover:text-[#4D94FF]'}`}>
+                                            <span className="text-[11px] font-black tracking-wider">脊柱</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="absolute right-[-80px] top-[500px] flex items-center group cursor-pointer" onClick={() => setSelectedBodyRegion("四肢")}>
+                                        <svg className="w-[40px] h-[20px] mr-1 overflow-visible">
+                                            <path d="M40 10 L20 10" stroke={selectedBodyRegion === '四肢' ? "#4D94FF" : "#CBD5E1"} fill="none" strokeWidth="1.5" />
+                                            <circle cx="20" cy="10" r="2.5" fill={selectedBodyRegion === '四肢' ? "#4D94FF" : "#CBD5E1"} />
+                                        </svg>
+                                        <div className={`px-2.5 py-1.5 rounded-lg border backdrop-blur-md transition-all shadow-sm ${selectedBodyRegion === '四肢' ? 'bg-[#4D94FF] border-[#4D94FF] text-white' : 'bg-white/80 border-[#CBD5E1] text-[#64748B] hover:border-[#4D94FF] hover:text-[#4D94FF]'}`}>
+                                            <span className="text-[11px] font-black tracking-wider">四肢</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -966,6 +1128,18 @@ const ProtocolSetupScreen = () => {
 
                         {/* 协议列表 */}
                         <div className="flex-1 overflow-y-auto">
+                            {libraryData.length === 0 ? (
+                                <div className="h-full flex items-center justify-center px-8 text-center bg-[#FCFDFE]">
+                                    <div>
+                                        <div className="text-[12px] font-black text-[#546E7A]">
+                                            当前筛选下没有协议
+                                        </div>
+                                        <div className="mt-2 text-[10px] leading-5 text-[#90A4AE]">
+                                            可以切换年龄、部位或螺旋/断层，查看其他协议组合。
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
                             <table className="w-full text-left border-collapse">
                                 <thead className="bg-[#4D94FF] text-white sticky top-0 h-[32px] text-[11px] uppercase font-bold tracking-wider">
                                     <tr>
@@ -1000,6 +1174,7 @@ const ProtocolSetupScreen = () => {
                                     ))}
                                 </tbody>
                             </table>
+                            )}
                         </div>
 
                         {/* 摆位关联设置 */}
@@ -1175,6 +1350,3 @@ const ParamBox = ({ label, value, highlight = false, options, onChange }: ParamB
 
 
 export default ProtocolSetupScreen;
-
-
-

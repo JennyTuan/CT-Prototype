@@ -7,8 +7,6 @@ import {
     ChevronLeft,
     ChevronRight,
     ChevronsUp,
-    Monitor,
-    UserCheck,
     FilePlus,
     Trash2,
     Circle,
@@ -18,7 +16,10 @@ import {
     TrendingUp,
     AlertCircle,
     Check,
-    CheckCircle
+    CheckCircle,
+    Flame,
+    Network,
+    Siren
 } from "lucide-react";
 
 interface Sequence {
@@ -36,11 +37,13 @@ interface ProtocolGroup {
 interface ScoutScanScreenProps {
     firstStepLabel?: string;
     bottomPanelMode?: "positioning" | "breathing";
+    viewportBgClassName?: string;
 }
 
 const ScoutScanScreen = ({
     firstStepLabel = "打开激光灯获取定位",
     bottomPanelMode = "positioning",
+    viewportBgClassName = "bg-[#1A222B]",
 }: ScoutScanScreenProps) => {
     const [startPos, setStartPos] = useState("472.95");
     const [endPos, setEndPos] = useState("595.17");
@@ -137,27 +140,17 @@ const ScoutScanScreen = ({
     // Metrics are now handled in the update loop state
 
     // Initial data
-    const [groups, setGroups] = useState<ProtocolGroup[]>(
-        bottomPanelMode === 'breathing' ? [
-            {
-                id: 'g1',
-                name: 'Head_FacialBoneVolume',
-                sequences: [
-                    { id: 's1', name: '呼吸采集', steps: [] },
-                    { id: 's2', name: '定位像' },
-                    { id: 's3', name: '螺旋采集' }
-                ]
-            }
-        ] : [
-            {
-                id: 'g1',
-                name: 'Head_FacialBoneVolume',
-                sequences: [
-                    { id: 's1', name: 'Scout', steps: [firstStepLabel, '确认参数', '执行扫描'] },
-                    { id: 's2', name: 'Helical Scan' }
-                ]
-            }
-        ]);
+    // Initial data
+    const [groups, setGroups] = useState<ProtocolGroup[]>([
+        {
+            id: 'g1',
+            name: 'Head_FacialBoneVolume',
+            sequences: [
+                { id: 's1', name: 'Scout', steps: ["呼吸采集", "激光灯定位", "参数确认"] },
+                { id: 's2', name: 'Helical Scan' }
+            ]
+        }
+    ]);
 
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isTreeCollapsed, setIsTreeCollapsed] = useState(false);
@@ -166,6 +159,27 @@ const ScoutScanScreen = ({
     const [selectedPosition, setSelectedPosition] = useState<"start" | "end" | null>(null);
     const [activeStepIdx, setActiveStepIdx] = useState(0); // Add state for active step tracking
     const [expandedSeqId, setExpandedSeqId] = useState<string | null>("s1");
+
+    useEffect(() => {
+        if (bottomPanelMode !== "breathing") return;
+
+        const timer = setTimeout(() => {
+            setGroups([
+                {
+                    id: "g1",
+                    name: "Head_FacialBoneVolume",
+                    sequences: [
+                        { id: "s1", name: "Scout", steps: ["呼吸采集", "激光灯定位", "参数确认"] },
+                        { id: "s2", name: "Helical Scan" },
+                    ],
+                },
+            ]);
+            setExpandedSeqId("s1");
+            setActiveStepIdx(0);
+        }, 0);
+
+        return () => clearTimeout(timer);
+    }, [bottomPanelMode, firstStepLabel]);
 
     const toggleSelection = (id: string) => {
         setSelectedIds(prev => {
@@ -237,27 +251,30 @@ const ScoutScanScreen = ({
                             <span className="text-[16px] font-bold text-[#37474F]">Roky Zhang</span>
                             <span className="text-[12px] text-[#546E7A] font-medium leading-none mt-0.5">ID: 67890</span>
                         </div>
-                        <div className="ml-auto flex flex-col gap-0.5 text-[#546E7A] opacity-60">
-                            <div className="text-[9px] font-bold italic">M0</div>
-                            <div className="text-[9px] font-bold">F0</div>
+                    </div>
+                    <div className="flex flex-col gap-0.5 text-[#546E7A] opacity-60">
+                        <div className="text-[9px] font-bold italic">? 0</div>
+                        <div className="text-[9px] font-bold">? 0</div>
+                        <div className="flex items-center gap-1 text-[11px] font-bold">
+                            <Flame size={14} />
+                            <span>0%</span>
                         </div>
                     </div>
                 </div>
 
                 <div className="text-center">
                     <div className="text-[28px] font-bold tracking-tight text-[#37474F] leading-none">13:52</div>
-                    <div className="text-[12px] text-[#546E7A] font-medium mt-1 uppercase opacity-80">2026 周四</div>
+                    <div className="text-[12px] text-[#546E7A] font-medium mt-1 uppercase opacity-80">2?26? ??</div>
                 </div>
 
                 <div className="flex items-center gap-5 pr-2">
-                    <div className="p-1 text-[#D32F2F] cursor-pointer hover:opacity-70"><UserCheck size={32} strokeWidth={1.5} /></div>
-                    <div className="p-1 text-[#546E7A] cursor-pointer hover:opacity-70 relative">
-                        <Monitor size={24} />
-                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[9px] flex items-center justify-center rounded-full font-bold border border-white">9</span>
+                    <div className="p-1 text-[#D32F2F] cursor-pointer hover:opacity-70"><Siren size={30} strokeWidth={1.8} /></div>
+                    <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
+                        <Network size={24} />
+                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[9px] flex items-center justify-center rounded-full font-bold border border-white">5</span>
                     </div>
                     <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
                         <Sun size={24} />
-                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[9px] flex items-center justify-center rounded-full font-bold border border-white">5</span>
                     </div>
                     <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
                         <Settings size={24} />
@@ -323,6 +340,7 @@ const ScoutScanScreen = ({
                                                     ? seq.name === '呼吸采集'
                                                     : seq.name === 'Scout';
                                                 const isExpanded = expandedSeqId === seq.id;
+                                                const isUnifiedActiveSequence = seq.name === 'Scout' || isActiveSequence;
                                                 const shouldShowSteps = !!seq.steps?.length && isExpanded;
 
                                                 return (
@@ -330,21 +348,21 @@ const ScoutScanScreen = ({
                                                         {/* Sequence Row - Simplified to matched refined WT32 aesthetic */}
                                                         <div
                                                             onClick={() => setExpandedSeqId(isExpanded ? null : seq.id)}
-                                                            className={`flex items-center gap-2 px-3 rounded-lg mb-1 transition-all relative cursor-pointer border ${seq.name === 'Scout' || seq.name === 'Helical Scan' ? 'h-[28px]' : 'py-2.5'} ${isActiveSequence
+                                                            className={`flex items-center gap-2 px-3 rounded-lg mb-1 transition-all relative cursor-pointer border ${seq.name === 'Scout' || seq.name === 'Helical Scan' ? 'h-[28px]' : 'py-2.5'} ${isUnifiedActiveSequence
                                                                 ? 'bg-[#4D94FF] border-[#4D94FF] text-white shadow-md'
                                                                 : (selectedIds.includes(seq.id) ? 'bg-[#E3F2FD] border-[#4D94FF]/30 text-[#4D94FF]' : 'bg-transparent border-transparent text-[#546E7A] hover:bg-[#EEF2F9]')
                                                                 }`}
                                                         >
-                                                            {isExpanded ? <ChevronDown size={14} className={selectedIds.includes(seq.id) ? 'text-[#4D94FF]/60' : isActiveSequence ? "text-white/70" : "text-gray-400"} /> : <ChevronRight size={14} className={selectedIds.includes(seq.id) ? 'text-[#4D94FF]/60' : isActiveSequence ? "text-white/70" : "text-gray-400"} />}
+                                                            {isExpanded ? <ChevronDown size={14} className={selectedIds.includes(seq.id) ? 'text-[#4D94FF]/60' : isUnifiedActiveSequence ? "text-white/70" : "text-gray-400"} /> : <ChevronRight size={14} className={selectedIds.includes(seq.id) ? 'text-[#4D94FF]/60' : isUnifiedActiveSequence ? "text-white/70" : "text-gray-400"} />}
                                                             <div
                                                                 onClick={(e) => { e.stopPropagation(); toggleSelection(seq.id); }}
                                                                 className={`w-3.5 h-3.5 rounded border-2 cursor-pointer flex items-center justify-center shrink-0 transition-all ${selectedIds.includes(seq.id)
-                                                                    ? (isActiveSequence ? 'bg-white border-white/30' : 'bg-[#4D94FF] border-[#4D94FF]')
-                                                                    : (isActiveSequence ? 'bg-white/20 border-white/30' : 'bg-white border-[#B0C4DE]')
+                                                                    ? (isUnifiedActiveSequence ? 'bg-white border-white/30' : 'bg-[#4D94FF] border-[#4D94FF]')
+                                                                    : (isUnifiedActiveSequence ? 'bg-white/20 border-white/30' : 'bg-white border-[#B0C4DE]')
                                                                     }`}
                                                             >
                                                                 {selectedIds.includes(seq.id) && (
-                                                                    <Check size={9} className={`${isActiveSequence ? 'text-[#4D94FF]' : 'text-white'} stroke-[3]`} />
+                                                                    <Check size={9} className={`${isUnifiedActiveSequence ? 'text-[#4D94FF]' : 'text-white'} stroke-[3]`} />
                                                                 )}
                                                             </div>
                                                             <span className="text-[13px] font-bold">{seq.name}</span>
@@ -357,13 +375,9 @@ const ScoutScanScreen = ({
                                                             <div className="flex flex-col ml-12 mt-2 gap-4 relative pb-4">
                                                                 <div className="absolute left-[7px] top-2 bottom-6 w-[1px] bg-[#B0C4DE]"></div>
                                                                 {seq.steps?.map((step, idx) => {
-                                                                    const isCompleted = bottomPanelMode === 'breathing'
-                                                                        ? false
-                                                                        : (isActiveSequence && idx < activeStepIdx);
+                                                                    const isCompleted = isUnifiedActiveSequence && idx < activeStepIdx;
 
-                                                                    const isActive = bottomPanelMode === 'breathing'
-                                                                        ? (step === '呼吸信号采集')
-                                                                        : (isActiveSequence && idx === activeStepIdx);
+                                                                    const isActive = isUnifiedActiveSequence && idx === activeStepIdx;
 
                                                                     return (
                                                                         <div
@@ -423,7 +437,7 @@ const ScoutScanScreen = ({
                                             }`} />
                                         <span className={`text-[11px] font-bold ${breathingPhase === 'stable' ? 'text-[#2E7D32]' : 'text-orange-700'
                                             }`}>
-                                            {breathingPhase === 'stable' ? '呼吸采集(已就绪)' : `呼吸采集(训练中)`}
+                                            {breathingPhase === 'stable' ? '呼吸采集(已就绪)' : '呼吸采集(训练中)'}
                                         </span>
                                     </div>
                                 </div>
@@ -527,7 +541,7 @@ const ScoutScanScreen = ({
                 </aside>
 
                 {/* Right Viewport Card - Redesigned for Breathing */}
-                <section className="flex-1 bg-[#1A222B] rounded-lg border border-[#B0C4DE] shadow-sm flex flex-col overflow-hidden relative">
+                <section className={`flex-1 ${viewportBgClassName} rounded-lg border border-[#B0C4DE] shadow-sm flex flex-col overflow-hidden relative`}>
                     {bottomPanelMode === 'breathing' ? (
                         <div className="flex-1 flex flex-col p-4 gap-4 bg-[#EEF2F9]/50">
                             {/* Parameter Sliders */}
@@ -893,3 +907,4 @@ const MetricRow = ({ icon, label, value, isMain }: {
 };
 
 export default ScoutScanScreen;
+
