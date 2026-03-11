@@ -13,7 +13,6 @@ import {
     ChevronLeft,
     ChevronRight,
     ArrowLeftRight,
-    Monitor,
     RefreshCw,
     Check,
     Target,
@@ -1350,3 +1349,4 @@ const ParamBox = ({ label, value, highlight = false, options, onChange }: ParamB
 
 
 export default ProtocolSetupScreen;
+
