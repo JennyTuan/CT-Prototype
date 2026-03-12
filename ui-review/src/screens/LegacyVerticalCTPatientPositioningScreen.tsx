@@ -1,6 +1,5 @@
 import {
     ArrowRightLeft,
-    Crosshair,
     Download,
     Telescope,
     View,
@@ -17,7 +16,7 @@ const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
 const seatOptions: Array<{ code: string; label: string; desc: string; active?: boolean }> = [
     { code: "S1", label: "标准坐姿", desc: "背部贴靠，双手自然扶把", active: true },
-    { code: "S2", label: "前倾坐姿", desc: "胸部轻微前送，便于胸肺扫描" },
+    { code: "S2", label: "后仰坐姿", desc: "胸部轻微后仰，便于胸肺扫描" },
     { code: "S3", label: "侧向坐姿", desc: "用于特殊角度摆位或介入观察" },
 ] as const;
 
@@ -145,7 +144,7 @@ export default function LegacyVerticalCTPatientPositioningScreen() {
                         </div>
                         <div>
                             <div className="text-[28px] font-bold leading-none text-[#2A6DE5]">患者摆位</div>
-                            <div className="mt-1 text-[12px] font-semibold text-[#73819A]">垂直 CT 坐姿摆位与吊环定位</div>
+
                         </div>
                     </div>
 
