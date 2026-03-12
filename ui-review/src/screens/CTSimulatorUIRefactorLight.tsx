@@ -5,7 +5,6 @@ import {
     MoveVertical,
     RotateCw,
     RotateCcw,
-    AlertTriangle,
     Zap,
     User,
     Activity,
@@ -35,11 +34,9 @@ const ControlCard = ({ title, value, unit, icon: Icon, active, schema }: Control
             )}
         </div>
 
-        <div className="flex items-baseline justify-end">
-            <div className="px-2.5 py-1 rounded-md border border-slate-300 bg-white/70 inline-flex items-baseline gap-1">
-                <span className={`text-[34px] font-mono font-bold tracking-tighter ${active ? 'text-slate-900' : 'text-slate-500'}`}>{value}</span>
-                <span className="text-[15px] text-slate-400 font-bold uppercase">{unit}</span>
-            </div>
+        <div className="flex items-baseline justify-end gap-1 px-1">
+            <span className={`text-[34px] font-mono font-bold tracking-tighter ${active ? 'text-slate-900' : 'text-slate-500'}`}>{value}</span>
+            <span className="text-[15px] text-slate-400 font-bold uppercase">{unit}</span>
         </div>
     </div>
 );
@@ -53,7 +50,7 @@ const CTSimulatorUIRefactorLight = () => {
         kv: 120,
         ma: 250
     }); const [isRadiating, setIsRadiating] = useState(false);
-    const [laserActive, setLaserActive] = useState(true);
+    const [laserActive, setLaserActive] = useState(false);
     const toggleRadiation = () => setIsRadiating(!isRadiating);
     const toggleLaser = () => setLaserActive(!laserActive);
 
@@ -67,7 +64,7 @@ const CTSimulatorUIRefactorLight = () => {
                         </div>
                         <div>
                             <div className="text-[16px] text-slate-500 font-black uppercase tracking-wide">Patient Name</div>
-                            <div className="mt-1 inline-flex items-center px-3 py-1 rounded-md border border-slate-300 bg-white/70">
+                            <div className="mt-1 inline-flex items-center py-1">
                                 <span className="text-[30px] font-black text-slate-900 tracking-wide leading-none">欧阳娜娜</span>
                             </div>
                         </div>
@@ -78,19 +75,19 @@ const CTSimulatorUIRefactorLight = () => {
                     <div className="grid grid-cols-3 gap-8">
                         <div>
                             <div className="text-[15px] text-slate-500 font-black">ID</div>
-                            <div className="mt-1 inline-flex items-center px-3 py-1 rounded-md border border-slate-300 bg-white/70">
+                            <div className="mt-1 inline-flex items-center py-1">
                                 <span className="font-mono text-sky-800 text-[28px] font-bold leading-none">MZ202603030001</span>
                             </div>
                         </div>
                         <div>
                             <div className="text-[15px] text-slate-500 font-black">Sex / Age</div>
-                            <div className="mt-1 inline-flex items-center px-3 py-1 rounded-md border border-slate-300 bg-white/70">
+                            <div className="mt-1 inline-flex items-center py-1">
                                 <span className="font-bold text-slate-700 text-[28px] leading-none">M / 100Y</span>
                             </div>
                         </div>
                         <div>
                             <div className="text-[15px] text-slate-500 font-black">Protocol</div>
-                            <div className="mt-1 inline-flex items-center px-3 py-1 rounded-md border border-slate-300 bg-white/70">
+                            <div className="mt-1 inline-flex items-center py-1">
                                 <span className="font-bold text-slate-700 text-[28px] leading-none">ABD Enhanced CT</span>
                             </div>
                         </div>
@@ -211,8 +208,8 @@ const CTSimulatorUIRefactorLight = () => {
                                 <div className="flex items-center justify-between">
                                     <span className="text-[14px] font-black text-slate-500 tracking-wide">通讯状态</span>
                                     <div className="flex items-center gap-2">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.45)]" />
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-slate-300 bg-white/70 text-[18px] font-black text-slate-900">正常</span>
+                                        <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.35)]" />
+                                        <span className="inline-flex items-center py-0.5 text-[18px] font-black text-red-600">断开</span>
                                     </div>
                                 </div>
                                 <div className="h-px bg-slate-200" />
@@ -223,15 +220,14 @@ const CTSimulatorUIRefactorLight = () => {
                                     <span className="text-[14px] font-black text-slate-500 tracking-wide">激光灯状态</span>
                                     <div className="flex items-center gap-2">
                                         <div className={`w-2.5 h-2.5 rounded-full ${laserActive ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.45)] animate-pulse' : 'bg-slate-300'}`} />
-                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-md border border-slate-300 bg-white/70 text-[18px] font-black ${laserActive ? 'text-red-600' : 'text-slate-900'}`}>{laserActive ? '开启' : '关闭'}</span>
+                                        <span className={`inline-flex items-center py-0.5 text-[18px] font-black ${laserActive ? 'text-red-600' : 'text-slate-900'}`}>{laserActive ? '开启' : '关闭'}</span>
                                     </div>
                                 </div>
                                 <div className="h-px bg-slate-200" />
                                 <div className="flex items-center justify-between">
                                     <span className="text-[14px] font-black text-slate-500 tracking-wide">急停状态</span>
-                                    <div className="flex items-center gap-2">
-                                        <AlertTriangle size={18} className="text-red-500" />
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-slate-300 bg-white/70 text-[18px] font-black text-slate-900">正常</span>
+                                    <div className="flex items-center">
+                                        <span className="inline-flex items-center py-0.5 text-[18px] font-black text-slate-900">正常</span>
                                     </div>
                                 </div>
                             </div>

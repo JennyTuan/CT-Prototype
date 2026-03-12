@@ -5,25 +5,27 @@ import {
     MoveVertical,
     RotateCw,
     RotateCcw,
-    AlertTriangle,
     Zap,
     User,
     Activity,
 } from 'lucide-react';
 
+const emergencyIconSrc = "/急停icon.png";
+
 interface ControlCardProps {
     title: string;
+    value: number;
     unit: string;
     icon: React.ElementType;
     active: boolean;
     schema?: string;
 }
 
-const ControlCard = ({ title, unit, icon: Icon, active, schema }: ControlCardProps) => (
+const ControlCard = ({ title, value, unit, icon: Icon, active, schema }: ControlCardProps) => (
     <div className={`bg-white border ${active ? 'border-sky-300 shadow-[0_8px_24px_rgba(14,116,144,0.12)]' : 'border-slate-200'} rounded-xl p-3 flex flex-col transition-all duration-300 hover:bg-slate-50 relative group h-full`}>
 
 
-        <div className="flex-1 min-h-[80px] bg-slate-50/50 rounded-lg flex flex-col items-center justify-center p-2 mb-3 group-hover:bg-sky-50 transition-colors">
+        <div className="flex-1 min-h-[80px] bg-slate-50/50 rounded-lg border border-slate-200 flex flex-col items-center justify-center p-2 mb-3 group-hover:bg-sky-50 transition-colors">
             {schema ? (
                 <img src={schema} alt={title} className="max-h-full object-contain opacity-80" />
             ) : (
@@ -34,11 +36,9 @@ const ControlCard = ({ title, unit, icon: Icon, active, schema }: ControlCardPro
             )}
         </div>
 
-        <div className="flex items-center justify-between gap-2">
-            <span className={`text-[13px] font-bold tracking-wide ${active ? 'text-slate-900' : 'text-slate-500'}`}>{title}</span>
-            <div className="px-2.5 py-1 rounded-md inline-flex items-baseline gap-1">
-                <span className="text-[15px] text-slate-400 font-bold uppercase">{unit}</span>
-            </div>
+        <div className="flex items-baseline justify-end gap-1 px-1">
+            <span className={`text-[34px] font-mono font-bold tracking-tighter ${active ? 'text-slate-900' : 'text-slate-500'}`}>{value}</span>
+            <span className="text-[15px] text-slate-400 font-bold uppercase">{unit}</span>
         </div>
     </div>
 );
@@ -66,31 +66,31 @@ const CTSimulatorUIRefactorLight2 = () => {
                         </div>
                         <div>
                             <div className="text-[16px] text-slate-500 font-black uppercase tracking-wide">Patient Name</div>
-                            <div className="mt-1 inline-flex items-center px-3 py-1">
-                                <span className="text-[30px] font-black text-slate-900 tracking-wide leading-none"></span>
+                            <div className="mt-1 inline-flex items-center py-1">
+                                <span className="text-[30px] font-black text-slate-900 tracking-wide leading-none">欧阳娜娜</span>
                             </div>
                         </div>
                     </div>
 
                     <div className="h-12 w-px bg-slate-200" />
 
-                    <div className="grid grid-cols-3 gap-16">
+                    <div className="grid grid-cols-3 gap-8">
                         <div>
                             <div className="text-[15px] text-slate-500 font-black">ID</div>
-                            <div className="mt-1 inline-flex items-center px-3 py-1">
-                                <span className="font-mono text-sky-800 text-[28px] font-bold leading-none"></span>
+                            <div className="mt-1 inline-flex items-center py-1">
+                                <span className="font-mono text-sky-800 text-[28px] font-bold leading-none">MZ202603030001</span>
                             </div>
                         </div>
                         <div>
                             <div className="text-[15px] text-slate-500 font-black">Sex / Age</div>
-                            <div className="mt-1 inline-flex items-center px-3 py-1">
-                                <span className="font-bold text-slate-700 text-[28px] leading-none"></span>
+                            <div className="mt-1 inline-flex items-center py-1">
+                                <span className="font-bold text-slate-700 text-[28px] leading-none">M / 100Y</span>
                             </div>
                         </div>
                         <div>
                             <div className="text-[15px] text-slate-500 font-black">Protocol</div>
-                            <div className="mt-1 inline-flex items-center px-3 py-1">
-                                <span className="font-bold text-slate-700 text-[28px] leading-none"></span>
+                            <div className="mt-1 inline-flex items-center py-1">
+                                <span className="font-bold text-slate-700 text-[28px] leading-none">ABD Enhanced CT</span>
                             </div>
                         </div>
                     </div>
@@ -107,10 +107,10 @@ const CTSimulatorUIRefactorLight2 = () => {
                         </div>
 
                         <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-3">
-                            <ControlCard title="" unit="mm" icon={MoveHorizontal} active={false} />
-                            <ControlCard title="" unit="mm" icon={MoveVertical} active={false} />
-                            <ControlCard title="" unit="deg" icon={RotateCw} active={false} />
-                            <ControlCard title="" unit="deg" icon={RotateCcw} active={false} />
+                            <ControlCard title="Lateral Axis (X)" value={values.lateral} unit="mm" icon={MoveHorizontal} active={false} />
+                            <ControlCard title="Vertical Axis (Y)" value={values.vertical} unit="mm" icon={MoveVertical} active={false} />
+                            <ControlCard title="Gantry Tilt (A)" value={values.tiltA} unit="deg" icon={RotateCw} active={false} />
+                            <ControlCard title="Cradle Tilt (B)" value={values.tiltB} unit="deg" icon={RotateCcw} active={false} />
                         </div>
                     </div>
                 </div>
@@ -211,7 +211,7 @@ const CTSimulatorUIRefactorLight2 = () => {
                                     <span className="text-[14px] font-black text-slate-500 tracking-wide">通讯状态</span>
                                     <div className="flex items-center gap-2">
                                         <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.45)]" />
-                                        <span className="inline-flex items-center px-2 py-0.5 text-[18px] font-black text-slate-900">正常</span>
+                                        <span className="inline-flex items-center py-0.5 text-[18px] font-black text-slate-900">正常</span>
                                     </div>
                                 </div>
                                 <div className="h-px bg-slate-200" />
@@ -222,15 +222,19 @@ const CTSimulatorUIRefactorLight2 = () => {
                                     <span className="text-[14px] font-black text-slate-500 tracking-wide">激光灯状态</span>
                                     <div className="flex items-center gap-2">
                                         <div className={`w-2.5 h-2.5 rounded-full ${laserActive ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.45)] animate-pulse' : 'bg-slate-300'}`} />
-                                        <span className={`inline-flex items-center px-2 py-0.5 text-[18px] font-black ${laserActive ? 'text-red-600' : 'text-slate-900'}`}>{laserActive ? '开启' : '关闭'}</span>
+                                        <span className={`inline-flex items-center py-0.5 text-[18px] font-black ${laserActive ? 'text-red-600' : 'text-slate-900'}`}>{laserActive ? '开启' : '关闭'}</span>
                                     </div>
                                 </div>
                                 <div className="h-px bg-slate-200" />
                                 <div className="flex items-center justify-between">
                                     <span className="text-[14px] font-black text-slate-500 tracking-wide">急停状态</span>
-                                    <div className="flex items-center gap-2">
-                                        <AlertTriangle size={18} className="text-red-500" />
-                                        <span className="inline-flex items-center px-2 py-0.5 text-[18px] font-black text-slate-900">正常</span>
+                                    <div className="flex items-center">
+                                        <img
+                                            src={emergencyIconSrc}
+                                            alt="急停"
+                                            draggable={false}
+                                            className="h-[30px] w-[30px] object-contain select-none"
+                                        />
                                     </div>
                                 </div>
                             </div>
