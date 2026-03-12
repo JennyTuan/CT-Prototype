@@ -1,6 +1,8 @@
 import {
+    ArrowLeft,
     ArrowRightLeft,
     Download,
+    LocateFixed,
     Telescope,
     View,
 } from "lucide-react";
@@ -146,23 +148,56 @@ export default function LegacyVerticalCTPatientPositioningScreen() {
                 </div>
 
                 <div className="flex flex-1 flex-col rounded-[16px] border border-[#B8C8E9] bg-[linear-gradient(180deg,#F7FAFF_0%,#EEF3FC_100%)] px-5 py-4 shadow-[0_15px_40px_rgba(88,117,170,0.12)]">
-                    <div className="flex items-center justify-between rounded-[14px] border border-[#C9D7F0] bg-white/70 px-4 py-3">
+                    <div className="flex items-center justify-between px-2 py-2">
                         <div>
                             <div className="text-[18px] font-bold text-[#355A9C]">Position Preview</div>
                         </div>
                         <div className="flex items-center gap-3">
-                            <div className="flex h-[44px] w-[44px] items-center justify-center rounded-full bg-[#EAF2FF]">
+                            <div className="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-white/35">
                                 <img src={imgVertical} alt="垂直模式" draggable={false} className="h-[32px] w-[32px] object-contain" />
                             </div>
                         </div>
                     </div>
 
-                    <div className="mt-4 flex flex-1">
-                        <div className="relative flex w-full items-center justify-center overflow-hidden rounded-[18px] border border-[#CBD8EE] bg-[radial-gradient(circle_at_50%_20%,#FFFFFF_0%,#ECF3FF_52%,#DEE7F4_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-                            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.65)_0%,rgba(237,244,255,0)_22%,rgba(155,177,220,0.08)_100%)]" />
-                            
-                            
+                    <div className="mt-4 flex flex-1 flex-col">
+                        <div className="relative flex flex-1 items-center justify-center overflow-hidden rounded-[18px] bg-[linear-gradient(180deg,#F3F7FF_0%,#E8F0FD_100%)]">
+                            <div className="pointer-events-none absolute inset-0 rounded-[18px] border border-[#CBD8EE]" />
+                            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.55)_0%,rgba(237,244,255,0)_24%,rgba(155,177,220,0.06)_100%)]" />
+
                             <PositioningPreviewPlaceholder />
+
+                            <div className="hidden absolute bottom-5 right-6 items-center gap-3">
+                                <button
+                                    type="button"
+                                    className="flex h-[42px] items-center gap-2 rounded-[12px] border border-[#7CA1E3] bg-[linear-gradient(180deg,rgba(255,255,255,0.94)_0%,rgba(233,241,255,0.98)_100%)] px-4 text-[15px] font-semibold text-[#2A63BE] shadow-[0_10px_24px_rgba(114,145,201,0.18)]"
+                                >
+                                    <ArrowLeft size={16} strokeWidth={2.2} />
+                                    <span>返回</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    className="flex h-[42px] items-center gap-2 rounded-[12px] border border-[#2459B2] bg-[linear-gradient(180deg,#2A6DE5_0%,#1E56B9_100%)] px-5 text-[15px] font-semibold text-white shadow-[0_12px_26px_rgba(42,109,229,0.28)]"
+                                >
+                                    <LocateFixed size={16} strokeWidth={2.2} />
+                                    <span>开始定位</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-end gap-3 px-2 pb-1 pt-4">
+                            <button
+                                type="button"
+                                className="flex h-[42px] items-center gap-2 rounded-[12px] border border-[#7CA1E3] bg-[linear-gradient(180deg,rgba(255,255,255,0.94)_0%,rgba(233,241,255,0.98)_100%)] px-4 text-[15px] font-semibold text-[#2A63BE] shadow-[0_10px_24px_rgba(114,145,201,0.18)]"
+                            >
+                                <ArrowLeft size={16} strokeWidth={2.2} />
+                                <span>返回</span>
+                            </button>
+                            <button
+                                type="button"
+                                className="flex h-[42px] items-center gap-2 rounded-[12px] border border-[#2459B2] bg-[linear-gradient(180deg,#2A6DE5_0%,#1E56B9_100%)] px-5 text-[15px] font-semibold text-white shadow-[0_12px_26px_rgba(42,109,229,0.28)]"
+                            >
+                                <LocateFixed size={16} strokeWidth={2.2} />
+                                <span>开始定位</span>
+                            </button>
                         </div>
                     </div>
                 </div>
