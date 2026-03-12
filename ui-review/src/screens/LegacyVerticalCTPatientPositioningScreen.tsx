@@ -70,40 +70,13 @@ function SeatOption({
     );
 }
 
-function ChairPositioningGraphic() {
+function PositioningPreviewPlaceholder() {
     return (
-        <div className="relative h-[420px] w-[520px]">
-            <div className="absolute left-1/2 top-0 h-[82px] w-[256px] -translate-x-1/2 rounded-b-[28px] border border-[#BFCDE4] bg-[linear-gradient(180deg,#DCE5F3_0%,#C7D3E6_100%)] shadow-[0_10px_18px_rgba(112,132,171,0.14)]" />
-            <div className="absolute left-1/2 top-[68px] h-[90px] w-[20px] -translate-x-1/2 rounded-full bg-[linear-gradient(180deg,#B9C7DE_0%,#98A9C8_100%)]" />
-            <div className="absolute left-1/2 top-[122px] h-[92px] w-[208px] -translate-x-1/2 rounded-[48px] border-[16px] border-[#8FA7D6] bg-[radial-gradient(circle_at_50%_50%,#F8FBFF_0%,#EEF4FD_58%,#DCE6F3_100%)] shadow-[0_18px_30px_rgba(96,119,170,0.18)]" />
-            <div className="absolute left-1/2 top-[145px] h-[46px] w-[46px] -translate-x-1/2 rounded-full border border-[#B5C4DE] bg-white/85" />
-
-            <div className="absolute left-[112px] top-[220px] h-[104px] w-[88px] rounded-[22px] border border-[#AAB9D4] bg-[linear-gradient(180deg,#E8F0FB_0%,#D6E0EF_100%)]" />
-            <div className="absolute left-[136px] top-[262px] h-[72px] w-[118px] rounded-[18px] border border-[#AAB9D4] bg-[linear-gradient(180deg,#DCE6F4_0%,#C4D1E6_100%)]" />
-            <div className="absolute left-[182px] top-[328px] h-[28px] w-[28px] rounded-[8px] bg-[#8FA2C2]" />
-            <div className="absolute left-[128px] top-[354px] h-[16px] w-[136px] rounded-full bg-[#97A8C6]" />
-
-            <div className="absolute left-[218px] top-[196px] h-[42px] w-[42px] rounded-full border border-[#A6B8D6] bg-[radial-gradient(circle_at_35%_35%,#F7FBFF_0%,#DAE5F4_72%,#C2D0E5_100%)]" />
-            <div className="absolute left-[208px] top-[234px] h-[86px] w-[60px] rounded-[24px] border border-[#A6B8D6] bg-[linear-gradient(180deg,#EDF4FD_0%,#D8E3F1_100%)]" />
-            <div className="absolute left-[184px] top-[244px] h-[28px] w-[48px] rounded-[18px] border border-[#A6B8D6] bg-[linear-gradient(180deg,#EAF1FC_0%,#D2DDEF_100%)] -rotate-[25deg]" />
-            <div className="absolute left-[246px] top-[244px] h-[28px] w-[48px] rounded-[18px] border border-[#A6B8D6] bg-[linear-gradient(180deg,#EAF1FC_0%,#D2DDEF_100%)] rotate-[28deg]" />
-            <div className="absolute left-[212px] top-[318px] h-[78px] w-[20px] rounded-[12px] border border-[#A6B8D6] bg-[linear-gradient(180deg,#EAF1FC_0%,#D2DDEF_100%)]" />
-            <div className="absolute left-[240px] top-[318px] h-[78px] w-[20px] rounded-[12px] border border-[#A6B8D6] bg-[linear-gradient(180deg,#EAF1FC_0%,#D2DDEF_100%)]" />
-
-            <div className="absolute left-1/2 top-[96px] h-[280px] w-[2px] -translate-x-1/2 bg-[linear-gradient(180deg,rgba(42,109,229,0)_0%,rgba(42,109,229,0.82)_18%,rgba(42,109,229,0.82)_82%,rgba(42,109,229,0)_100%)]" />
-            <div className="absolute left-[92px] top-[168px] h-[2px] w-[336px] bg-[linear-gradient(90deg,rgba(42,109,229,0)_0%,rgba(42,109,229,0.82)_18%,rgba(42,109,229,0.82)_82%,rgba(42,109,229,0)_100%)]" />
-            <div className="absolute left-1/2 top-[160px] h-[18px] w-[18px] -translate-x-1/2 rounded-full border-2 border-[#2A6DE5] bg-white shadow-[0_0_0_6px_rgba(42,109,229,0.12)]" />
-
-            <div className="absolute right-[22px] top-[122px] rounded-full bg-white/90 px-3 py-1 text-[11px] font-bold text-[#6E7D97] shadow-sm">
-                吊挂扫描环
-            </div>
-            <div className="absolute left-[28px] bottom-[24px] rounded-full bg-white/90 px-3 py-1 text-[11px] font-bold text-[#6E7D97] shadow-sm">
-                患者坐姿中心
-            </div>
-            <div className="absolute right-[36px] bottom-[54px] rounded-[16px] border border-[#C7D8F3] bg-white/82 px-4 py-3 text-[12px] font-semibold leading-[1.45] text-[#66758F] shadow-sm">
-                <div>患者坐在固定椅位</div>
-                <div>扫描环从上方下降并旋转到位</div>
-                <div>激光交点锁定胸部中心线</div>
+        <div className="relative flex h-[420px] w-[520px] items-center justify-center rounded-[20px] border-2 border-dashed border-[#B9CBEA] bg-[linear-gradient(180deg,#F8FBFF_0%,#EEF4FF_100%)]">
+            <div className="flex flex-col items-center text-center text-[#6A7A96]">
+                <div className="h-14 w-14 rounded-[16px] border border-[#C7D7F2] bg-white/85" />
+                <div className="mt-3 text-[16px] font-bold text-[#5B6C8A]">示意图占位区域</div>
+                <div className="mt-1 text-[12px] font-semibold">后续由公司 UI 补充正式插画</div>
             </div>
         </div>
     );
@@ -189,14 +162,17 @@ export default function LegacyVerticalCTPatientPositioningScreen() {
                     </div>
 
                     <div className="mt-4 flex flex-1">
-                        <div className="relative flex w-full items-center justify-center overflow-hidden rounded-[18px] border border-[#CBD8EE] bg-[radial-gradient(circle_at_50%_20%,#FFFFFF_0%,#ECF3FF_52%,#DEE7F4_100%)]">
-                            <div className="absolute left-[28px] top-[24px] rounded-full bg-white/85 px-3 py-1 text-[11px] font-bold text-[#6B7280] shadow-sm">
-                                坐姿中心预览
+                        <div className="relative flex w-full items-center justify-center overflow-hidden rounded-[18px] border border-[#CBD8EE] bg-[radial-gradient(circle_at_50%_20%,#FFFFFF_0%,#ECF3FF_52%,#DEE7F4_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+                            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.65)_0%,rgba(237,244,255,0)_22%,rgba(155,177,220,0.08)_100%)]" />
+                            <div className="absolute left-[20px] top-[16px] rounded-[12px] border border-[#D4E1F7] bg-white/90 px-3 py-2 shadow-sm">
+                                <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[#7B8AA4]">Seat Preview</div>
+                                <div className="mt-0.5 text-[12px] font-bold text-[#5E6F8D]">坐姿中心预览</div>
                             </div>
-                            <div className="absolute right-[28px] top-[24px] rounded-full bg-[#E8F1FF] px-3 py-1 text-[11px] font-bold text-[#2A6DE5] shadow-sm">
+                            <div className="absolute right-[20px] top-[16px] flex items-center gap-2 rounded-[12px] border border-[#CCE0FF] bg-[#F0F6FF] px-3 py-2 text-[11px] font-black text-[#2A6DE5] shadow-sm">
+                                <span className="h-2 w-2 rounded-full bg-[#2A6DE5] shadow-[0_0_0_3px_rgba(42,109,229,0.2)]" />
                                 激光已锁定
                             </div>
-                            <ChairPositioningGraphic />
+                            <PositioningPreviewPlaceholder />
                         </div>
                     </div>
                 </div>
