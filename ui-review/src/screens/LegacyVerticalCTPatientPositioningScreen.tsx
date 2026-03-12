@@ -76,7 +76,7 @@ function PositioningPreviewPlaceholder() {
             <div className="flex flex-col items-center text-center text-[#6A7A96]">
                 <div className="h-14 w-14 rounded-[16px] border border-[#C7D7F2] bg-white/85" />
                 <div className="mt-3 text-[16px] font-bold text-[#5B6C8A]">示意图占位区域</div>
-                <div className="mt-1 text-[12px] font-semibold">后续由公司 UI 补充正式插画</div>
+                <div className="mt-1 text-[12px] font-semibold">后续由 UI 补充正式插画</div>
             </div>
         </div>
     );
@@ -164,14 +164,8 @@ export default function LegacyVerticalCTPatientPositioningScreen() {
                     <div className="mt-4 flex flex-1">
                         <div className="relative flex w-full items-center justify-center overflow-hidden rounded-[18px] border border-[#CBD8EE] bg-[radial-gradient(circle_at_50%_20%,#FFFFFF_0%,#ECF3FF_52%,#DEE7F4_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
                             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.65)_0%,rgba(237,244,255,0)_22%,rgba(155,177,220,0.08)_100%)]" />
-                            <div className="absolute left-[20px] top-[16px] rounded-[12px] border border-[#D4E1F7] bg-white/90 px-3 py-2 shadow-sm">
-                                <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[#7B8AA4]">Seat Preview</div>
-                                <div className="mt-0.5 text-[12px] font-bold text-[#5E6F8D]">坐姿中心预览</div>
-                            </div>
-                            <div className="absolute right-[20px] top-[16px] flex items-center gap-2 rounded-[12px] border border-[#CCE0FF] bg-[#F0F6FF] px-3 py-2 text-[11px] font-black text-[#2A6DE5] shadow-sm">
-                                <span className="h-2 w-2 rounded-full bg-[#2A6DE5] shadow-[0_0_0_3px_rgba(42,109,229,0.2)]" />
-                                激光已锁定
-                            </div>
+                            
+                            
                             <PositioningPreviewPlaceholder />
                         </div>
                     </div>
