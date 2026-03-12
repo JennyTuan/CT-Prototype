@@ -148,15 +148,11 @@ export default function LegacyVerticalCTPatientPositioningScreen() {
                 <div className="flex flex-1 flex-col rounded-[16px] border border-[#B8C8E9] bg-[linear-gradient(180deg,#F7FAFF_0%,#EEF3FC_100%)] px-5 py-4 shadow-[0_15px_40px_rgba(88,117,170,0.12)]">
                     <div className="flex items-center justify-between rounded-[14px] border border-[#C9D7F0] bg-white/70 px-4 py-3">
                         <div>
-                            <div className="text-[11px] font-black uppercase tracking-[0.18em] text-[#8B97AE]">Position Preview</div>
-                            <div className="mt-1 text-[18px] font-bold text-[#355A9C]">扫描环中心已对准患者胸部区域</div>
+                            <div className="text-[18px] font-bold text-[#355A9C]">Position Preview</div>
                         </div>
                         <div className="flex items-center gap-3">
                             <div className="flex h-[44px] w-[44px] items-center justify-center rounded-full bg-[#EAF2FF]">
                                 <img src={imgVertical} alt="垂直模式" draggable={false} className="h-[32px] w-[32px] object-contain" />
-                            </div>
-                            <div className="rounded-full bg-[#D8E6FF] px-4 py-1 text-[12px] font-black text-[#2A6DE5]">
-                                坐姿摆位 / 垂直 CT
                             </div>
                         </div>
                     </div>
