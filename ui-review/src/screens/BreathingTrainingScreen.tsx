@@ -1,7 +1,7 @@
 import ScoutScanScreen from "./ScoutScanScreen";
 
 const BreathingTrainingScreen = () => {
-    return <ScoutScanScreen firstStepLabel="鍛煎惛璁粌" bottomPanelMode="breathing" viewportBgClassName="bg-white" />;
+    return <ScoutScanScreen firstStepLabel="\u547c\u5438\u8bad\u7ec3" bottomPanelMode="breathing" viewportBgClassName="bg-white" />;
 };
 
 export default BreathingTrainingScreen;

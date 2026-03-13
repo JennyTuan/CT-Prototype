@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
     ArrowRightLeft,
+    ArrowUpDown,
     Download,
     ScanLine,
     Telescope,
@@ -18,6 +19,7 @@ const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 const scoutParams = [
     { label: "扫描长度", value: "122.00" },
     { label: "扫描协议", value: "Head_Surview90" },
+    { label: "\u4f53\u4f4d", value: "HFS" },
     { label: "mA", value: "10" },
     { label: "kV", value: "80" },
     { label: "平扫角度", value: "90" },
@@ -41,6 +43,44 @@ function ParamField({ label, value }: { label: string; value: string }) {
             <span className="w-[70px] text-[12px] font-semibold text-[#6c7f97]">{label}:</span>
             <div className="h-[30px] flex-1 rounded-[6px] border border-[#ccd8e8] bg-[#eef2f7] px-[10px] text-[13px] leading-[30px] text-[#7f90a7] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
                 {value}
+            </div>
+        </div>
+    );
+}
+
+function ParamOptionField({
+    label,
+    value,
+    options,
+    onChange,
+}: {
+    label: string;
+    value: string;
+    options: readonly string[];
+    onChange: (value: string) => void;
+}) {
+    return (
+        <div className={`flex items-center gap-[8px] ${label ? "" : "pl-[78px]"}`}>
+            {label ? <span className="w-[70px] text-[12px] font-semibold text-[#6c7f97]">{label}:</span> : null}
+            <div className="flex flex-1 rounded-[6px] border border-[#ccd8e8] bg-[#eef2f7] p-[3px] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+                {options.map((option) => {
+                    const active = value === option;
+
+                    return (
+                        <button
+                            key={option}
+                            type="button"
+                            onClick={() => onChange(option)}
+                            className={`flex-1 rounded-[4px] px-[6px] py-[4px] text-[12px] font-semibold transition-all ${
+                                active
+                                    ? "bg-white text-[#4d6f9f] shadow-[0_1px_2px_rgba(149,166,191,0.22)]"
+                                    : "text-[#7f90a7]"
+                            }`}
+                        >
+                            {option}
+                        </button>
+                    );
+                })}
             </div>
         </div>
     );
@@ -120,6 +160,7 @@ export default function LegacyVerticalCTScoutConfirmScreen() {
     const [startPos, setStartPos] = useState("472.95");
     const [endPos, setEndPos] = useState("595.17");
     const [selectedPosition, setSelectedPosition] = useState<"start" | "end">("end");
+    const [tableDirection, setTableDirection] = useState<"\u8fdb\u5e8a" | "\u51fa\u5e8a">("\u8fdb\u5e8a");
 
     const handleSwap = () => {
         setStartPos(endPos);
@@ -156,60 +197,89 @@ export default function LegacyVerticalCTScoutConfirmScreen() {
                 <div className="flex h-full">
                     <section className="w-[312px] pt-[10px]">
                         <div className="flex h-[580px] flex-col rounded-[14px] border border-[#bcc6d5] bg-[linear-gradient(180deg,#f1f4f9_0%,#e4e9f2_100%)] px-[16px] py-[18px] shadow-[0_6px_18px_rgba(112,117,131,0.14)]">
-                            <div className="whitespace-nowrap text-[22px] font-medium leading-none text-[#4b6f9f]">请打开激光灯获取定位</div>
+                            <div className="whitespace-nowrap text-[22px] font-medium leading-[1.1] text-[#4b6f9f]">请打开激光灯获取定位</div>
 
-                            <div className="mt-[22px] flex items-stretch gap-[10px] px-[2px]">
-                                <div className="flex flex-col items-center self-stretch">
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedPosition("start")}
-                                        className={`h-[12px] w-[12px] rounded-full border-2 ${selectedPosition === "start" ? "border-[#7fa5d6] bg-[#e8f0fb]" : "border-[#96b1d3] bg-[#eef3fb]"}`}
-                                    />
-                                    <div className="my-1 w-px flex-1 bg-[#b4c7df]" />
-                                    <button
-                                        type="button"
-                                        onClick={handleSwap}
-                                        title="交换起始/结束位置"
-                                        className="flex h-[24px] w-[24px] items-center justify-center rounded-[6px] border border-[#9db7d8] bg-[#e9f0fa] text-[#6b8cb3] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
-                                    >
-                                        ↕
-                                    </button>
-                                    <div className="my-1 w-px flex-1 bg-[#b4c7df]" />
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedPosition("end")}
-                                        className={`h-[12px] w-[12px] rounded-full border-2 ${selectedPosition === "end" ? "border-[#7fa5d6] bg-[#e8f0fb]" : "border-[#96b1d3] bg-[#eef3fb]"}`}
-                                    />
-                                </div>
+                            <div className="mt-[18px] rounded-[10px] border border-[#D7E1EE] bg-[rgba(255,255,255,0.45)] px-[12px] py-[10px]">
+                                <div className="flex items-stretch gap-3 h-[118px]">
+                                    <div className="flex flex-col items-center self-stretch justify-center py-2 shrink-0">
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedPosition("start")}
+                                            className={`w-3 h-3 rounded-full border-2 flex items-center justify-center p-[2px] shrink-0 transition-all ${selectedPosition === "start" ? "bg-[#4D94FF] border-white shadow-sm" : "bg-white border-[#B0C4DE]"}`}
+                                        >
+                                            {selectedPosition === "start" && <div className="w-full h-full bg-white rounded-full" />}
+                                        </button>
+                                        <div className="w-px flex-1 bg-[#C5D5E8] my-1" />
+                                        <button
+                                            type="button"
+                                            onClick={handleSwap}
+                                            title="交换起始/结束位置"
+                                            className="w-[20px] h-[20px] rounded-full bg-white border border-[#B0C4DE] flex items-center justify-center text-[#78A0BF] hover:text-[#4D94FF] hover:border-[#4D94FF] hover:bg-[#EEF6FF] transition-all active:scale-90 shadow-sm shrink-0"
+                                        >
+                                            <ArrowUpDown size={10} />
+                                        </button>
+                                        <div className="w-px flex-1 bg-[#C5D5E8] my-1" />
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedPosition("end")}
+                                            className={`w-3 h-3 rounded-full border-2 flex items-center justify-center p-[2px] shrink-0 transition-all ${selectedPosition === "end" ? "bg-[#66BB6A] border-white shadow-sm" : "bg-white border-[#B0C4DE]"}`}
+                                        >
+                                            {selectedPosition === "end" && <div className="w-full h-full bg-white rounded-full" />}
+                                        </button>
+                                    </div>
 
-                                <div className="flex flex-1 flex-col gap-[18px]">
-                                    <button type="button" onClick={() => setSelectedPosition("start")} className="flex items-center gap-[8px] text-left">
-                                        <span className="w-[68px] text-[12px] font-bold leading-none text-[#6f839e]">起始位置:</span>
-                                        <input
-                                            type="text"
-                                            value={startPos}
-                                            onChange={(e) => setStartPos(e.target.value)}
-                                            onClick={(e) => e.stopPropagation()}
-                                            className={`h-[42px] w-[142px] rounded-[6px] border bg-[#edf1f6] px-[12px] text-[30px] font-semibold leading-none shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] ${selectedPosition === "start" ? "border-[#93afd2] text-[#6d859f]" : "border-[#c4d2e3] text-[#9fb0c4]"}`}
-                                        />
-                                    </button>
-
-                                    <button type="button" onClick={() => setSelectedPosition("end")} className="flex items-center gap-[8px] text-left">
-                                        <span className="w-[68px] text-[12px] font-bold leading-none text-[#6f839e]">结束位置:</span>
-                                        <input
-                                            type="text"
-                                            value={endPos}
-                                            onChange={(e) => setEndPos(e.target.value)}
-                                            onClick={(e) => e.stopPropagation()}
-                                            className={`h-[42px] w-[142px] rounded-[6px] border bg-[#edf1f6] px-[12px] text-[30px] font-semibold leading-none shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] ${selectedPosition === "end" ? "border-[#96bf8a] text-[#66bb6a]" : "border-[#c4d2e3] text-[#9fb0c4]"}`}
-                                        />
-                                    </button>
+                                    <div className="flex flex-col flex-1 min-w-0 self-stretch justify-between py-4">
+                                        <div
+                                            onClick={() => setSelectedPosition("start")}
+                                            className="flex items-center gap-2 h-[32px] min-w-0 cursor-pointer"
+                                        >
+                                            <span className={`text-[12px] font-bold w-[60px] shrink-0 transition-colors ${selectedPosition === "start" ? "text-[#4D94FF]" : "text-[#90A4AE]"}`}>起始位置 :</span>
+                                            <input
+                                                type="text"
+                                                value={startPos}
+                                                onChange={(e) => {
+                                                    setSelectedPosition("start");
+                                                    setStartPos(e.target.value);
+                                                }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedPosition("start");
+                                                }}
+                                                className={`flex-1 min-w-0 h-[32px] bg-white border rounded px-2 text-[13px] font-bold outline-none transition-colors ${selectedPosition === "start" ? "border-[#4D94FF] text-[#4D94FF]" : "border-[#B0C4DE] text-[#90A4AE]"} focus:border-[#4D94FF]`}
+                                            />
+                                        </div>
+                                        <div
+                                            onClick={() => setSelectedPosition("end")}
+                                            className="flex items-center gap-2 h-[32px] min-w-0 cursor-pointer"
+                                        >
+                                            <span className={`text-[12px] font-bold w-[60px] shrink-0 transition-colors ${selectedPosition === "end" ? "text-[#66BB6A]" : "text-[#90A4AE]"}`}>结束位置 :</span>
+                                            <input
+                                                type="text"
+                                                value={endPos}
+                                                onChange={(e) => {
+                                                    setSelectedPosition("end");
+                                                    setEndPos(e.target.value);
+                                                }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedPosition("end");
+                                                }}
+                                                className={`flex-1 min-w-0 h-[32px] bg-white border rounded px-2 text-[13px] font-bold outline-none transition-colors ${selectedPosition === "end" ? "border-[#66BB6A] text-[#66BB6A]" : "border-[#B0C4DE] text-[#90A4AE]"} focus:border-[#4D94FF]`}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                             <div className="mt-[18px] border-t border-[#c7d0de] pt-[14px]">
                                 <div className="mb-[10px] text-[13px] font-semibold text-[#526d8f]">扫描参数</div>
                                 <div className="flex flex-col gap-[8px]">
+                                    <ParamOptionField
+                                        label=""
+                                        value={tableDirection}
+                                        options={["\u8fdb\u5e8a", "\u51fa\u5e8a"] as const}
+                                        onChange={(value) => setTableDirection(value as "\u8fdb\u5e8a" | "\u51fa\u5e8a")}
+                                    />
                                     {scoutParams.map((item) => (
                                         <ParamField key={item.label} label={item.label} value={item.value} />
                                     ))}
@@ -230,6 +300,12 @@ export default function LegacyVerticalCTScoutConfirmScreen() {
                             </div>
                             <CameraPreviewPanel />
                             <div className="mt-[14px] flex justify-end gap-[10px] pr-[2px]">
+                                <button
+                                    type="button"
+                                    className="flex h-[38px] items-center justify-center rounded-[6px] border border-[#B8C6DA] bg-[#EEF2F7] px-[18px] text-[13px] font-semibold text-[#6B7C93]"
+                                >
+                                    <span>取消</span>
+                                </button>
                                 <button
                                     type="button"
                                     className="flex h-[38px] items-center justify-center gap-2 rounded-[6px] border border-[#8EBF73] bg-[#8CC06D] px-[16px] text-[13px] font-semibold text-[#F8FFF3]"
