@@ -1,8 +1,9 @@
+import { useEffect, useRef, useState } from "react";
 import {
     ArrowLeft,
     ArrowRightLeft,
+    ChevronRight,
     Download,
-    LocateFixed,
     Telescope,
     View,
 } from "lucide-react";
@@ -12,15 +13,132 @@ const imgMachine = "https://www.figma.com/api/mcp/asset/a434ca2c-b5c7-4847-985a-
 const imgLaser = "https://www.figma.com/api/mcp/asset/aff6e8ff-2b61-43bf-914d-9d401cfccea1";
 const imgEmergency = "https://www.figma.com/api/mcp/asset/bfc511ee-8358-46e6-9d1c-3959ad3f6809";
 const imgPatient = "https://www.figma.com/api/mcp/asset/03451ece-f71a-4cbf-9dfe-fa05e0bcc6a9";
-const imgVertical = "https://www.figma.com/api/mcp/asset/f7d2c225-ca8f-4d34-b88b-c399b50b89ec";
 
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
-const seatOptions: Array<{ code: string; label: string; desc: string; active?: boolean }> = [
-    { code: "S1", label: "标准坐姿", desc: "背部贴靠，双手自然扶把", active: true },
-    { code: "S2", label: "后仰坐姿", desc: "胸部轻微后仰，便于胸肺扫描" },
-    { code: "S3", label: "侧向坐姿", desc: "用于特殊角度摆位或介入观察" },
-] as const;
+const postureOptions: ReadonlyArray<{ id: string; label: string; active?: boolean }> = [
+    { id: "supine", label: "仰卧", active: true },
+    { id: "prone", label: "俯卧" },
+    { id: "left", label: "左侧卧" },
+    { id: "right", label: "右侧卧" },
+];
+
+const directionOptions: ReadonlyArray<{ id: string; label: string; active?: boolean }> = [
+    { id: "head-first", label: "头先进", active: true },
+    { id: "feet-first", label: "脚先进" },
+];
+
+function SelectionButton({
+    label,
+    active = false,
+    wide = false,
+}: {
+    label: string;
+    active?: boolean;
+    wide?: boolean;
+}) {
+    return (
+        <button
+            type="button"
+            className={`flex h-[38px] items-center justify-center rounded-[3px] text-[14px] font-semibold tracking-[0.02em] transition-colors ${
+                wide ? "w-full" : "w-[110px]"
+            }`}
+            style={{
+                color: "#F4F7FF",
+                backgroundColor: active ? "#7EA4EE" : "#717A8D",
+                boxShadow: active ? "inset 0 1px 0 rgba(255,255,255,0.2)" : "inset 0 1px 0 rgba(255,255,255,0.08)",
+            }}
+        >
+            {label}
+        </button>
+    );
+}
+
+function PatientPoseIllustration() {
+    return (
+        <div className="relative h-[92px] w-[240px] overflow-hidden border border-[#B4B7C5] bg-[linear-gradient(180deg,#CFD2DB_0%,#C9CCD6_100%)]">
+            <div className="absolute left-[18px] top-[7px] h-[62px] w-[28px] rounded-l-[20px] rounded-r-[6px] border-[6px] border-[#E7E6E2] border-r-[5px] bg-transparent opacity-95" />
+            <div className="absolute left-[42px] top-[48px] h-[26px] w-[182px] -skew-x-12 rounded-r-[8px] bg-[linear-gradient(180deg,#D9D6CC_0%,#C8C3B7_100%)] shadow-[0_8px_12px_rgba(88,92,106,0.22)]" />
+            <div className="absolute left-[67px] top-[35px] h-[9px] w-[108px] rotate-[8deg] rounded-full bg-[rgba(78,84,98,0.24)] blur-[3px]" />
+            <div className="absolute left-[55px] top-[30px] h-[14px] w-[16px] rounded-full bg-[linear-gradient(180deg,#D7DBE5_0%,#A9AFBC_100%)] shadow-[0_1px_2px_rgba(73,78,92,0.28)]" />
+            <div className="absolute left-[66px] top-[34px] h-[14px] w-[88px] rotate-[7deg] rounded-full bg-[linear-gradient(180deg,#C6CBD7_0%,#9098A9_100%)] shadow-[0_2px_4px_rgba(79,84,97,0.24)]" />
+            <div className="absolute left-[114px] top-[30px] h-[12px] w-[34px] rotate-[8deg] rounded-full bg-[linear-gradient(180deg,#B8BFCD_0%,#8C93A3_100%)]" />
+            <div className="absolute left-[147px] top-[34px] h-[10px] w-[28px] rotate-[12deg] rounded-full bg-[linear-gradient(180deg,#BFC5D2_0%,#8E96A5_100%)]" />
+            <div className="absolute left-[90px] top-[42px] h-[10px] w-[60px] rotate-[10deg] rounded-full bg-[linear-gradient(180deg,#B7BDCB_0%,#838B9D_100%)]" />
+            <div className="absolute left-[142px] top-[45px] h-[9px] w-[40px] rotate-[8deg] rounded-full bg-[linear-gradient(180deg,#B9BFCC_0%,#858D9E_100%)]" />
+            <div className="absolute left-[180px] top-[28px] h-[19px] w-[4px] rotate-[12deg] rounded-full bg-[linear-gradient(180deg,#9EA7B7_0%,#768092_100%)]" />
+            <div className="absolute left-[183px] top-[24px] h-[17px] w-[4px] rotate-[-16deg] rounded-full bg-[linear-gradient(180deg,#A5AEBD_0%,#7B8496_100%)]" />
+        </div>
+    );
+}
+
+function CameraPreviewPanel() {
+    const videoRef = useRef<HTMLVideoElement | null>(null);
+    const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+
+    useEffect(() => {
+        let active = true;
+        let stream: MediaStream | null = null;
+
+        async function startCamera() {
+            if (!navigator.mediaDevices?.getUserMedia) {
+                if (active) setStatus("error");
+                return;
+            }
+
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 960 },
+                        height: { ideal: 720 },
+                    },
+                    audio: false,
+                });
+
+                if (!active) {
+                    stream.getTracks().forEach((track) => track.stop());
+                    return;
+                }
+
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                    await videoRef.current.play().catch(() => undefined);
+                }
+
+                setStatus("ready");
+            } catch {
+                if (active) setStatus("error");
+            }
+        }
+
+        startCamera();
+
+        return () => {
+            active = false;
+            if (stream) {
+                stream.getTracks().forEach((track) => track.stop());
+            }
+        };
+    }, []);
+
+    return (
+        <div className="relative h-[406px] w-[510px] overflow-hidden rounded-[8px] border border-[#aab1c1] bg-[#8d95a8] shadow-[0_2px_8px_rgba(96,104,122,0.18)]">
+            <video ref={videoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
+            {status !== "ready" ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[linear-gradient(180deg,rgba(88,96,114,0.82)_0%,rgba(64,71,87,0.92)_100%)] text-[#eef2fb]">
+                    <div className="text-[15px] font-semibold">{status === "loading" ? "正在连接摄像头..." : "无法显示实时画面"}</div>
+                    <div className="mt-2 text-[12px] text-[#d5dbea]">
+                        {status === "loading" ? "请稍候" : "请检查摄像头权限或设备连接"}
+                    </div>
+                </div>
+            ) : null}
+            <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between bg-[linear-gradient(180deg,rgba(17,22,31,0.68)_0%,rgba(17,22,31,0)_100%)] px-3 py-2 text-white">
+                <span className="text-[12px] font-medium tracking-[0.04em]">实时画面</span>
+                <span className="rounded-full bg-[rgba(77,211,123,0.92)] px-2 py-[2px] text-[10px] font-bold text-[#0c2a14]">LIVE</span>
+            </div>
+        </div>
+    );
+}
 
 function ToolbarIcon({ src, alt, left }: { src: string; alt: string; left: number }) {
     return (
@@ -31,56 +149,6 @@ function ToolbarIcon({ src, alt, left }: { src: string; alt: string; left: numbe
             className="absolute top-[20px] h-[32px] w-[32px] object-contain select-none"
             style={{ left }}
         />
-    );
-}
-
-function SeatOption({
-    code,
-    label,
-    desc,
-    active = false,
-}: {
-    code: string;
-    label: string;
-    desc: string;
-    active?: boolean;
-}) {
-    return (
-        <button
-            type="button"
-            className="flex items-start rounded-[12px] border px-4 py-3 text-left transition-all"
-            style={{
-                borderColor: active ? "#2A6DE5" : "#C8D6F0",
-                background: active ? "linear-gradient(180deg,#EDF4FF 0%,#FFFFFF 100%)" : "rgba(255,255,255,0.78)",
-                boxShadow: active ? "0 10px 18px rgba(42,109,229,0.14)" : "none",
-            }}
-        >
-            <div
-                className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[10px] text-[13px] font-black"
-                style={{
-                    backgroundColor: active ? "#2A6DE5" : "#E6EDF9",
-                    color: active ? "#FFFFFF" : "#5A6781",
-                }}
-            >
-                {code}
-            </div>
-            <div className="ml-3 min-w-0">
-                <div className="text-[13px] font-bold text-[#334155]">{label}</div>
-                <div className="mt-1 text-[11px] font-semibold leading-[1.35] text-[#7C879D]">{desc}</div>
-            </div>
-        </button>
-    );
-}
-
-function PositioningPreviewPlaceholder() {
-    return (
-        <div className="relative flex h-[420px] w-[520px] items-center justify-center rounded-[20px] border-2 border-dashed border-[#B9CBEA] bg-[linear-gradient(180deg,#F8FBFF_0%,#EEF4FF_100%)]">
-            <div className="flex flex-col items-center text-center text-[#6A7A96]">
-                <div className="h-14 w-14 rounded-[16px] border border-[#C7D7F2] bg-white/85" />
-                <div className="mt-3 text-[16px] font-bold text-[#5B6C8A]">示意图占位区域</div>
-                <div className="mt-1 text-[12px] font-semibold">后续由 UI 补充正式插画</div>
-            </div>
-        </div>
     );
 }
 
@@ -111,95 +179,58 @@ export default function LegacyVerticalCTPatientPositioningScreen() {
                 <ToolbarIcon src={imgSystem} alt="系统管理" left={952} />
             </div>
 
-            <div className="absolute left-[20px] right-[20px] top-[92px] flex h-[588px] gap-4">
-                <div className="flex w-[300px] flex-col rounded-[16px] border border-[#B8C8E9] bg-[linear-gradient(180deg,#F6F9FF_0%,#EDF2FC_100%)] p-5 shadow-[0_15px_40px_rgba(88,117,170,0.12)]">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-[10px] bg-[#2A6DE5] text-white shadow-lg">
-                            <ArrowRightLeft size={22} />
-                        </div>
-                        <div>
-                            <div className="text-[28px] font-bold leading-none text-[#2A6DE5]">患者摆位</div>
+            <div className="absolute left-[20px] right-[20px] top-[92px] h-[588px]">
+                <div className="flex h-full">
+                    <section className="w-[292px] pt-[10px]">
+                        <div className="flex h-[498px] flex-col rounded-[10px] border border-[#b6bbc8] bg-[linear-gradient(180deg,#d8dbe4_0%,#d3d6df_100%)] px-[14px] py-[16px] shadow-[0_2px_8px_rgba(112,117,131,0.22)]">
+                            <h2 className="text-[17px] font-semibold text-[#23262b]">请选择患者的体位</h2>
+                            <div className="mt-[14px] grid grid-cols-2 gap-x-[18px] gap-y-[12px]">
+                                {postureOptions.map((option) => (
+                                    <SelectionButton key={option.id} label={option.label} active={option.active} />
+                                ))}
+                            </div>
 
-                        </div>
-                    </div>
+                            <div className="mt-[18px] flex justify-center">
+                                <PatientPoseIllustration />
+                            </div>
 
-                    <div className="mt-5">
-                        <div className="mb-2 text-[12px] font-black text-[#5A6781]">坐姿模板</div>
-                        <div className="grid grid-cols-1 gap-2.5">
-                            {seatOptions.map((item) => (
-                                <SeatOption
-                                    key={item.code}
-                                    code={item.code}
-                                    label={item.label}
-                                    desc={item.desc}
-                                    active={item.active}
-                                />
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="mt-4 rounded-[14px] border border-[#F3C5B3] bg-[rgba(255,243,238,0.86)] p-4">
-                        <div className="text-[11px] font-black uppercase tracking-[0.18em] text-[#D66B43]">摆位提示</div>
-                        <div className="mt-2 text-[13px] font-semibold leading-[1.45] text-[#6C7286]">
-                            引导患者坐稳并保持头颈正中。通过吊挂扫描环的升降、旋转和前后平移，让环心对准胸部扫描中心线。
-                        </div>
-                    </div>
-
-                </div>
-
-                <div className="flex flex-1 flex-col rounded-[16px] border border-[#B8C8E9] bg-[linear-gradient(180deg,#F7FAFF_0%,#EEF3FC_100%)] px-5 py-4 shadow-[0_15px_40px_rgba(88,117,170,0.12)]">
-                    <div className="flex items-center justify-between px-2 py-2">
-                        <div>
-                            <div className="text-[18px] font-bold text-[#355A9C]">Position Preview</div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-white/35">
-                                <img src={imgVertical} alt="垂直模式" draggable={false} className="h-[32px] w-[32px] object-contain" />
+                            <div className="mt-[20px] border-t border-[#bcc1cd] pt-[18px]">
+                                <h2 className="text-[17px] font-semibold text-[#23262b]">请选择患者的方向</h2>
+                                <div className="mt-[16px] flex flex-col gap-[12px]">
+                                    {directionOptions.map((option) => (
+                                        <SelectionButton key={option.id} label={option.label} active={option.active} wide />
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </section>
 
-                    <div className="mt-4 flex flex-1 flex-col">
-                        <div className="relative flex flex-1 items-center justify-center overflow-hidden rounded-[18px] bg-[linear-gradient(180deg,#F3F7FF_0%,#E8F0FD_100%)]">
-                            <div className="pointer-events-none absolute inset-0 rounded-[18px] border border-[#CBD8EE]" />
-                            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.55)_0%,rgba(237,244,255,0)_24%,rgba(155,177,220,0.06)_100%)]" />
+                    <div className="ml-[14px] h-full w-px bg-[#b7bcc9]" />
 
-                            <PositioningPreviewPlaceholder />
-
-                            <div className="hidden absolute bottom-5 right-6 items-center gap-3">
-                                <button
-                                    type="button"
-                                    className="flex h-[42px] items-center gap-2 rounded-[12px] border border-[#7CA1E3] bg-[linear-gradient(180deg,rgba(255,255,255,0.94)_0%,rgba(233,241,255,0.98)_100%)] px-4 text-[15px] font-semibold text-[#2A63BE] shadow-[0_10px_24px_rgba(114,145,201,0.18)]"
-                                >
-                                    <ArrowLeft size={16} strokeWidth={2.2} />
-                                    <span>返回</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    className="flex h-[42px] items-center gap-2 rounded-[12px] border border-[#2459B2] bg-[linear-gradient(180deg,#2A6DE5_0%,#1E56B9_100%)] px-5 text-[15px] font-semibold text-white shadow-[0_12px_26px_rgba(42,109,229,0.28)]"
-                                >
-                                    <LocateFixed size={16} strokeWidth={2.2} />
-                                    <span>开始定位</span>
-                                </button>
-                            </div>
+                    <section className="flex flex-1 flex-col pl-[40px] pt-[24px]">
+                        <div className="pl-[8px]">
+                            <div className="mb-[10px] text-[16px] font-semibold text-[#23262b]">患者摄像头画面</div>
+                            <CameraPreviewPanel />
                         </div>
-                        <div className="flex items-center justify-end gap-3 px-2 pb-1 pt-4">
+
+                        <div className="mt-auto flex items-center justify-between px-[8px] pb-[82px]">
                             <button
                                 type="button"
-                                className="flex h-[42px] items-center gap-2 rounded-[12px] border border-[#7CA1E3] bg-[linear-gradient(180deg,rgba(255,255,255,0.94)_0%,rgba(233,241,255,0.98)_100%)] px-4 text-[15px] font-semibold text-[#2A63BE] shadow-[0_10px_24px_rgba(114,145,201,0.18)]"
+                                className="flex h-[36px] w-[76px] items-center justify-center gap-2 rounded-[3px] border border-[#dd8f92] bg-[#e89a99] text-[13px] font-semibold text-[#fff5f4]"
                             >
-                                <ArrowLeft size={16} strokeWidth={2.2} />
+                                <ArrowLeft size={14} strokeWidth={2.2} />
                                 <span>返回</span>
                             </button>
+
                             <button
                                 type="button"
-                                className="flex h-[42px] items-center gap-2 rounded-[12px] border border-[#2459B2] bg-[linear-gradient(180deg,#2A6DE5_0%,#1E56B9_100%)] px-5 text-[15px] font-semibold text-white shadow-[0_12px_26px_rgba(42,109,229,0.28)]"
+                                className="flex h-[36px] w-[76px] items-center justify-center gap-2 rounded-[3px] border border-[#8ebf73] bg-[#8cc06d] text-[13px] font-semibold text-[#f8fff3]"
                             >
-                                <LocateFixed size={16} strokeWidth={2.2} />
-                                <span>开始定位</span>
+                                <span>继续</span>
+                                <ChevronRight size={15} strokeWidth={2.5} />
                             </button>
                         </div>
-                    </div>
+                    </section>
                 </div>
             </div>
 
