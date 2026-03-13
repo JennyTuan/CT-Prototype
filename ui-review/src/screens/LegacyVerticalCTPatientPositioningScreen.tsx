@@ -122,7 +122,7 @@ function CameraPreviewPanel() {
     }, []);
 
     return (
-        <div className="relative h-[436px] w-[560px] overflow-hidden rounded-[8px] border border-[#aab1c1] bg-[#8d95a8] shadow-[0_2px_8px_rgba(96,104,122,0.18)]">
+        <div className="relative h-[470px] w-[638px] overflow-hidden rounded-[8px] border border-[#aab1c1] bg-[#8d95a8] shadow-[0_2px_8px_rgba(96,104,122,0.18)]">
             <video ref={videoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
             {status !== "ready" ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[linear-gradient(180deg,rgba(88,96,114,0.82)_0%,rgba(64,71,87,0.92)_100%)] text-[#eef2fb]">
