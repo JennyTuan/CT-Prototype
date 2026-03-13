@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import PatientListScreen from "./screens/PatientListScreen";
 import ScoutScanScreen from "./screens/ScoutScanScreen";
 import FourDScanScreen from "./screens/FourDScanScreen";
+import BreathingTrainingScreen from "./screens/BreathingTrainingScreen";
 import ProtocolSetupScreen from "./screens/ProtocolSetupScreen";
 import WT32ProtocolDetailScreen from "./screens/WT32ProtocolDetailScreen";
 import WT32ProtocolScoutDetailScreen from "./screens/WT32NewProtocolScoutDetailScreen";
@@ -27,9 +28,10 @@ import CTSimulatorUIRefactorLight from "./screens/CTSimulatorUIRefactorLight";
 import CTSimulatorUIRefactorLight2 from "./screens/CTSimulatorUIRefactorLight2";
 import LegacyVerticalCTHomeScreen from "./screens/LegacyVerticalCTHomeScreen";
 import LegacyVerticalCTModeConfirmScreen from "./screens/LegacyVerticalCTModeConfirmScreen";
-import LegacyVerticalCTModeConfirmCorrectScreen from "./screens/LegacyVerticalCTModeConfirmCorrectScreen";
+//import LegacyVerticalCTModeConfirmCorrectScreen from "./screens/LegacyVerticalCTModeConfirmCorrectScreen";
 import LegacyVerticalCTPatientPositioningScreen from "./screens/LegacyVerticalCTPatientPositioningScreen";
 import LegacyVerticalCTPatientPositioningVerticalScreen from "./screens/LegacyVerticalCTPatientPositioningVerticalScreen";
+import LegacyVerticalCTScoutConfirmScreen from "./screens/LegacyVerticalCTScoutConfirmScreen";
 
 type ScreenItem = {
     key: string;
@@ -72,6 +74,7 @@ export default function Gallery() {
                     { key: "scan_confirm", name: "参数确认", component: <ScanConfirmScreen /> },
                     { key: "view", name: "图像浏览", component: <ViewScreen /> },
                     { key: "4d-scan", name: "4D 扫描", component: <FourDScanScreen /> },
+                    { key: "breathing-training", name: "呼吸训练", component: <BreathingTrainingScreen /> },
                     { key: "mock_scan", name: "模拟按键", component: <MockScanScreen /> },
                     { key: "tube-warmup", name: "球管预热", component: <TubeWarmupScreen /> },
                     { key: "air-calibration", name: "空气校正", component: <AirCalibrationScreen /> },
@@ -98,9 +101,10 @@ export default function Gallery() {
                 screens: [
                     { key: "legacy-vertical-ct-home", name: "首页", component: <LegacyVerticalCTHomeScreen /> },
                     { key: "legacy-vertical-ct-mode-confirm", name: "模式确认", component: <LegacyVerticalCTModeConfirmScreen /> },
-                    { key: "legacy-vertical-ct-mode-confirm-correct", name: "模式确认-模式正确", component: <LegacyVerticalCTModeConfirmCorrectScreen /> },
-                    { key: "legacy-vertical-ct-patient-positioning", name: "患者摆位", component: <LegacyVerticalCTPatientPositioningScreen /> },
+                //    { key: "legacy-vertical-ct-mode-confirm-correct", name: "模式确认-模式正确", component: <LegacyVerticalCTModeConfirmCorrectScreen /> },
+                    { key: "legacy-vertical-ct-patient-positioning", name: "患者摆位-水平", component: <LegacyVerticalCTPatientPositioningScreen /> },
                     { key: "legacy-vertical-ct-patient-positioning-vertical", name: "患者摆位-垂直", component: <LegacyVerticalCTPatientPositioningVerticalScreen /> },
+                    { key: "legacy-vertical-ct-scout-confirm", name: "定位像确认", component: <LegacyVerticalCTScoutConfirmScreen /> },
                 ],
             },
         ],
@@ -303,8 +307,6 @@ export default function Gallery() {
         </div>
     );
 }
-
-
 
 
 

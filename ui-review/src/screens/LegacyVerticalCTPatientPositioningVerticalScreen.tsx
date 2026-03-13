@@ -17,10 +17,10 @@ const imgPatient = "https://www.figma.com/api/mcp/asset/03451ece-f71a-4cbf-9dfe-
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
 const stanceOptions = [
-    { id: "standing", label: "站立", active: true },
-    { id: "sitting", label: "坐姿", active: false },
-    { id: "leaning", label: "前倾扶靠", active: false },
-    { id: "wheelchair", label: "轮椅辅助", active: false },
+    { id: "standing", label: "正向", active: true },
+    { id: "sitting", label: "反向", active: false },
+    { id: "leaning", label: "左侧", active: false },
+    { id: "wheelchair", label: "右侧", active: false },
 ] as const;
 
 const directionOptions = [
@@ -172,7 +172,7 @@ export default function LegacyVerticalCTPatientPositioningVerticalScreen() {
             <div className="absolute left-[20px] right-[20px] top-[92px] h-[588px]">
                 <div className="flex h-full">
                     <section className="w-[312px] pt-[10px]">
-                        <div className="flex h-[536px] flex-col rounded-[12px] border border-[#b6bbc8] bg-[linear-gradient(180deg,#d8dbe4_0%,#d3d6df_100%)] px-[14px] py-[16px] shadow-[0_2px_8px_rgba(112,117,131,0.22)]">
+                        <div className="flex h-[580px] flex-col rounded-[12px] border border-[#b6bbc8] bg-[linear-gradient(180deg,#d8dbe4_0%,#d3d6df_100%)] px-[14px] py-[16px] shadow-[0_2px_8px_rgba(112,117,131,0.22)]">
                             <div className="flex items-center justify-between">
                                 <h2 className="text-[17px] font-semibold text-[#23262b]">患者摆位-垂直</h2>
                                 <span className="rounded-full bg-[#D8E6FF] px-2.5 py-1 text-[11px] font-bold tracking-[0.08em] text-[#2D64C7]">

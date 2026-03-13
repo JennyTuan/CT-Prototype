@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import {
-    ArrowLeft,
     ArrowRightLeft,
-    ChevronRight,
     Download,
+    ScanLine,
     Telescope,
     View,
 } from "lucide-react";
@@ -16,58 +15,45 @@ const imgPatient = "https://www.figma.com/api/mcp/asset/03451ece-f71a-4cbf-9dfe-
 
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
-const postureOptions: ReadonlyArray<{ id: string; label: string; active?: boolean }> = [
-    { id: "supine", label: "仰卧", active: true },
-    { id: "prone", label: "俯卧" },
-    { id: "left", label: "左侧卧" },
-    { id: "right", label: "右侧卧" },
-];
+const scoutParams = [
+    { label: "扫描方向", value: "前后位" },
+    { label: "定位长度", value: "420 mm" },
+    { label: "视野 FOV", value: "500 mm" },
+    { label: "层厚", value: "1.0 mm" },
+] as const;
 
-const directionOptions: ReadonlyArray<{ id: string; label: string; active?: boolean }> = [
-    { id: "head-first", label: "头先进", active: true },
-    { id: "feet-first", label: "脚先进" },
-];
+const confirmItems = [
+    "确认患者姿态与垂直摆位一致",
+    "确认激光线与胸腹中心对位",
+    "确认定位范围覆盖目标区域",
+] as const;
 
-function SelectionButton({
-    label,
-    active = false,
-    wide = false,
-}: {
-    label: string;
-    active?: boolean;
-    wide?: boolean;
-}) {
+function ToolbarIcon({ src, alt, left }: { src: string; alt: string; left: number }) {
     return (
-        <button
-            type="button"
-            className={`flex h-[38px] items-center justify-center rounded-[3px] text-[14px] font-semibold tracking-[0.02em] transition-colors ${
-                wide ? "w-full" : "w-[110px]"
-            }`}
-            style={{
-                color: "#F4F7FF",
-                backgroundColor: active ? "#7EA4EE" : "#717A8D",
-                boxShadow: active ? "inset 0 1px 0 rgba(255,255,255,0.2)" : "inset 0 1px 0 rgba(255,255,255,0.08)",
-            }}
-        >
-            {label}
-        </button>
+        <img
+            src={src}
+            alt={alt}
+            draggable={false}
+            className="absolute top-[20px] h-[32px] w-[32px] object-contain select-none"
+            style={{ left }}
+        />
     );
 }
 
-function PatientPoseIllustration() {
+function ParameterRow({ label, value }: { label: string; value: string }) {
     return (
-        <div className="relative h-[92px] w-[240px] overflow-hidden border border-[#B4B7C5] bg-[linear-gradient(180deg,#CFD2DB_0%,#C9CCD6_100%)]">
-            <div className="absolute left-[18px] top-[7px] h-[62px] w-[28px] rounded-l-[20px] rounded-r-[6px] border-[6px] border-[#E7E6E2] border-r-[5px] bg-transparent opacity-95" />
-            <div className="absolute left-[42px] top-[48px] h-[26px] w-[182px] -skew-x-12 rounded-r-[8px] bg-[linear-gradient(180deg,#D9D6CC_0%,#C8C3B7_100%)] shadow-[0_8px_12px_rgba(88,92,106,0.22)]" />
-            <div className="absolute left-[67px] top-[35px] h-[9px] w-[108px] rotate-[8deg] rounded-full bg-[rgba(78,84,98,0.24)] blur-[3px]" />
-            <div className="absolute left-[55px] top-[30px] h-[14px] w-[16px] rounded-full bg-[linear-gradient(180deg,#D7DBE5_0%,#A9AFBC_100%)] shadow-[0_1px_2px_rgba(73,78,92,0.28)]" />
-            <div className="absolute left-[66px] top-[34px] h-[14px] w-[88px] rotate-[7deg] rounded-full bg-[linear-gradient(180deg,#C6CBD7_0%,#9098A9_100%)] shadow-[0_2px_4px_rgba(79,84,97,0.24)]" />
-            <div className="absolute left-[114px] top-[30px] h-[12px] w-[34px] rotate-[8deg] rounded-full bg-[linear-gradient(180deg,#B8BFCD_0%,#8C93A3_100%)]" />
-            <div className="absolute left-[147px] top-[34px] h-[10px] w-[28px] rotate-[12deg] rounded-full bg-[linear-gradient(180deg,#BFC5D2_0%,#8E96A5_100%)]" />
-            <div className="absolute left-[90px] top-[42px] h-[10px] w-[60px] rotate-[10deg] rounded-full bg-[linear-gradient(180deg,#B7BDCB_0%,#838B9D_100%)]" />
-            <div className="absolute left-[142px] top-[45px] h-[9px] w-[40px] rotate-[8deg] rounded-full bg-[linear-gradient(180deg,#B9BFCC_0%,#858D9E_100%)]" />
-            <div className="absolute left-[180px] top-[28px] h-[19px] w-[4px] rotate-[12deg] rounded-full bg-[linear-gradient(180deg,#9EA7B7_0%,#768092_100%)]" />
-            <div className="absolute left-[183px] top-[24px] h-[17px] w-[4px] rotate-[-16deg] rounded-full bg-[linear-gradient(180deg,#A5AEBD_0%,#7B8496_100%)]" />
+        <div className="flex items-center justify-between rounded-[8px] border border-[#C1C7D4] bg-[rgba(244,247,252,0.8)] px-[12px] py-[10px] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+            <span className="text-[12px] font-semibold text-[#627086]">{label}</span>
+            <span className="text-[13px] font-bold text-[#253248]">{value}</span>
+        </div>
+    );
+}
+
+function ConfirmItem({ text }: { text: string }) {
+    return (
+        <div className="flex items-start gap-[10px] rounded-[8px] border border-[#C7CFDC] bg-[rgba(246,248,252,0.88)] px-[12px] py-[10px]">
+            <div className="mt-[2px] h-[8px] w-[8px] rounded-full bg-[#6E95DC]" />
+            <span className="text-[12px] font-medium leading-[1.45] text-[#4F5D73]">{text}</span>
         </div>
     );
 }
@@ -122,7 +108,7 @@ function CameraPreviewPanel() {
     }, []);
 
     return (
-        <div className="relative h-[470px] w-full max-w-[700px] overflow-hidden rounded-[8px] border border-[#aab1c1] bg-[#8d95a8] shadow-[0_2px_8px_rgba(96,104,122,0.18)]">
+        <div className="relative h-[470px] w-full max-w-[700px] overflow-hidden rounded-[10px] border border-[#aab1c1] bg-[#8d95a8] shadow-[0_2px_8px_rgba(96,104,122,0.18)]">
             <video ref={videoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
             {status !== "ready" ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[linear-gradient(180deg,rgba(88,96,114,0.82)_0%,rgba(64,71,87,0.92)_100%)] text-[#eef2fb]">
@@ -133,26 +119,14 @@ function CameraPreviewPanel() {
                 </div>
             ) : null}
             <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between bg-[linear-gradient(180deg,rgba(17,22,31,0.68)_0%,rgba(17,22,31,0)_100%)] px-3 py-2 text-white">
-                <span className="text-[12px] font-medium tracking-[0.04em]">实时画面</span>
+                <span className="text-[12px] font-medium tracking-[0.04em]">定位像实时画面</span>
                 <span className="rounded-full bg-[rgba(77,211,123,0.92)] px-2 py-[2px] text-[10px] font-bold text-[#0c2a14]">LIVE</span>
             </div>
         </div>
     );
 }
 
-function ToolbarIcon({ src, alt, left }: { src: string; alt: string; left: number }) {
-    return (
-        <img
-            src={src}
-            alt={alt}
-            draggable={false}
-            className="absolute top-[20px] h-[32px] w-[32px] object-contain select-none"
-            style={{ left }}
-        />
-    );
-}
-
-export default function LegacyVerticalCTPatientPositioningScreen() {
+export default function LegacyVerticalCTScoutConfirmScreen() {
     return (
         <div className="relative h-[768px] w-[1024px] overflow-hidden bg-[#DCE0ED] text-[#535353]" style={{ fontFamily: pingFang }}>
             <div className="absolute left-0 top-0 h-[80px] w-full bg-[#C1C5D5] opacity-50" />
@@ -160,7 +134,7 @@ export default function LegacyVerticalCTPatientPositioningScreen() {
                 <div className="absolute left-[20px] top-[12px] h-[50px] w-[100px] rounded-[5px] border border-[#95B0E2] bg-[#D2D7E6]">
                     <img
                         src={imgPatient}
-                        alt="患者"
+                        alt="patient"
                         draggable={false}
                         className="absolute left-[4px] top-[8px] h-[29.818px] w-[31.552px] object-contain select-none"
                     />
@@ -175,30 +149,47 @@ export default function LegacyVerticalCTPatientPositioningScreen() {
                 </div>
                 <ToolbarIcon src={imgEmergency} alt="急停" left={760} />
                 <ToolbarIcon src={imgLaser} alt="激光" left={824} />
-                <ToolbarIcon src={imgMachine} alt="机器状态" left={888} />
+                <ToolbarIcon src={imgMachine} alt="设备状态" left={888} />
                 <ToolbarIcon src={imgSystem} alt="系统管理" left={952} />
             </div>
 
             <div className="absolute left-[20px] right-[20px] top-[92px] h-[588px]">
                 <div className="flex h-full">
                     <section className="w-[312px] pt-[10px]">
-                        <div className="flex h-[580px] flex-col rounded-[10px] border border-[#b6bbc8] bg-[linear-gradient(180deg,#d8dbe4_0%,#d3d6df_100%)] px-[14px] py-[16px] shadow-[0_2px_8px_rgba(112,117,131,0.22)]">
-                            <h2 className="text-[17px] font-semibold text-[#23262b]">请选择患者的体位</h2>
-                            <div className="mt-[14px] grid grid-cols-2 gap-x-[18px] gap-y-[12px]">
-                                {postureOptions.map((option) => (
-                                    <SelectionButton key={option.id} label={option.label} active={option.active} />
-                                ))}
+                        <div className="flex h-[580px] flex-col rounded-[12px] border border-[#b6bbc8] bg-[linear-gradient(180deg,#d8dbe4_0%,#d3d6df_100%)] px-[14px] py-[16px] shadow-[0_2px_8px_rgba(112,117,131,0.22)]">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-[17px] font-semibold text-[#23262b]">定位像参数确认</h2>
+                                <span className="rounded-full bg-[#D8E6FF] px-2.5 py-1 text-[11px] font-bold tracking-[0.08em] text-[#2D64C7]">
+                                    SCOUT
+                                </span>
                             </div>
 
-                            <div className="mt-[18px] flex justify-center">
-                                <PatientPoseIllustration />
+                            <div className="mt-[14px]">
+                                <div className="mb-[8px] text-[13px] font-semibold text-[#59657B]">扫描参数</div>
+                                <div className="flex flex-col gap-[10px]">
+                                    {scoutParams.map((item) => (
+                                        <ParameterRow key={item.label} label={item.label} value={item.value} />
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="mt-[18px] rounded-[10px] border border-dashed border-[#AEB7C7] bg-[linear-gradient(180deg,#E5E9F2_0%,#D7DCE7_100%)] px-[14px] py-[14px] shadow-[inset_0_1px_0_rgba(255,255,255,0.42)]">
+                                <div className="flex items-center gap-[8px]">
+                                    <div className="flex h-[28px] w-[28px] items-center justify-center rounded-[8px] bg-[rgba(255,255,255,0.64)] text-[#5D77A8]">
+                                        <ScanLine size={16} strokeWidth={2} />
+                                    </div>
+                                    <div>
+                                        <div className="text-[13px] font-semibold text-[#31425F]">定位范围预览</div>
+                                        <div className="mt-[2px] text-[11px] text-[#73819A]">当前定位线覆盖肩部至膈顶区域</div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="mt-[20px] border-t border-[#bcc1cd] pt-[18px]">
-                                <h2 className="text-[17px] font-semibold text-[#23262b]">请选择患者的方向</h2>
-                                <div className="mt-[16px] flex flex-col gap-[12px]">
-                                    {directionOptions.map((option) => (
-                                        <SelectionButton key={option.id} label={option.label} active={option.active} wide />
+                                <h2 className="text-[17px] font-semibold text-[#23262b]">确认要点</h2>
+                                <div className="mt-[14px] flex flex-col gap-[10px]">
+                                    {confirmItems.map((item) => (
+                                        <ConfirmItem key={item} text={item} />
                                     ))}
                                 </div>
                             </div>
@@ -209,26 +200,22 @@ export default function LegacyVerticalCTPatientPositioningScreen() {
 
                     <section className="flex flex-1 flex-col pl-[24px] pt-[18px]">
                         <div className="pl-[8px]">
-                            <div className="mb-[10px] text-[16px] font-semibold text-[#23262b]">患者摄像头画面</div>
+                            <div className="mb-[10px] flex items-end justify-between">
+                                <div className="text-[16px] font-semibold text-[#23262b]">定位像实时画面</div>
+                                <div className="rounded-full bg-[#E5ECFA] px-3 py-[5px] text-[11px] font-bold tracking-[0.08em] text-[#4A659C]">
+                                    垂直模式 / 定位像确认中
+                                </div>
+                            </div>
                             <CameraPreviewPanel />
-                        </div>
-
-                        <div className="mt-auto flex items-center justify-between px-[8px] pb-[12px]">
-                            <button
-                                type="button"
-                                className="flex h-[36px] w-[76px] items-center justify-center gap-2 rounded-[3px] border border-[#dd8f92] bg-[#e89a99] text-[13px] font-semibold text-[#fff5f4]"
-                            >
-                                <ArrowLeft size={14} strokeWidth={2.2} />
-                                <span>返回</span>
-                            </button>
-
-                            <button
-                                type="button"
-                                className="flex h-[36px] w-[76px] items-center justify-center gap-2 rounded-[3px] border border-[#8ebf73] bg-[#8cc06d] text-[13px] font-semibold text-[#f8fff3]"
-                            >
-                                <span>继续</span>
-                                <ChevronRight size={15} strokeWidth={2.5} />
-                            </button>
+                            <div className="mt-[14px] flex justify-end gap-[10px] pr-[2px]">
+                                <button
+                                    type="button"
+                                    className="flex h-[38px] items-center justify-center gap-2 rounded-[6px] border border-[#8EBF73] bg-[#8CC06D] px-[16px] text-[13px] font-semibold text-[#F8FFF3]"
+                                >
+                                    <ScanLine size={15} strokeWidth={2.1} />
+                                    <span>定位扫描</span>
+                                </button>
+                            </div>
                         </div>
                     </section>
                 </div>

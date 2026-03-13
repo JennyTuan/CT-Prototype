@@ -54,6 +54,7 @@ const ScoutScanScreen = ({
         valleyThreshold: "0.35",
         gain: "1.5",
     });
+    const [isBreathingSignalEnabled, setIsBreathingSignalEnabled] = useState(true);
 
     const [breathingPhase, setBreathingPhase] = useState<"training" | "stable">("training");
     const [trainingTimer, setTrainingTimer] = useState(30);
@@ -88,7 +89,7 @@ const ScoutScanScreen = ({
     const tRef = useRef(0); // Persistent time counter to prevent resets on re-render
 
     useEffect(() => {
-        if (bottomPanelMode !== 'breathing') return;
+        if (bottomPanelMode !== 'breathing' || !isBreathingSignalEnabled) return;
 
         const update = () => {
             tRef.current += 0.05; // Standard speed for ~15 bpm breaths
@@ -135,7 +136,23 @@ const ScoutScanScreen = ({
         return () => {
             if (timerRef.current !== null) cancelAnimationFrame(timerRef.current);
         };
-    }, [bottomPanelMode]); // Removed wave states from dependencies to stop re-running/resetting
+    }, [bottomPanelMode, isBreathingSignalEnabled]); // Removed wave states from dependencies to stop re-running/resetting
+
+    useEffect(() => {
+        if (bottomPanelMode !== "breathing") return;
+
+        if (!isBreathingSignalEnabled) {
+            setRawWaveData(new Array(500).fill(0));
+            setFilteredWaveData(new Array(500).fill(0));
+            setMetrics({ bpm: "--", peakErr: "--", freqErr: "--" });
+            return;
+        }
+
+        setRawWaveData(new Array(500).fill(100));
+        setFilteredWaveData(new Array(500).fill(100));
+        setMetrics({ bpm: "14.8", peakErr: "1.7", freqErr: "1.9" });
+        tRef.current = 0;
+    }, [bottomPanelMode, isBreathingSignalEnabled]);
 
     // Metrics are now handled in the update loop state
 
@@ -544,8 +561,41 @@ const ScoutScanScreen = ({
                 <section className={`flex-1 ${viewportBgClassName} rounded-lg border border-[#B0C4DE] shadow-sm flex flex-col overflow-hidden relative`}>
                     {bottomPanelMode === 'breathing' ? (
                         <div className="flex-1 flex flex-col p-4 gap-4 bg-[#EEF2F9]/50">
+                            <div className="flex items-center justify-between rounded-md border border-[#DCE6F2] bg-white px-4 py-3 shadow-sm">
+                                <div>
+                                    <div className="text-[15px] font-black text-[#37474F]">呼吸信号输入</div>
+                                    <div className="mt-0.5 text-[11px] font-medium text-[#78909C]">
+                                        控制右侧呼吸波形与实时监测输入
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsBreathingSignalEnabled((prev) => !prev)}
+                                    className={`flex items-center gap-3 rounded-full border px-3 py-2 transition-all active:scale-95 ${
+                                        isBreathingSignalEnabled
+                                            ? "border-[#4D94FF]/30 bg-[#EEF6FF] text-[#4D94FF]"
+                                            : "border-[#CFD8DC] bg-[#F5F7FA] text-[#90A4AE]"
+                                    }`}
+                                >
+                                    <span className="text-[12px] font-bold">
+                                        {isBreathingSignalEnabled ? "已开启" : "已关闭"}
+                                    </span>
+                                    <span
+                                        className={`relative h-6 w-11 rounded-full transition-colors ${
+                                            isBreathingSignalEnabled ? "bg-[#4D94FF]" : "bg-[#B0BEC5]"
+                                        }`}
+                                    >
+                                        <span
+                                            className={`absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-white shadow-sm transition-all ${
+                                                isBreathingSignalEnabled ? "left-[22px]" : "left-[2px]"
+                                            }`}
+                                        />
+                                    </span>
+                                </button>
+                            </div>
+
                             {/* Parameter Sliders */}
-                            <div className="grid grid-cols-2 gap-x-12 gap-y-4 px-4 py-2">
+                            <div className={`grid grid-cols-2 gap-x-12 gap-y-4 px-4 py-2 transition-opacity ${isBreathingSignalEnabled ? "opacity-100" : "pointer-events-none opacity-45"}`}>
                                 <BreathSliderItem
                                     label="最小间隔"
                                     value={breathingEditableParams.minSpacing}
@@ -673,8 +723,17 @@ const ScoutScanScreen = ({
                                         })}
                                     </svg>
                                 </div>
-                                <div className="absolute right-6 top-6 flex items-center gap-1.5 px-2.5 py-1 bg-[#E8F5E9] rounded-full border border-[#C8E6C9] shadow-sm">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-[#4CAF50] animate-pulse"></div>
+                                {!isBreathingSignalEnabled && (
+                                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/84 backdrop-blur-[1px]">
+                                        <div className="rounded-full border border-[#CFD8DC] bg-[#F5F7FA] px-4 py-1 text-[11px] font-black tracking-[0.08em] text-[#78909C]">
+                                            SIGNAL OFF
+                                        </div>
+                                        <div className="mt-3 text-[16px] font-bold text-[#546E7A]">呼吸信号输入已关闭</div>
+                                        <div className="mt-1 text-[12px] text-[#90A4AE]">打开右上角开关后恢复实时波形输入</div>
+                                    </div>
+                                )}
+                                <div className={`absolute right-6 top-6 flex items-center gap-1.5 rounded-full border px-2.5 py-1 shadow-sm ${isBreathingSignalEnabled ? 'border-[#C8E6C9] bg-[#E8F5E9]' : 'border-[#CFD8DC] bg-[#F5F7FA]'}`}>
+                                    <div className={`w-1.5 h-1.5 rounded-full ${isBreathingSignalEnabled ? 'bg-[#4CAF50] animate-pulse' : 'bg-[#90A4AE]'}`}></div>
                                     <span className="text-[10px] font-black text-[#2E7D32]">实时监测</span>
                                 </div>
                             </div>
