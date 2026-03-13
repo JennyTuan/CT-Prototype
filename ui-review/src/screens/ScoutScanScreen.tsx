@@ -164,7 +164,7 @@ const ScoutScanScreen = ({
             name: 'Head_FacialBoneVolume',
             sequences: [
                 { id: 's1', name: 'Scout', steps: ["呼吸采集", "激光灯定位", "参数确认"] },
-                { id: 's2', name: 'Helical Scan' }
+                { id: 's2', name: 'Helical Scan', steps: [firstStepLabel, '参数确认', '执行扫描'] }
             ]
         }
     ]);
@@ -187,11 +187,11 @@ const ScoutScanScreen = ({
                     name: "Head_FacialBoneVolume",
                     sequences: [
                         { id: "s1", name: "Scout", steps: ["呼吸采集", "激光灯定位", "参数确认"] },
-                        { id: "s2", name: "Helical Scan" },
+                        { id: "s2", name: "Helical Scan", steps: [firstStepLabel, '参数确认', '执行扫描'] },
                     ],
                 },
             ]);
-            setExpandedSeqId("s1");
+            setExpandedSeqId("s2");
             setActiveStepIdx(0);
         }, 0);
 
@@ -357,7 +357,9 @@ const ScoutScanScreen = ({
                                                     ? seq.name === '呼吸采集'
                                                     : seq.name === 'Scout';
                                                 const isExpanded = expandedSeqId === seq.id;
-                                                const isUnifiedActiveSequence = seq.name === 'Scout' || isActiveSequence;
+                                                const isCompletedSequence = bottomPanelMode === 'breathing' && seq.name === 'Scout';
+                                                const isBreathingHelicalSequence = bottomPanelMode === 'breathing' && seq.name === 'Helical Scan';
+                                                const isUnifiedActiveSequence = bottomPanelMode === 'breathing' ? isBreathingHelicalSequence : seq.name === 'Scout' || isActiveSequence;
                                                 const shouldShowSteps = !!seq.steps?.length && isExpanded;
 
                                                 return (
@@ -367,18 +369,22 @@ const ScoutScanScreen = ({
                                                             onClick={() => setExpandedSeqId(isExpanded ? null : seq.id)}
                                                             className={`flex items-center gap-2 px-3 rounded-lg mb-1 transition-all relative cursor-pointer border ${seq.name === 'Scout' || seq.name === 'Helical Scan' ? 'h-[28px]' : 'py-2.5'} ${isUnifiedActiveSequence
                                                                 ? 'bg-[#4D94FF] border-[#4D94FF] text-white shadow-md'
-                                                                : (selectedIds.includes(seq.id) ? 'bg-[#E3F2FD] border-[#4D94FF]/30 text-[#4D94FF]' : 'bg-transparent border-transparent text-[#546E7A] hover:bg-[#EEF2F9]')
+                                                                : isCompletedSequence
+                                                                    ? 'bg-[#E8F5E9] border-[#A5D6A7] text-[#2E7D32]'
+                                                                    : (selectedIds.includes(seq.id) ? 'bg-[#E3F2FD] border-[#4D94FF]/30 text-[#4D94FF]' : 'bg-transparent border-transparent text-[#546E7A] hover:bg-[#EEF2F9]')
                                                                 }`}
                                                         >
-                                                            {isExpanded ? <ChevronDown size={14} className={selectedIds.includes(seq.id) ? 'text-[#4D94FF]/60' : isUnifiedActiveSequence ? "text-white/70" : "text-gray-400"} /> : <ChevronRight size={14} className={selectedIds.includes(seq.id) ? 'text-[#4D94FF]/60' : isUnifiedActiveSequence ? "text-white/70" : "text-gray-400"} />}
+                                                            {isExpanded ? <ChevronDown size={14} className={selectedIds.includes(seq.id) ? 'text-[#4D94FF]/60' : isUnifiedActiveSequence ? "text-white/70" : isCompletedSequence ? "text-[#2E7D32]/70" : "text-gray-400"} /> : <ChevronRight size={14} className={selectedIds.includes(seq.id) ? 'text-[#4D94FF]/60' : isUnifiedActiveSequence ? "text-white/70" : isCompletedSequence ? "text-[#2E7D32]/70" : "text-gray-400"} />}
                                                             <div
                                                                 onClick={(e) => { e.stopPropagation(); toggleSelection(seq.id); }}
-                                                                className={`w-3.5 h-3.5 rounded border-2 cursor-pointer flex items-center justify-center shrink-0 transition-all ${selectedIds.includes(seq.id)
+                                                                className={`w-3.5 h-3.5 rounded border-2 cursor-pointer flex items-center justify-center shrink-0 transition-all ${isCompletedSequence
+                                                                    ? 'bg-[#66BB6A] border-[#66BB6A]'
+                                                                    : selectedIds.includes(seq.id)
                                                                     ? (isUnifiedActiveSequence ? 'bg-white border-white/30' : 'bg-[#4D94FF] border-[#4D94FF]')
                                                                     : (isUnifiedActiveSequence ? 'bg-white/20 border-white/30' : 'bg-white border-[#B0C4DE]')
                                                                     }`}
                                                             >
-                                                                {selectedIds.includes(seq.id) && (
+                                                                {(selectedIds.includes(seq.id) || isCompletedSequence) && (
                                                                     <Check size={9} className={`${isUnifiedActiveSequence ? 'text-[#4D94FF]' : 'text-white'} stroke-[3]`} />
                                                                 )}
                                                             </div>
@@ -392,14 +398,14 @@ const ScoutScanScreen = ({
                                                             <div className="flex flex-col ml-12 mt-2 gap-4 relative pb-4">
                                                                 <div className="absolute left-[7px] top-2 bottom-6 w-[1px] bg-[#B0C4DE]"></div>
                                                                 {seq.steps?.map((step, idx) => {
-                                                                    const isCompleted = isUnifiedActiveSequence && idx < activeStepIdx;
+                                                                    const isCompleted = isCompletedSequence || (isUnifiedActiveSequence && idx < activeStepIdx);
 
-                                                                    const isActive = isUnifiedActiveSequence && idx === activeStepIdx;
+                                                                    const isActive = !isCompletedSequence && isUnifiedActiveSequence && idx === activeStepIdx;
 
                                                                     return (
                                                                         <div
                                                                             key={`${seq.id}-step-${idx}`}
-                                                                            onClick={() => isActiveSequence && setActiveStepIdx(idx)}
+                                                                            onClick={() => isUnifiedActiveSequence && setActiveStepIdx(idx)}
                                                                             className="flex items-center gap-3 z-10"
                                                                         >
                                                                             {isCompleted ? (
