@@ -16,37 +16,47 @@ const imgPatient = "https://www.figma.com/api/mcp/asset/03451ece-f71a-4cbf-9dfe-
 
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
-const postureOptions: ReadonlyArray<{ id: string; label: string; active?: boolean }> = [
-    { id: "supine", label: "仰卧", active: true },
-    { id: "prone", label: "俯卧" },
-    { id: "left", label: "左侧卧" },
-    { id: "right", label: "右侧卧" },
-];
+const stanceOptions = [
+    { id: "standing", label: "站立", active: true },
+    { id: "sitting", label: "坐姿", active: false },
+    { id: "leaning", label: "前倾扶靠", active: false },
+    { id: "wheelchair", label: "轮椅辅助", active: false },
+] as const;
 
-const directionOptions: ReadonlyArray<{ id: string; label: string; active?: boolean }> = [
+const directionOptions = [
     { id: "head-first", label: "头先进", active: true },
-    { id: "feet-first", label: "脚先进" },
-];
+    { id: "feet-first", label: "脚先进", active: false },
+] as const;
 
-function SelectionButton({
+function ToolbarIcon({ src, alt, left }: { src: string; alt: string; left: number }) {
+    return (
+        <img
+            src={src}
+            alt={alt}
+            draggable={false}
+            className="absolute top-[20px] h-[32px] w-[32px] object-contain select-none"
+            style={{ left }}
+        />
+    );
+}
+
+function SelectionChip({
     label,
     active = false,
-    wide = false,
 }: {
     label: string;
     active?: boolean;
-    wide?: boolean;
 }) {
     return (
         <button
             type="button"
-            className={`flex h-[38px] items-center justify-center rounded-[3px] text-[14px] font-semibold tracking-[0.02em] transition-colors ${
-                wide ? "w-full" : "w-[110px]"
-            }`}
+            className="flex h-[40px] items-center justify-center rounded-[4px] border text-[14px] font-semibold tracking-[0.02em] transition-colors"
             style={{
-                color: "#F4F7FF",
-                backgroundColor: active ? "#7EA4EE" : "#717A8D",
-                boxShadow: active ? "inset 0 1px 0 rgba(255,255,255,0.2)" : "inset 0 1px 0 rgba(255,255,255,0.08)",
+                width: "100%",
+                color: active ? "#F6FAFF" : "#445067",
+                background: active ? "linear-gradient(180deg,#7EA4EE 0%,#6D92DD 100%)" : "#EEF2FA",
+                borderColor: active ? "#6B8FDB" : "#C0C8D8",
+                boxShadow: active ? "inset 0 1px 0 rgba(255,255,255,0.22)" : "inset 0 1px 0 rgba(255,255,255,0.6)",
             }}
         >
             {label}
@@ -54,20 +64,13 @@ function SelectionButton({
     );
 }
 
-function PatientPoseIllustration() {
+function VerticalPoseIllustration() {
     return (
-        <div className="relative h-[92px] w-[240px] overflow-hidden border border-[#B4B7C5] bg-[linear-gradient(180deg,#CFD2DB_0%,#C9CCD6_100%)]">
-            <div className="absolute left-[18px] top-[7px] h-[62px] w-[28px] rounded-l-[20px] rounded-r-[6px] border-[6px] border-[#E7E6E2] border-r-[5px] bg-transparent opacity-95" />
-            <div className="absolute left-[42px] top-[48px] h-[26px] w-[182px] -skew-x-12 rounded-r-[8px] bg-[linear-gradient(180deg,#D9D6CC_0%,#C8C3B7_100%)] shadow-[0_8px_12px_rgba(88,92,106,0.22)]" />
-            <div className="absolute left-[67px] top-[35px] h-[9px] w-[108px] rotate-[8deg] rounded-full bg-[rgba(78,84,98,0.24)] blur-[3px]" />
-            <div className="absolute left-[55px] top-[30px] h-[14px] w-[16px] rounded-full bg-[linear-gradient(180deg,#D7DBE5_0%,#A9AFBC_100%)] shadow-[0_1px_2px_rgba(73,78,92,0.28)]" />
-            <div className="absolute left-[66px] top-[34px] h-[14px] w-[88px] rotate-[7deg] rounded-full bg-[linear-gradient(180deg,#C6CBD7_0%,#9098A9_100%)] shadow-[0_2px_4px_rgba(79,84,97,0.24)]" />
-            <div className="absolute left-[114px] top-[30px] h-[12px] w-[34px] rotate-[8deg] rounded-full bg-[linear-gradient(180deg,#B8BFCD_0%,#8C93A3_100%)]" />
-            <div className="absolute left-[147px] top-[34px] h-[10px] w-[28px] rotate-[12deg] rounded-full bg-[linear-gradient(180deg,#BFC5D2_0%,#8E96A5_100%)]" />
-            <div className="absolute left-[90px] top-[42px] h-[10px] w-[60px] rotate-[10deg] rounded-full bg-[linear-gradient(180deg,#B7BDCB_0%,#838B9D_100%)]" />
-            <div className="absolute left-[142px] top-[45px] h-[9px] w-[40px] rotate-[8deg] rounded-full bg-[linear-gradient(180deg,#B9BFCC_0%,#858D9E_100%)]" />
-            <div className="absolute left-[180px] top-[28px] h-[19px] w-[4px] rotate-[12deg] rounded-full bg-[linear-gradient(180deg,#9EA7B7_0%,#768092_100%)]" />
-            <div className="absolute left-[183px] top-[24px] h-[17px] w-[4px] rotate-[-16deg] rounded-full bg-[linear-gradient(180deg,#A5AEBD_0%,#7B8496_100%)]" />
+        <div className="relative h-[168px] w-[220px] overflow-hidden rounded-[10px] border border-dashed border-[#AEB7C7] bg-[linear-gradient(180deg,#E5E9F2_0%,#D7DCE7_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.42)]">
+            <div className="absolute inset-[18px] rounded-[8px] border border-dashed border-[#BBC4D4] bg-[rgba(255,255,255,0.26)]" />
+            <div className="absolute left-1/2 top-1/2 flex h-[64px] w-[120px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[8px] border border-[#C2CAD8] bg-[rgba(248,250,255,0.82)] text-[12px] font-semibold tracking-[0.08em] text-[#77829A]">
+                体位示意占位
+            </div>
         </div>
     );
 }
@@ -122,7 +125,7 @@ function CameraPreviewPanel() {
     }, []);
 
     return (
-        <div className="relative h-[470px] w-full max-w-[700px] overflow-hidden rounded-[8px] border border-[#aab1c1] bg-[#8d95a8] shadow-[0_2px_8px_rgba(96,104,122,0.18)]">
+        <div className="relative h-[470px] w-full max-w-[700px] overflow-hidden rounded-[10px] border border-[#aab1c1] bg-[#8d95a8] shadow-[0_2px_8px_rgba(96,104,122,0.18)]">
             <video ref={videoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
             {status !== "ready" ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[linear-gradient(180deg,rgba(88,96,114,0.82)_0%,rgba(64,71,87,0.92)_100%)] text-[#eef2fb]">
@@ -133,26 +136,14 @@ function CameraPreviewPanel() {
                 </div>
             ) : null}
             <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between bg-[linear-gradient(180deg,rgba(17,22,31,0.68)_0%,rgba(17,22,31,0)_100%)] px-3 py-2 text-white">
-                <span className="text-[12px] font-medium tracking-[0.04em]">实时画面</span>
+                <span className="text-[12px] font-medium tracking-[0.04em]">垂直摆位实时画面</span>
                 <span className="rounded-full bg-[rgba(77,211,123,0.92)] px-2 py-[2px] text-[10px] font-bold text-[#0c2a14]">LIVE</span>
             </div>
         </div>
     );
 }
 
-function ToolbarIcon({ src, alt, left }: { src: string; alt: string; left: number }) {
-    return (
-        <img
-            src={src}
-            alt={alt}
-            draggable={false}
-            className="absolute top-[20px] h-[32px] w-[32px] object-contain select-none"
-            style={{ left }}
-        />
-    );
-}
-
-export default function LegacyVerticalCTPatientPositioningScreen() {
+export default function LegacyVerticalCTPatientPositioningVerticalScreen() {
     return (
         <div className="relative h-[768px] w-[1024px] overflow-hidden bg-[#DCE0ED] text-[#535353]" style={{ fontFamily: pingFang }}>
             <div className="absolute left-0 top-0 h-[80px] w-full bg-[#C1C5D5] opacity-50" />
@@ -171,7 +162,7 @@ export default function LegacyVerticalCTPatientPositioningScreen() {
                 </div>
                 <div className="absolute left-1/2 top-[12px] -translate-x-1/2 text-center text-[#717579]">
                     <div className="text-[32px] font-black leading-none">13:06</div>
-                    <div className="mt-[9px] text-[15px] font-black leading-none">3月9日 周日</div>
+                    <div className="mt-[9px] text-[15px] font-black leading-none">3月1日 周日</div>
                 </div>
                 <ToolbarIcon src={imgEmergency} alt="急停" left={760} />
                 <ToolbarIcon src={imgLaser} alt="激光" left={824} />
@@ -181,24 +172,33 @@ export default function LegacyVerticalCTPatientPositioningScreen() {
 
             <div className="absolute left-[20px] right-[20px] top-[92px] h-[588px]">
                 <div className="flex h-full">
-                    <section className="w-[292px] pt-[10px]">
-                        <div className="flex h-[498px] flex-col rounded-[10px] border border-[#b6bbc8] bg-[linear-gradient(180deg,#d8dbe4_0%,#d3d6df_100%)] px-[14px] py-[16px] shadow-[0_2px_8px_rgba(112,117,131,0.22)]">
-                            <h2 className="text-[17px] font-semibold text-[#23262b]">请选择患者的体位</h2>
-                            <div className="mt-[14px] grid grid-cols-2 gap-x-[18px] gap-y-[12px]">
-                                {postureOptions.map((option) => (
-                                    <SelectionButton key={option.id} label={option.label} active={option.active} />
-                                ))}
+                    <section className="w-[312px] pt-[10px]">
+                        <div className="flex h-[536px] flex-col rounded-[12px] border border-[#b6bbc8] bg-[linear-gradient(180deg,#d8dbe4_0%,#d3d6df_100%)] px-[14px] py-[16px] shadow-[0_2px_8px_rgba(112,117,131,0.22)]">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-[17px] font-semibold text-[#23262b]">患者摆位-垂直</h2>
+                                <span className="rounded-full bg-[#D8E6FF] px-2.5 py-1 text-[11px] font-bold tracking-[0.08em] text-[#2D64C7]">
+                                    VERTICAL
+                                </span>
                             </div>
 
-                            <div className="mt-[18px] flex justify-center">
-                                <PatientPoseIllustration />
+                            <div className="mt-[14px]">
+                                <div className="mb-[8px] text-[13px] font-semibold text-[#59657B]">摆位姿态</div>
+                                <div className="grid grid-cols-2 gap-[10px]">
+                                    {stanceOptions.map((option) => (
+                                        <SelectionChip key={option.id} label={option.label} active={option.active} />
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="mt-[16px] flex justify-center">
+                                <VerticalPoseIllustration />
                             </div>
 
                             <div className="mt-[20px] border-t border-[#bcc1cd] pt-[18px]">
-                                <h2 className="text-[17px] font-semibold text-[#23262b]">请选择患者的方向</h2>
+                                <h2 className="text-[17px] font-semibold text-[#23262b]">请选择患者方向</h2>
                                 <div className="mt-[16px] flex flex-col gap-[12px]">
                                     {directionOptions.map((option) => (
-                                        <SelectionButton key={option.id} label={option.label} active={option.active} wide />
+                                        <SelectionChip key={option.id} label={option.label} active={option.active} />
                                     ))}
                                 </div>
                             </div>
@@ -209,7 +209,12 @@ export default function LegacyVerticalCTPatientPositioningScreen() {
 
                     <section className="flex flex-1 flex-col pl-[24px] pt-[18px]">
                         <div className="pl-[8px]">
-                            <div className="mb-[10px] text-[16px] font-semibold text-[#23262b]">患者摄像头画面</div>
+                            <div className="mb-[10px] flex items-end justify-between">
+                                <div className="text-[16px] font-semibold text-[#23262b]">患者摄像头画面</div>
+                                <div className="rounded-full bg-[#E5ECFA] px-3 py-[5px] text-[11px] font-bold tracking-[0.08em] text-[#4A659C]">
+                                    垂直模式 / 激光对位中
+                                </div>
+                            </div>
                             <CameraPreviewPanel />
                         </div>
 

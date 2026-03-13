@@ -29,6 +29,7 @@ import LegacyVerticalCTHomeScreen from "./screens/LegacyVerticalCTHomeScreen";
 import LegacyVerticalCTModeConfirmScreen from "./screens/LegacyVerticalCTModeConfirmScreen";
 import LegacyVerticalCTModeConfirmCorrectScreen from "./screens/LegacyVerticalCTModeConfirmCorrectScreen";
 import LegacyVerticalCTPatientPositioningScreen from "./screens/LegacyVerticalCTPatientPositioningScreen";
+import LegacyVerticalCTPatientPositioningVerticalScreen from "./screens/LegacyVerticalCTPatientPositioningVerticalScreen";
 
 type ScreenItem = {
     key: string;
@@ -99,6 +100,7 @@ export default function Gallery() {
                     { key: "legacy-vertical-ct-mode-confirm", name: "模式确认", component: <LegacyVerticalCTModeConfirmScreen /> },
                     { key: "legacy-vertical-ct-mode-confirm-correct", name: "模式确认-模式正确", component: <LegacyVerticalCTModeConfirmCorrectScreen /> },
                     { key: "legacy-vertical-ct-patient-positioning", name: "患者摆位", component: <LegacyVerticalCTPatientPositioningScreen /> },
+                    { key: "legacy-vertical-ct-patient-positioning-vertical", name: "患者摆位-垂直", component: <LegacyVerticalCTPatientPositioningVerticalScreen /> },
                 ],
             },
         ],
