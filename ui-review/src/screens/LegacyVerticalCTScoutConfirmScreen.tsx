@@ -16,16 +16,11 @@ const imgPatient = "https://www.figma.com/api/mcp/asset/03451ece-f71a-4cbf-9dfe-
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
 const scoutParams = [
-    { label: "扫描方向", value: "前后位" },
-    { label: "定位长度", value: "420 mm" },
-    { label: "视野 FOV", value: "500 mm" },
-    { label: "层厚", value: "1.0 mm" },
-] as const;
-
-const confirmItems = [
-    "确认患者姿态与垂直摆位一致",
-    "确认激光线与胸腹中心对位",
-    "确认定位范围覆盖目标区域",
+    { label: "扫描长度", value: "122.00" },
+    { label: "扫描协议", value: "Head_Surview90" },
+    { label: "mA", value: "10" },
+    { label: "kV", value: "80" },
+    { label: "平扫角度", value: "90" },
 ] as const;
 
 function ToolbarIcon({ src, alt, left }: { src: string; alt: string; left: number }) {
@@ -40,20 +35,13 @@ function ToolbarIcon({ src, alt, left }: { src: string; alt: string; left: numbe
     );
 }
 
-function ParameterRow({ label, value }: { label: string; value: string }) {
+function ParamField({ label, value }: { label: string; value: string }) {
     return (
-        <div className="flex items-center justify-between rounded-[8px] border border-[#C1C7D4] bg-[rgba(244,247,252,0.8)] px-[12px] py-[10px] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
-            <span className="text-[12px] font-semibold text-[#627086]">{label}</span>
-            <span className="text-[13px] font-bold text-[#253248]">{value}</span>
-        </div>
-    );
-}
-
-function ConfirmItem({ text }: { text: string }) {
-    return (
-        <div className="flex items-start gap-[10px] rounded-[8px] border border-[#C7CFDC] bg-[rgba(246,248,252,0.88)] px-[12px] py-[10px]">
-            <div className="mt-[2px] h-[8px] w-[8px] rounded-full bg-[#6E95DC]" />
-            <span className="text-[12px] font-medium leading-[1.45] text-[#4F5D73]">{text}</span>
+        <div className="flex items-center gap-[8px]">
+            <span className="w-[70px] text-[12px] font-semibold text-[#6c7f97]">{label}:</span>
+            <div className="h-[30px] flex-1 rounded-[4px] border border-[#c6d3e5] bg-[#eef2f7] px-[10px] text-[13px] leading-[30px] text-[#8b9cb1]">
+                {value}
+            </div>
         </div>
     );
 }
@@ -127,6 +115,15 @@ function CameraPreviewPanel() {
 }
 
 export default function LegacyVerticalCTScoutConfirmScreen() {
+    const [startPos, setStartPos] = useState("472.95");
+    const [endPos, setEndPos] = useState("595.17");
+    const [selectedPosition, setSelectedPosition] = useState<"start" | "end">("end");
+
+    const handleSwap = () => {
+        setStartPos(endPos);
+        setEndPos(startPos);
+    };
+
     return (
         <div className="relative h-[768px] w-[1024px] overflow-hidden bg-[#DCE0ED] text-[#535353]" style={{ fontFamily: pingFang }}>
             <div className="absolute left-0 top-0 h-[80px] w-full bg-[#C1C5D5] opacity-50" />
@@ -156,40 +153,63 @@ export default function LegacyVerticalCTScoutConfirmScreen() {
             <div className="absolute left-[20px] right-[20px] top-[92px] h-[588px]">
                 <div className="flex h-full">
                     <section className="w-[312px] pt-[10px]">
-                        <div className="flex h-[580px] flex-col rounded-[12px] border border-[#b6bbc8] bg-[linear-gradient(180deg,#d8dbe4_0%,#d3d6df_100%)] px-[14px] py-[16px] shadow-[0_2px_8px_rgba(112,117,131,0.22)]">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-[17px] font-semibold text-[#23262b]">定位像参数确认</h2>
-                                <span className="rounded-full bg-[#D8E6FF] px-2.5 py-1 text-[11px] font-bold tracking-[0.08em] text-[#2D64C7]">
-                                    SCOUT
-                                </span>
+                        <div className="flex h-[580px] flex-col rounded-[12px] border border-[#b6bbc8] bg-[linear-gradient(180deg,#eef2f8_0%,#e3e8f1_100%)] px-[14px] py-[16px] shadow-[0_2px_8px_rgba(112,117,131,0.16)]">
+                            <div className="text-[28px] font-medium leading-none text-[#4b6f9f]">请打开激光灯获取定位</div>
+
+                            <div className="mt-[18px] flex items-stretch gap-[10px]">
+                                <div className="flex flex-col items-center self-stretch">
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedPosition("start")}
+                                        className={`h-[12px] w-[12px] rounded-full border-2 ${selectedPosition === "start" ? "border-[#7fa5d6] bg-[#e8f0fb]" : "border-[#96b1d3] bg-[#eef3fb]"}`}
+                                    />
+                                    <div className="my-1 w-px flex-1 bg-[#b4c7df]" />
+                                    <button
+                                        type="button"
+                                        onClick={handleSwap}
+                                        title="交换起始/结束位置"
+                                        className="flex h-[24px] w-[24px] items-center justify-center rounded-[6px] border border-[#9db7d8] bg-[#e9f0fa] text-[#6b8cb3]"
+                                    >
+                                        ↕
+                                    </button>
+                                    <div className="my-1 w-px flex-1 bg-[#b4c7df]" />
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedPosition("end")}
+                                        className={`h-[12px] w-[12px] rounded-full border-2 ${selectedPosition === "end" ? "border-[#7fa5d6] bg-[#e8f0fb]" : "border-[#96b1d3] bg-[#eef3fb]"}`}
+                                    />
+                                </div>
+
+                                <div className="flex flex-1 flex-col gap-[18px]">
+                                    <button type="button" onClick={() => setSelectedPosition("start")} className="flex items-center gap-[8px] text-left">
+                                        <span className="w-[68px] text-[12px] font-bold leading-none text-[#6f839e]">起始位置:</span>
+                                        <input
+                                            type="text"
+                                            value={startPos}
+                                            onChange={(e) => setStartPos(e.target.value)}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className={`h-[42px] w-[142px] rounded-[4px] border bg-[#e9edf4] px-[12px] text-[30px] font-semibold leading-none ${selectedPosition === "start" ? "border-[#93afd2] text-[#6d859f]" : "border-[#c4d2e3] text-[#9fb0c4]"}`}
+                                        />
+                                    </button>
+
+                                    <button type="button" onClick={() => setSelectedPosition("end")} className="flex items-center gap-[8px] text-left">
+                                        <span className="w-[68px] text-[12px] font-bold leading-none text-[#6f839e]">结束位置:</span>
+                                        <input
+                                            type="text"
+                                            value={endPos}
+                                            onChange={(e) => setEndPos(e.target.value)}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className={`h-[42px] w-[142px] rounded-[4px] border bg-[#e9edf4] px-[12px] text-[30px] font-semibold leading-none ${selectedPosition === "end" ? "border-[#96bf8a] text-[#66bb6a]" : "border-[#c4d2e3] text-[#9fb0c4]"}`}
+                                        />
+                                    </button>
+                                </div>
                             </div>
 
-                            <div className="mt-[14px]">
-                                <div className="mb-[8px] text-[13px] font-semibold text-[#59657B]">扫描参数</div>
-                                <div className="flex flex-col gap-[10px]">
+                            <div className="mt-[20px] border-t border-[#c3cfdf] pt-[14px]">
+                                <div className="mb-[10px] text-[13px] font-semibold text-[#526d8f]">扫描参数</div>
+                                <div className="flex flex-col gap-[8px]">
                                     {scoutParams.map((item) => (
-                                        <ParameterRow key={item.label} label={item.label} value={item.value} />
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="mt-[18px] rounded-[10px] border border-dashed border-[#AEB7C7] bg-[linear-gradient(180deg,#E5E9F2_0%,#D7DCE7_100%)] px-[14px] py-[14px] shadow-[inset_0_1px_0_rgba(255,255,255,0.42)]">
-                                <div className="flex items-center gap-[8px]">
-                                    <div className="flex h-[28px] w-[28px] items-center justify-center rounded-[8px] bg-[rgba(255,255,255,0.64)] text-[#5D77A8]">
-                                        <ScanLine size={16} strokeWidth={2} />
-                                    </div>
-                                    <div>
-                                        <div className="text-[13px] font-semibold text-[#31425F]">定位范围预览</div>
-                                        <div className="mt-[2px] text-[11px] text-[#73819A]">当前定位线覆盖肩部至膈顶区域</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="mt-[20px] border-t border-[#bcc1cd] pt-[18px]">
-                                <h2 className="text-[17px] font-semibold text-[#23262b]">确认要点</h2>
-                                <div className="mt-[14px] flex flex-col gap-[10px]">
-                                    {confirmItems.map((item) => (
-                                        <ConfirmItem key={item} text={item} />
+                                        <ParamField key={item.label} label={item.label} value={item.value} />
                                     ))}
                                 </div>
                             </div>
