@@ -122,7 +122,7 @@ function CameraPreviewPanel() {
     }, []);
 
     return (
-        <div className="relative h-[406px] w-[510px] overflow-hidden rounded-[8px] border border-[#aab1c1] bg-[#8d95a8] shadow-[0_2px_8px_rgba(96,104,122,0.18)]">
+        <div className="relative h-[436px] w-[560px] overflow-hidden rounded-[8px] border border-[#aab1c1] bg-[#8d95a8] shadow-[0_2px_8px_rgba(96,104,122,0.18)]">
             <video ref={videoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
             {status !== "ready" ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[linear-gradient(180deg,rgba(88,96,114,0.82)_0%,rgba(64,71,87,0.92)_100%)] text-[#eef2fb]">
@@ -207,13 +207,13 @@ export default function LegacyVerticalCTPatientPositioningScreen() {
 
                     <div className="ml-[14px] h-full w-px bg-[#b7bcc9]" />
 
-                    <section className="flex flex-1 flex-col pl-[40px] pt-[24px]">
+                    <section className="flex flex-1 flex-col pl-[40px] pt-[18px]">
                         <div className="pl-[8px]">
                             <div className="mb-[10px] text-[16px] font-semibold text-[#23262b]">患者摄像头画面</div>
                             <CameraPreviewPanel />
                         </div>
 
-                        <div className="mt-auto flex items-center justify-between px-[8px] pb-[82px]">
+                        <div className="mt-auto flex items-center justify-between px-[8px] pb-[42px]">
                             <button
                                 type="button"
                                 className="flex h-[36px] w-[76px] items-center justify-center gap-2 rounded-[3px] border border-[#dd8f92] bg-[#e89a99] text-[13px] font-semibold text-[#fff5f4]"
