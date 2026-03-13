@@ -1,60 +1,31 @@
-﻿import {
+﻿import { useEffect, useState, useRef, useMemo } from "react";
+import {
     AlertTriangle,
-    ArrowRightLeft,
-    Download,
-    ShieldAlert,
+    ArrowLeftRight,
+    Image as LucideImage,
+    Info,
+    RefreshCcw,
+    Send,
     Telescope,
     View,
+    Zap,
+    CheckCircle2
 } from "lucide-react";
 
+// 样式常量
+const premiumFont = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+// 资产 URL
 const imgSystem = "https://www.figma.com/api/mcp/asset/0f00e16f-223e-459a-a4a1-fba281a95725";
 const imgMachine = "https://www.figma.com/api/mcp/asset/a434ca2c-b5c7-4847-985a-8429917eb0e9";
 const imgLaser = "https://www.figma.com/api/mcp/asset/aff6e8ff-2b61-43bf-914d-9d401cfccea1";
 const imgEmergency = "https://www.figma.com/api/mcp/asset/bfc511ee-8358-46e6-9d1c-3959ad3f6809";
 const imgPatient = "https://www.figma.com/api/mcp/asset/03451ece-f71a-4cbf-9dfe-fa05e0bcc6a9";
-const imgHorizontalTop = "https://www.figma.com/api/mcp/asset/2b51e6ea-1ef4-4b74-be4e-edb6db29a755";
-const imgHorizontalLeft = "https://www.figma.com/api/mcp/asset/f40f5a53-0237-411a-a83e-91f2413d02cc";
-const imgHorizontalRight = "https://www.figma.com/api/mcp/asset/4b9efe58-947d-427b-90e4-8a05a8551143";
-const imgHorizontalBottom = "https://www.figma.com/api/mcp/asset/380a0507-e3a3-495d-9ac9-c0d76016f63c";
-const imgVertical = "https://www.figma.com/api/mcp/asset/f7d2c225-ca8f-4d34-b88b-c399b50b89ec";
 
-const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
-
-type Mode = "vertical" | "horizontal";
-
-type ToolbarIconProps = {
-    src: string;
-    alt: string;
-    left: number;
-};
-
-type ModeMeta = {
-    label: string;
-    accent: string;
-    soft: string;
-    badge: string;
-};
-
-type ImprovedModeBadgeProps = {
-    title: string;
-    mode: Mode;
-    active?: boolean;
-    subtitle: string;
-};
-
-const modeMeta: Record<Mode, ModeMeta> = {
-    vertical: { label: "垂直模式", accent: "#2A6DE5", soft: "#EAF2FF", badge: "#D8E6FF" },
-    horizontal: { label: "水平模式", accent: "#4F74B8", soft: "#EDF3FF", badge: "#DAE4F7" },
-};
-
-const hardwareParams = [
-    { label: "扫描环角度", value: "90.0°", iconSrc: "/扫描环角度.png", iconAlt: "扫描环角度" },
-    { label: "机械臂角度", value: "0.0°", iconSrc: "/机械臂角度.png", iconAlt: "机械臂角度" },
-    { label: "高度", value: "1240 mm", iconSrc: "/高度.png", iconAlt: "高度" },
-    { label: "水平移动距离", value: "315 mm", iconSrc: "/水平移动距离.png", iconAlt: "水平移动距离" },
-] as const;
-
-function ToolbarIcon({ src, alt, left }: ToolbarIconProps) {
+/**
+ * 顶部工具栏图标组件
+ */
+function ToolbarIcon({ src, alt, left }: { src: string; alt: string; left: number }) {
     return (
         <img
             src={src}
@@ -66,242 +37,256 @@ function ToolbarIcon({ src, alt, left }: ToolbarIconProps) {
     );
 }
 
-function HorizontalModeGraphic() {
-    return (
-        <div className="relative h-[54px] w-[48px] select-none">
-            <img src={imgHorizontalTop} alt="" draggable={false} className="absolute left-0 top-0 h-[14px] w-full object-contain" />
-            <img src={imgHorizontalLeft} alt="" draggable={false} className="absolute left-0 top-[3px] h-[44px] w-[6px] object-contain" />
-            <img src={imgHorizontalRight} alt="" draggable={false} className="absolute right-0 top-[5px] h-[44px] w-[6px] object-contain" />
-            <img src={imgHorizontalBottom} alt="" draggable={false} className="absolute bottom-0 left-[10px] h-[28px] w-[28px] object-contain" />
-        </div>
-    );
-}
+type Mode = "水平模式" | "垂直模式";
 
-function ImprovedModeBadge({ title, mode, active = false, subtitle }: ImprovedModeBadgeProps) {
-    const meta = modeMeta[mode];
-
+/**
+ * 数据展示卡片组件
+ */
+function DataCard({ title, value, unit = "", isMoving }: { title: string; value: string; unit?: string; isMoving: boolean }) {
     return (
-        <div
-            className="relative flex h-[138px] flex-1 flex-col items-center overflow-hidden rounded-2xl border-2 px-4 pb-3 pt-[26px] transition-all"
-            style={{
-                borderColor: active ? meta.accent : "#AFC3EA",
-                background: active ? `linear-gradient(180deg, ${meta.soft} 0%, #FFFFFF 100%)` : "#F3F6FC",
-                boxShadow: active ? `0 12px 24px -10px ${meta.accent}33` : "none",
-            }}
-        >
-            <div
-                className="absolute left-[14px] top-[14px] rounded-full px-3 py-0.5 text-[11px] font-bold tracking-wide"
-                style={{
-                    color: active ? meta.accent : "#6D7991",
-                    backgroundColor: active ? meta.badge : "#E6EBF5",
-                }}
-            >
-                {title}
+        <div className={`flex flex-col rounded-2xl border transition-all duration-300 ${isMoving ? 'border-blue-400 bg-blue-50/50 shadow-inner scale-[1.01]' : 'border-slate-200 bg-white'
+            } p-5`}>
+            <div className="flex shrink-0 items-start justify-between">
+                <span className="text-sm font-bold tracking-wide text-slate-500">{title}</span>
+                {isMoving && <Zap size={14} className="text-blue-500" />}
             </div>
-            <div className="flex h-[40px] items-end justify-center">
-                {mode === "vertical" ? (
-                    <img src={imgVertical} alt="垂直模式" draggable={false} className="h-[56px] w-[56px] object-contain" />
-                ) : (
-                    <HorizontalModeGraphic />
-                )}
+
+            <div className="group my-4 flex flex-1 items-center justify-center overflow-hidden rounded-xl border border-dashed border-slate-200 bg-slate-50">
+                <div className="flex flex-col items-center text-slate-300">
+                    <LucideImage size={32} className={`mb-2 opacity-30 ${isMoving ? 'animate-bounce' : ''}`} />
+                    <span className="text-[10px] font-medium uppercase tracking-widest opacity-40">Machine Sketch</span>
+                </div>
             </div>
-            <div className="mt-4 text-[22px] font-black leading-none" style={{ color: active ? meta.accent : "#5A6781" }}>
-                {meta.label}
-            </div>
-            <div className="mt-3 text-[10px] font-bold tracking-[0.16em] text-slate-500 opacity-40">
-                {subtitle}
+
+            <div className="flex shrink-0 items-baseline justify-center">
+                <span className={`whitespace-nowrap text-4xl font-bold tracking-tighter tabular-nums transition-colors ${isMoving ? 'text-blue-600' : 'text-slate-800'
+                    }`}>
+                    {value}
+                </span>
+                {unit ? <span className="ml-1 text-sm font-bold text-slate-400">{unit}</span> : null}
             </div>
         </div>
     );
 }
 
-function ModeSwitchGuide() {
+
+const modeTargets: Record<Mode, { x: number; y: number; a: number; b: number }> = {
+    "水平模式": { x: 133.0, y: -189.0, a: -60, b: -12 },
+    "垂直模式": { x: 0.0, y: 500.0, a: 90, b: 0 }
+};
+
+export default function App() {
+    const [currentMode, setCurrentMode] = useState<Mode>("水平模式");
+    const [deviceState, setDeviceState] = useState<Mode>("垂直模式");
+    const [time, setTime] = useState(new Date());
+
+    const [isSwitching, setIsSwitching] = useState(false);
+    const [isMoving, setIsMoving] = useState(false);
+    const [progress, setProgress] = useState(0);
+
+    const timerRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        if (isMoving) {
+            timerRef.current = window.setInterval(() => {
+                setProgress(prev => {
+                    if (prev >= 100) {
+                        setIsMoving(false);
+                        setIsSwitching(false);
+                        setDeviceState(currentMode);
+                        return 100;
+                    }
+                    return prev + 1.2;
+                });
+            }, 30);
+        } else {
+            if (timerRef.current) window.clearInterval(timerRef.current);
+        }
+        return () => { if (timerRef.current) window.clearInterval(timerRef.current); };
+    }, [isMoving, currentMode]);
+
+    const values = useMemo(() => {
+        const start = modeTargets[deviceState];
+        const end = modeTargets[currentMode];
+        const p = Math.min(progress / 100, 1);
+        return {
+            x: (start.x + (end.x - start.x) * p).toFixed(1),
+            y: (start.y + (end.y - start.y) * p).toFixed(1),
+            a: Math.round(start.a + (end.a - start.a) * p),
+            b: Math.round(start.b + (end.b - start.b) * p)
+        };
+    }, [progress, deviceState, currentMode]);
+
+    useEffect(() => {
+        const timer = window.setInterval(() => setTime(new Date()), 60000);
+        return () => window.clearInterval(timer);
+    }, []);
+
+    const isMatch = currentMode === deviceState;
+
     return (
-        <div className="flex w-[218px] shrink-0 items-start gap-3 rounded-xl border border-[#F3C5B3] bg-white/85 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
-            <div className="relative h-[118px] w-[56px] shrink-0 rounded-[18px] border border-[#C8D3E8] bg-[linear-gradient(180deg,#C7D2E8_0%,#AEBBD7_100%)] shadow-[inset_0_2px_0_rgba(255,255,255,0.48),0_6px_10px_rgba(130,149,186,0.2)]">
-                <div className="absolute left-[7px] top-[7px] h-[104px] w-[42px] rounded-[14px] bg-[linear-gradient(180deg,rgba(255,255,255,0.18)_0%,rgba(147,164,198,0.18)_100%)]" />
-                <div className="absolute left-[17px] top-[12px] h-[18px] w-[18px] rounded-full border border-[#95A5C5] bg-[radial-gradient(circle_at_35%_35%,#D8E1F0_0%,#B7C4DB_72%,#A4B2CD_100%)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.55)]" />
-                <div className="absolute left-[12px] top-[42px] h-[16px] w-[16px] rounded-full border border-[#95A4C2] bg-[radial-gradient(circle_at_35%_35%,#C3CEE3_0%,#AAB7D0_78%,#97A6C2_100%)]" />
-                <div className="absolute right-[9px] top-[33px] flex h-[22px] w-[22px] items-center justify-center rounded-full border border-[#8EAF70] bg-[radial-gradient(circle_at_35%_35%,#D4E993_0%,#B9D86C_68%,#9FC14D_100%)] shadow-[0_0_0_4px_rgba(186,218,122,0.22),0_2px_6px_rgba(132,166,63,0.35)]">
-                    <div className="h-[8px] w-[8px] rounded-full bg-white/35" />
-                </div>
-                <div className="absolute left-[16px] top-[74px] h-[10px] w-[24px] rounded-full bg-[#93A1BE]" />
-                <div className="absolute left-[21px] top-[68px] h-[22px] w-[14px] rounded-[10px] border border-[#98A7C4] bg-[linear-gradient(180deg,#C6D1E6_0%,#ADB9D3_100%)]" />
-                <div className="absolute bottom-[9px] left-[11px] h-[14px] w-[34px] rounded-full border border-[#A2B0CA] bg-[linear-gradient(180deg,#BAC5DB_0%,#AAB6D0_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]" />
-            </div>
-            <div className="flex-1">
-                <div className="text-[10px] font-black tracking-[0.06em] text-[#D66B43]">模式切换引导</div>
-                <div className="mt-1 text-[11px] font-bold leading-[1.3] text-[#6C7286]">
-                    请按绿色模式切换键，完成硬件切换。
-                </div>
-                <div className="mt-2 space-y-1 text-[10px] font-semibold leading-[1.3] text-[#7B8196]">
-                    <div>1. 找到高亮模式键</div>
-                    <div>2. 按下后等待切换完成</div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-export default function LegacyVerticalCTModeConfirmScreen() {
-    const scenario: { selectedMode: Mode; hardwareMode: Mode } = {
-        selectedMode: "vertical",
-        hardwareMode: "horizontal",
-    };
-    const { selectedMode, hardwareMode } = scenario;
-    const hardwareMeta = modeMeta[hardwareMode];
-
-    return (
-        <div className="relative h-[768px] w-[1024px] overflow-hidden bg-[#DCE0ED] text-[#535353]" style={{ fontFamily: pingFang }}>
-            <div className="absolute left-0 top-0 h-[80px] w-full bg-[#C1C5D5] opacity-50" />
-            <div className="absolute left-0 top-0 z-10 h-[80px] w-full">
-                <div className="absolute left-[20px] top-[12px] h-[50px] w-[100px] rounded-[5px] border border-[#95B0E2] bg-[#D2D7E6]">
-                    <img
-                        src={imgPatient}
-                        alt="患者"
-                        draggable={false}
-                        className="absolute left-[4px] top-[8px] h-[29.818px] w-[31.552px] object-contain select-none"
-                    />
-                    <div className="absolute left-[38px] top-[4px] w-[56px] whitespace-nowrap text-center text-[14px] font-medium leading-[1.15] text-[#717579]">
-                        <div>欧阳祖华</div>
-                        <div>000001</div>
-                    </div>
-                </div>
-                <div className="absolute left-1/2 top-[12px] -translate-x-1/2 text-center text-[#717579]">
-                    <div className="text-[32px] font-black leading-none">13:06</div>
-                    <div className="mt-[9px] text-[15px] font-black leading-none">3月9日 周日</div>
-                </div>
-                <ToolbarIcon src={imgEmergency} alt="急停" left={760} />
-                <ToolbarIcon src={imgLaser} alt="激光" left={824} />
-                <ToolbarIcon src={imgMachine} alt="机器状态" left={888} />
-                <ToolbarIcon src={imgSystem} alt="系统管理" left={952} />
-            </div>
-
-            <div className="absolute left-[20px] right-[20px] top-[92px] flex h-[588px] flex-col overflow-hidden rounded-[16px] border border-[#B8C8E9] bg-[linear-gradient(180deg,#F6F9FF_0%,#EDF2FC_100%)] shadow-[0_15px_40px_rgba(88,117,170,0.18)]">
-                <div className="flex items-start gap-4 px-[36px] pt-[24px]">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-[10px] bg-[#2A6DE5] text-white shadow-lg">
-                        <ArrowRightLeft size={24} />
-                    </div>
-                    <div>
-                        <div className="text-[34px] font-bold leading-none text-[#2A6DE5]">模式确认</div>
-                        <div className="mt-2 text-[16px] font-medium text-[#69758B]">
-                            扫描前请确认目标模式与当前硬件状态一致
+        <div className="flex h-[768px] w-[1024px] flex-col overflow-hidden bg-[#f0f4f8] text-slate-800" style={{ fontFamily: premiumFont }}>
+            {/* 顶部工具栏 */}
+            <header className="relative h-20 shrink-0">
+                <div className="absolute inset-0 bg-[#C1C5D5] opacity-50" />
+                <div className="relative z-10 flex h-full items-center px-6">
+                    <div className="h-[52px] w-[115px] rounded-[5px] border border-[#95B0E2] bg-[#D2D7E6] relative shadow-sm">
+                        <img src={imgPatient} alt="P" className="absolute left-[6px] top-[10px] h-[32px] w-[32px] object-contain" />
+                        <div className="absolute left-[44px] top-[10px] w-16 text-[12px] font-bold text-slate-600 leading-tight">
+                            <div>欧阳祖华</div>
+                            <div className="text-[10px] opacity-60 font-mono">000001</div>
                         </div>
                     </div>
-                </div>
-
-                <div className="mt-4 flex items-center gap-4 px-[36px]">
-                    <ImprovedModeBadge title="用户选择 (计划目标)" mode={selectedMode} active subtitle="TARGET PLAN" />
-
-                    <div className="flex w-[64px] flex-col items-center gap-1.5">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F37B4D] text-white shadow-md">
-                            <AlertTriangle size={24} />
+                    <div className="absolute left-1/2 -translate-x-1/2 text-center text-slate-600">
+                        <div className="text-[34px] font-black leading-none tracking-tighter">
+                            {time.getHours().toString().padStart(2, "0")}:{time.getMinutes().toString().padStart(2, "0")}
                         </div>
-                        <div className="text-[11px] font-black text-[#F37B4D]">状态不一致</div>
+                        <div className="mt-1 text-sm font-bold opacity-80 uppercase tracking-widest">
+                            {time.getMonth() + 1}月{time.getDate()}日
+                        </div>
                     </div>
-
-                    <ImprovedModeBadge title="硬件当前状态" mode={hardwareMode} active subtitle="CURRENT HARDWARE" />
-                </div>
-
-                <div className="mx-[36px] mt-2.5 rounded-xl border-2 border-[#F2B79E] bg-[rgba(255,243,238,0.9)] p-2.5">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#E46839] text-white">
-                            <ShieldAlert size={18} />
-                        </div>
-                        <div className="flex-1">
-                            <div className="text-[16px] font-bold leading-tight text-[#D9653B]">
-                                硬件处于{hardwareMeta.label}，请先执行物理切换
-                            </div>
-                            <div className="mt-0.5 text-[11px] font-semibold leading-[1.3] text-[#6E778C] opacity-90">
-                                检测冲突：软件计划执行垂直模式，但探测到硬件仍处于水平模式。
-                            </div>
-                        </div>
-                        <ModeSwitchGuide />
+                    <div className="ml-auto flex items-center space-x-8">
+                        <ToolbarIcon src={imgEmergency} alt="E" left={760} />
+                        <ToolbarIcon src={imgLaser} alt="L" left={824} />
+                        <ToolbarIcon src={imgMachine} alt="M" left={888} />
+                        <ToolbarIcon src={imgSystem} alt="S" left={952} />
                     </div>
                 </div>
+            </header>
 
-                <div className="mt-3 px-[36px] pb-[14px]">
-                    <div className="mb-2 flex items-center gap-2 text-[13px] font-black text-[#5A6781]">
-                        <span className="h-4 w-1 rounded-full bg-[#2A6DE5]" />
-                        实时硬件定位参数
-                    </div>
-                    <div className="grid grid-cols-4 gap-4">
-                        {hardwareParams.map((item) => {
-                            return (
-                                <div
-                                    key={item.label}
-                                    className="flex h-[72px] items-center justify-between rounded-xl border border-[#C8D6F0] bg-white/85 px-3.5 py-2.5 shadow-sm backdrop-blur-md"
-                                >
-                                    <div className="flex min-w-0 flex-1 flex-col justify-between self-stretch pr-3">
-                                        <div className="text-[11px] font-bold text-[#7B86A0]">
-                                            <span className="truncate">{item.label}</span>
-                                        </div>
-                                        <div className="text-[20px] font-black leading-none text-[#355A9C] tabular-nums">
-                                            {item.value}
-                                        </div>
-                                    </div>
-                                    <div className="flex h-[48px] w-[48px] shrink-0 items-center justify-center">
-                                        <img src={item.iconSrc} alt={item.iconAlt} draggable={false} className={item.label === "扫描环角度" ? "h-[48px] w-[48px] object-contain" : "h-[38px] w-[38px] object-contain"} />
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                    <div className="mt-4 flex justify-end">
+            <main className="flex flex-1 gap-4 overflow-hidden p-4">
+                {/* 左侧：模式选择（仅用于设置目标） */}
+                <section className="flex w-64 flex-col gap-3">
+                    <h2 className="flex items-center px-2 text-lg font-bold text-slate-400 mb-1">
+                        <Info size={16} className="mr-2" /> 扫描模式
+                    </h2>
+                    {(["水平模式", "垂直模式"] as const).map(mode => (
                         <button
-                            type="button"
-                            className="flex h-[38px] items-center justify-center rounded-xl border border-[#AFC3EA] bg-white/85 px-5 text-[14px] font-bold text-[#5A6781] shadow-sm"
+                            key={mode}
+                            disabled={isSwitching || isMoving}
+                            onClick={() => { setCurrentMode(mode); setProgress(0); }}
+                            className={`flex flex-1 flex-col items-center justify-center rounded-2xl border-2 transition-all duration-300 ${currentMode === mode
+                                ? "border-blue-400 bg-blue-600 text-white shadow-xl shadow-blue-200/50"
+                                : "border-slate-100 bg-white text-slate-400 hover:border-blue-100"
+                                } ${(isSwitching || isMoving) && 'opacity-50'}`}
                         >
-                            返回首页
+                            <div className={`mb-4 flex h-24 w-44 items-center justify-center rounded-xl border border-dashed ${currentMode === mode ? "border-white/30 bg-white/10" : "border-slate-100 bg-slate-50"}`}>
+                                <LucideImage size={32} className={currentMode === mode ? "text-white/40" : "text-slate-200"} />
+                            </div>
+                            <span className="text-xl font-bold">{mode}</span>
                         </button>
-                    </div>
-                </div>
-            </div>
+                    ))}
+                </section>
 
-            <div className="absolute bottom-0 left-0 right-0 h-[80px] bg-[#88A3D2] px-[18px] pt-[8px]">
+                {/* 中间：数据反馈网格（实时跳动） */}
+                <section className="grid flex-1 grid-cols-2 grid-rows-2 gap-4">
+                    <DataCard title="水平位移" value={`${parseFloat(values.x) > 0 ? '+' : ''}${values.x}`} unit="mm" isMoving={isMoving} />
+                    <DataCard title="垂直高度" value={`${parseFloat(values.y) >= 0 ? '+' : ''}${values.y}`} unit="mm" isMoving={isMoving} />
+                    <DataCard title="倾斜角度 A" value={`${values.a}°`} isMoving={isMoving} />
+                    <DataCard title="旋转角度 B" value={`${values.b}°`} isMoving={isMoving} />
+                </section>
+
+                {/* 右侧：操作引导面板 */}
+                <section className={`flex shrink-0 flex-col ${isSwitching ? "w-fit" : "w-[240px]"}`}>
+                    {!isSwitching ? (
+                        /* 状态 A：待确认状态 */
+                        <div className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                            <div className={`mb-8 flex items-center ${isMatch ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                {isMatch ? <CheckCircle2 size={32} className="mr-3" /> : <AlertTriangle size={32} className="mr-3" />}
+                                <h3 className="text-2xl font-black text-slate-800 tracking-tight">{isMatch ? '状态匹配' : '模式不匹配'}</h3>
+                            </div>
+
+                            <div className="flex-1 space-y-6">
+                                <div className="rounded-xl border-l-8 border-blue-500 bg-slate-50 p-4 shadow-sm">
+                                    <p className="text-[10px] text-slate-400 font-bold mb-1 uppercase tracking-widest">Selected Mode</p>
+                                    <p className="text-xl font-black text-blue-700">【{currentMode}】</p>
+                                </div>
+                                <div className={`rounded-xl border-l-8 p-4 shadow-sm ${isMatch ? 'border-emerald-500 bg-slate-50' : 'border-slate-300 bg-slate-50'}`}>
+                                    <p className="text-[10px] text-slate-400 font-bold mb-1 uppercase tracking-widest">Mechanical State</p>
+                                    <p className="text-xl font-black text-slate-700">【{deviceState}】</p>
+                                </div>
+                                {!isMatch && (
+                                    <div className="mt-8 p-4 bg-blue-50/50 rounded-xl border border-blue-100 flex items-start gap-3">
+                                        <Info size={18} className="text-blue-500 shrink-0 mt-0.5" />
+                                        <p className="text-xs text-blue-600/80 leading-relaxed font-medium">
+                                            当前模式与机械位置不符。请在确认周围环境安全后，点击下方按钮开始执行切换引导。
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="mt-4 flex flex-col gap-2">
+                                {!isMatch && (
+                                    <button
+                                        onClick={() => setIsSwitching(true)}
+                                        className="flex w-full items-center justify-center rounded-xl bg-emerald-500 py-3 text-lg font-black text-white shadow-xl shadow-emerald-200/50 transition-all hover:bg-emerald-600 active:scale-95"
+                                    >
+                                        <RefreshCcw size={20} className="mr-3" /> 模式切换
+                                    </button>
+                                )}
+                                <button className="w-full py-2 font-bold text-slate-300 hover:text-slate-500 transition-colors tracking-widest text-sm">
+                                    返回首页
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        /* 状态 B：实体按键操作引导（图片示意） */
+                        <div className="flex h-full flex-col rounded-2xl border border-slate-200 bg-[#EDF1F7] shadow-lg overflow-hidden">
+
+                            {/* 模拟器图片容器，靠右对齐 */}
+                            <div className="flex flex-1 flex-col items-end justify-start p-0 pb-2">
+                                <div className="relative h-[520px] w-fit">
+                                    <img
+                                        src="/弹出实体按键.png"
+                                        alt="Simulator panel"
+                                        draggable={false}
+                                        className="h-[520px] w-auto max-w-full object-contain select-none"
+                                    />
+                                    {!isMoving && (
+                                        <>
+                                            <div className="pointer-events-none absolute left-[15%] top-[31%] flex -translate-x-1/2 flex-col items-center animate-bounce">
+                                                <div className="rounded-md bg-[#008D64] px-3 py-1 text-[10px] font-black text-white shadow-md">
+                                                    按住绿色按钮
+                                                </div>
+                                                <div className="h-0 w-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-[#008D64]" />
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="flex shrink-0 justify-end px-6 pb-5 pt-0">
+                                <button
+                                    disabled={isMoving}
+                                    onClick={() => { setIsSwitching(false); setProgress(0); }}
+                                    className="min-w-[108px] rounded-full border border-slate-300/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(233,239,247,0.96)_100%)] px-6 py-2.5 text-[11px] font-black uppercase tracking-[0.22em] text-slate-600 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.55),inset_0_1px_0_rgba(255,255,255,0.95)] transition-all hover:border-slate-400/80 hover:text-slate-700 hover:shadow-[0_14px_28px_-18px_rgba(15,23,42,0.6),inset_0_1px_0_rgba(255,255,255,1)] active:scale-95 active:bg-[linear-gradient(180deg,rgba(232,238,246,0.98)_0%,rgba(255,255,255,0.96)_100%)] disabled:cursor-not-allowed disabled:opacity-35"
+                                >
+                                    取消
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </section>
+            </main>
+
+            {/* 底部导航栏 */}
+            <footer className="h-20 shrink-0 bg-[#88A3D2] px-[18px] pt-[8px]">
                 <div className="grid h-[64px] w-full grid-cols-4 gap-[2px]">
-                    <button
-                        type="button"
-                        className="flex h-full items-center justify-center gap-4 rounded-[12px] border border-[#5F86CC] bg-[linear-gradient(180deg,#164CA7_0%,#2A63BE_100%)] px-6 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]"
-                    >
-                        <ArrowRightLeft size={34} strokeWidth={2.1} />
+                    <button className="flex h-full items-center justify-center gap-4 rounded-[12px] border border-[#5F86CC] bg-[linear-gradient(180deg,#164CA7_0%,#2A63BE_100%)] px-6 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]">
+                        <ArrowLeftRight size={34} strokeWidth={2.1} />
                         <span className="text-[20px] font-semibold tracking-[0.06em]">位置信息</span>
                     </button>
-                    <button
-                        type="button"
-                        className="flex h-full cursor-not-allowed items-center justify-center gap-3 rounded-[10px] bg-[#D7DBE5] text-white/50"
-                    >
-                        <Telescope size={32} strokeWidth={1.9} />
-                        <span className="text-[18px] font-medium tracking-[0.03em]">扫描成像</span>
-                    </button>
-                    <button
-                        type="button"
-                        className="flex h-full cursor-not-allowed items-center justify-center gap-3 rounded-[10px] bg-[#D7DBE5] text-white/50"
-                    >
-                        <View size={30} strokeWidth={1.9} />
-                        <span className="text-[18px] font-medium tracking-[0.03em]">成像视图</span>
-                    </button>
-                    <button
-                        type="button"
-                        className="flex h-full cursor-not-allowed items-center justify-center gap-3 rounded-[10px] bg-[#D7DBE5] text-white/50"
-                    >
-                        <Download size={30} strokeWidth={1.9} />
-                        <span className="text-[18px] font-medium tracking-[0.03em]">传输</span>
-                    </button>
+                    {[
+                        { icon: <Telescope size={32} />, label: "扫描成像" },
+                        { icon: <View size={30} />, label: "成像视图" },
+                        { icon: <Send size={30} className="-rotate-12" />, label: "传输" }
+                    ].map((btn, idx) => (
+                        <button key={idx} className="flex h-full cursor-not-allowed items-center justify-center gap-3 rounded-[10px] bg-[#D7DBE5] text-white/50">
+                            {btn.icon}
+                            <span className="text-[18px] font-medium tracking-[0.03em]">{btn.label}</span>
+                        </button>
+                    ))}
                 </div>
-            </div>
+            </footer>
         </div>
     );
 }
-
-
-
-
-
-
-
-
-
-
-
-
