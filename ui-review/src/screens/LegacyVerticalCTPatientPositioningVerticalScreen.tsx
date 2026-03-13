@@ -66,9 +66,8 @@ function SelectionChip({
 
 function VerticalPoseIllustration() {
     return (
-        <div className="relative h-[168px] w-[220px] overflow-hidden rounded-[10px] border border-dashed border-[#AEB7C7] bg-[linear-gradient(180deg,#E5E9F2_0%,#D7DCE7_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.42)]">
-            <div className="absolute inset-[18px] rounded-[8px] border border-dashed border-[#BBC4D4] bg-[rgba(255,255,255,0.26)]" />
-            <div className="absolute left-1/2 top-1/2 flex h-[64px] w-[120px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[8px] border border-[#C2CAD8] bg-[rgba(248,250,255,0.82)] text-[12px] font-semibold tracking-[0.08em] text-[#77829A]">
+        <div className="relative flex h-[176px] w-[260px] items-center justify-center overflow-hidden rounded-[10px] border border-dashed border-[#AEB7C7] bg-[linear-gradient(180deg,#E5E9F2_0%,#D7DCE7_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.42)]">
+            <div className="flex h-[72px] w-[128px] items-center justify-center rounded-[8px] border border-[#C2CAD8] bg-[rgba(248,250,255,0.82)] text-[12px] font-semibold tracking-[0.08em] text-[#77829A]">
                 体位示意占位
             </div>
         </div>
