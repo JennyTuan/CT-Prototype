@@ -39,7 +39,7 @@ function ParamField({ label, value }: { label: string; value: string }) {
     return (
         <div className="flex items-center gap-[8px]">
             <span className="w-[70px] text-[12px] font-semibold text-[#6c7f97]">{label}:</span>
-            <div className="h-[30px] flex-1 rounded-[4px] border border-[#c6d3e5] bg-[#eef2f7] px-[10px] text-[13px] leading-[30px] text-[#8b9cb1]">
+            <div className="h-[30px] flex-1 rounded-[6px] border border-[#ccd8e8] bg-[#eef2f7] px-[10px] text-[13px] leading-[30px] text-[#7f90a7] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
                 {value}
             </div>
         </div>
@@ -100,7 +100,9 @@ function CameraPreviewPanel() {
             <video ref={videoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
             {status !== "ready" ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[linear-gradient(180deg,rgba(88,96,114,0.82)_0%,rgba(64,71,87,0.92)_100%)] text-[#eef2fb]">
-                    <div className="text-[15px] font-semibold">{status === "loading" ? "正在连接摄像头..." : "无法显示实时画面"}</div>
+                    <div className="text-[15px] font-semibold">
+                        {status === "loading" ? "正在连接摄像头..." : "无法显示实时画面"}
+                    </div>
                     <div className="mt-2 text-[12px] text-[#d5dbea]">
                         {status === "loading" ? "请稍候" : "请检查摄像头权限或设备连接"}
                     </div>
@@ -153,10 +155,10 @@ export default function LegacyVerticalCTScoutConfirmScreen() {
             <div className="absolute left-[20px] right-[20px] top-[92px] h-[588px]">
                 <div className="flex h-full">
                     <section className="w-[312px] pt-[10px]">
-                        <div className="flex h-[580px] flex-col rounded-[12px] border border-[#b6bbc8] bg-[linear-gradient(180deg,#eef2f8_0%,#e3e8f1_100%)] px-[14px] py-[16px] shadow-[0_2px_8px_rgba(112,117,131,0.16)]">
-                            <div className="text-[28px] font-medium leading-none text-[#4b6f9f]">请打开激光灯获取定位</div>
+                        <div className="flex h-[580px] flex-col rounded-[14px] border border-[#bcc6d5] bg-[linear-gradient(180deg,#f1f4f9_0%,#e4e9f2_100%)] px-[16px] py-[18px] shadow-[0_6px_18px_rgba(112,117,131,0.14)]">
+                            <div className="whitespace-nowrap text-[22px] font-medium leading-none text-[#4b6f9f]">请打开激光灯获取定位</div>
 
-                            <div className="mt-[18px] flex items-stretch gap-[10px]">
+                            <div className="mt-[22px] flex items-stretch gap-[10px] px-[2px]">
                                 <div className="flex flex-col items-center self-stretch">
                                     <button
                                         type="button"
@@ -168,7 +170,7 @@ export default function LegacyVerticalCTScoutConfirmScreen() {
                                         type="button"
                                         onClick={handleSwap}
                                         title="交换起始/结束位置"
-                                        className="flex h-[24px] w-[24px] items-center justify-center rounded-[6px] border border-[#9db7d8] bg-[#e9f0fa] text-[#6b8cb3]"
+                                        className="flex h-[24px] w-[24px] items-center justify-center rounded-[6px] border border-[#9db7d8] bg-[#e9f0fa] text-[#6b8cb3] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
                                     >
                                         ↕
                                     </button>
@@ -188,7 +190,7 @@ export default function LegacyVerticalCTScoutConfirmScreen() {
                                             value={startPos}
                                             onChange={(e) => setStartPos(e.target.value)}
                                             onClick={(e) => e.stopPropagation()}
-                                            className={`h-[42px] w-[142px] rounded-[4px] border bg-[#e9edf4] px-[12px] text-[30px] font-semibold leading-none ${selectedPosition === "start" ? "border-[#93afd2] text-[#6d859f]" : "border-[#c4d2e3] text-[#9fb0c4]"}`}
+                                            className={`h-[42px] w-[142px] rounded-[6px] border bg-[#edf1f6] px-[12px] text-[30px] font-semibold leading-none shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] ${selectedPosition === "start" ? "border-[#93afd2] text-[#6d859f]" : "border-[#c4d2e3] text-[#9fb0c4]"}`}
                                         />
                                     </button>
 
@@ -199,13 +201,13 @@ export default function LegacyVerticalCTScoutConfirmScreen() {
                                             value={endPos}
                                             onChange={(e) => setEndPos(e.target.value)}
                                             onClick={(e) => e.stopPropagation()}
-                                            className={`h-[42px] w-[142px] rounded-[4px] border bg-[#e9edf4] px-[12px] text-[30px] font-semibold leading-none ${selectedPosition === "end" ? "border-[#96bf8a] text-[#66bb6a]" : "border-[#c4d2e3] text-[#9fb0c4]"}`}
+                                            className={`h-[42px] w-[142px] rounded-[6px] border bg-[#edf1f6] px-[12px] text-[30px] font-semibold leading-none shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] ${selectedPosition === "end" ? "border-[#96bf8a] text-[#66bb6a]" : "border-[#c4d2e3] text-[#9fb0c4]"}`}
                                         />
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="mt-[20px] border-t border-[#c3cfdf] pt-[14px]">
+                            <div className="mt-[18px] border-t border-[#c7d0de] pt-[14px]">
                                 <div className="mb-[10px] text-[13px] font-semibold text-[#526d8f]">扫描参数</div>
                                 <div className="flex flex-col gap-[8px]">
                                     {scoutParams.map((item) => (
