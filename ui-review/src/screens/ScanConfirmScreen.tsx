@@ -40,6 +40,7 @@ interface ProtocolGroup {
 type ScanConfirmScreenProps = {
     activeScoutStepIndex?: number;
     readOnlyMode?: boolean;
+    onExecuteScan?: () => void;
 };
 
 type ScoutDisplayParams = {
@@ -90,7 +91,7 @@ const getScoutDisplayParams = (protocolCases: RawProtocolCase[] | undefined): Sc
     };
 };
 
-const ScanConfirmScreen = ({ activeScoutStepIndex = 1, readOnlyMode = false }: ScanConfirmScreenProps) => {
+const ScanConfirmScreen = ({ activeScoutStepIndex = 1, readOnlyMode = false, onExecuteScan }: ScanConfirmScreenProps) => {
     const [isTreeCollapsed, setIsTreeCollapsed] = useState(false);
     const [bedMode, setBedMode] = useState<"in" | "out">("in");
     const [patientPosition, setPatientPosition] = useState("HFS");
@@ -535,9 +536,15 @@ const ScanConfirmScreen = ({ activeScoutStepIndex = 1, readOnlyMode = false }: S
                 </div>
                 <div className="flex-1 flex justify-end">
                     <button
-                        onClick={() => setShowPatientConfirm(true)}
-                        disabled={readOnlyMode}
-                        className={`flex items-center gap-2 px-10 h-[52px] font-bold rounded-md transition-all uppercase text-[13px] ${readOnlyMode ? "bg-[#CBD5E1] text-white cursor-not-allowed shadow-none" : "bg-[#4D94FF] text-white shadow-lg hover:bg-blue-600 active:scale-95"}`}
+                        onClick={() => {
+                            if (onExecuteScan) {
+                                onExecuteScan();
+                                return;
+                            }
+                            setShowPatientConfirm(true);
+                        }}
+                        disabled={readOnlyMode && !onExecuteScan}
+                        className={`flex items-center gap-2 px-10 h-[52px] font-bold rounded-md transition-all uppercase text-[13px] ${readOnlyMode && !onExecuteScan ? "bg-[#CBD5E1] text-white cursor-not-allowed shadow-none" : "bg-[#4D94FF] text-white shadow-lg hover:bg-blue-600 active:scale-95"}`}
                     >
                         执行扫描 <ChevronRight size={20} />
                     </button>

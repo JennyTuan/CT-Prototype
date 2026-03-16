@@ -77,6 +77,12 @@ export default function ScoutExecuteScanScreen() {
         }, EXPOSURE_DURATION_MS);
     };
 
+    const handleExecuteScanClick = () => {
+        if (stage === "idle" || stage === "arming") {
+            triggerScanSequence();
+        }
+    };
+
     const startHold = () => {
         if (!guideVisible || stage === "exposing" || stage === "rendering" || stage === "completed") {
             return;
@@ -138,7 +144,7 @@ export default function ScoutExecuteScanScreen() {
 
     return (
         <div className="relative h-[768px] w-[1024px] overflow-hidden">
-            <ScanConfirmScreen activeScoutStepIndex={2} readOnlyMode />
+            <ScanConfirmScreen activeScoutStepIndex={2} readOnlyMode onExecuteScan={handleExecuteScanClick} />
 
             <div className="pointer-events-none absolute bottom-[80px] left-[246px] right-0 top-[82px] z-20 overflow-hidden rounded-lg">
                 <div className="flex h-full flex-col border border-white/5 bg-[#1A222B]">
@@ -150,9 +156,9 @@ export default function ScoutExecuteScanScreen() {
                         <span className="text-[11px] text-[#90A4AE]">{statusText}</span>
                     </div>
 
-                    <div className="relative flex-1 overflow-hidden bg-[radial-gradient(circle_at_50%_16%,rgba(120,166,255,0.12),transparent_34%),linear-gradient(180deg,#111821_0%,#141D26_45%,#1A222B_100%)]">
+                    <div className="relative flex-1 overflow-hidden bg-[linear-gradient(180deg,#121A23_0%,#151E28_52%,#1A242F_100%)]">
                         <div className={`absolute inset-0 transition-opacity duration-500 ${stage === "idle" || stage === "arming" || stage === "enabled" ? "opacity-100" : "opacity-30"}`}>
-                            <div className="flex h-full items-center justify-center text-[52px] font-thin uppercase tracking-[16px] text-[#546E7A]/70">
+                            <div className="flex h-full items-center justify-center text-[46px] font-thin uppercase tracking-[10px] text-[#4D5B6A]/55">
                                 Viewport
                             </div>
                         </div>
@@ -162,8 +168,8 @@ export default function ScoutExecuteScanScreen() {
                             <div className="absolute inset-[28px] rounded-[28px] border border-white/10 bg-[#0B1219] shadow-[0_22px_50px_rgba(0,0,0,0.45)]">
                                 <div className="absolute inset-x-0 top-0 flex h-[34px] items-center justify-between border-b border-white/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.01))] px-4 text-[10px] font-bold tracking-[0.22em] text-[#8FA5BB]">
                                     <span>SCOUT AP</span>
-                                    <span>80KV / 10MA</span>
-                                    <span>FOV 500</span>
+                                    <span>120kV / 50mA</span>
+                                    <span>SL 450mm · FOV 500</span>
                                 </div>
 
                                 <div className="absolute inset-x-[18px] bottom-[18px] top-[52px] flex gap-4">
@@ -188,7 +194,7 @@ export default function ScoutExecuteScanScreen() {
                                         </div>
                                     </div>
 
-                                    <div className="relative flex-1 overflow-hidden rounded-[22px] border border-white/6 bg-[linear-gradient(180deg,#0E151D_0%,#111A23_100%)]">
+                                    <div className="relative flex-1 overflow-hidden rounded-[14px] border border-white/10 bg-[linear-gradient(180deg,#0E151D_0%,#101822_100%)]">
                                         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.02),transparent_14%,transparent_86%,rgba(255,255,255,0.02))]" />
                                         <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-[linear-gradient(180deg,transparent,rgba(143,165,187,0.45)_12%,rgba(143,165,187,0.45)_88%,transparent)]" />
 
@@ -201,7 +207,7 @@ export default function ScoutExecuteScanScreen() {
                                             END
                                         </div>
 
-                                        <div className="absolute inset-y-[6%] left-1/2 w-[290px] -translate-x-1/2 overflow-hidden rounded-[20px] border border-white/8 bg-[radial-gradient(circle_at_50%_14%,rgba(255,255,255,0.05),transparent_34%),linear-gradient(180deg,#141D27_0%,#182330_100%)] shadow-[inset_0_0_40px_rgba(255,255,255,0.03)]">
+                                        <div className="absolute inset-y-[6%] left-1/2 w-[290px] -translate-x-1/2 overflow-hidden rounded-[8px] border border-[#70879E]/35 bg-[#0F1720] shadow-[inset_0_0_18px_rgba(0,0,0,0.45)]">
                                             <img
                                                 src={lungCtSample}
                                                 alt="定位像模拟出图"
@@ -209,24 +215,24 @@ export default function ScoutExecuteScanScreen() {
                                                 className="absolute inset-0 h-full w-full object-cover object-center select-none transition-opacity duration-300"
                                                 style={{
                                                     clipPath: `inset(${(1 - renderProgress) * 100}% 0 0 0)`,
-                                                    opacity: 0.24 + renderProgress * 0.72,
-                                                    filter: `grayscale(1) contrast(${1.28 + renderProgress * 0.42}) brightness(${0.55 + renderProgress * 0.18}) blur(${Math.max(0, 1.2 - renderProgress)}px)`,
-                                                    transform: "scale(1.55, 1.12)",
+                                                    opacity: 0.18 + renderProgress * 0.62,
+                                                    filter: `grayscale(1) contrast(${1.06 + renderProgress * 0.2}) brightness(${0.46 + renderProgress * 0.12}) blur(${Math.max(0, 0.5 - renderProgress * 0.5)}px)`,
+                                                    transform: "scale(1.36, 1.04)",
                                                     transformOrigin: "center center",
                                                 }}
                                             />
 
                                             <div
-                                                className="absolute inset-x-[10%] rounded-[999px] border border-[#E7F7FF]/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.01))]"
+                                                className="absolute inset-x-[10%] rounded-[6px] border border-[#9FB1C6]/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))]"
                                                 style={{
                                                     top: "12%",
                                                     bottom: "12%",
-                                                    opacity: 0.2 + renderProgress * 0.3,
+                                                    opacity: 0.14 + renderProgress * 0.12,
                                                 }}
                                             />
 
                                             <div
-                                                className="pointer-events-none absolute left-[10%] right-[10%] h-[4px] bg-[linear-gradient(90deg,transparent,rgba(128,255,211,0.95),rgba(224,255,246,0.92),rgba(128,255,211,0.95),transparent)] shadow-[0_0_20px_rgba(94,234,212,0.95)] transition-opacity duration-200"
+                                                className="pointer-events-none absolute left-[10%] right-[10%] h-[2px] bg-[linear-gradient(90deg,transparent,rgba(198,214,230,0.75),rgba(240,246,252,0.92),rgba(198,214,230,0.75),transparent)] shadow-[0_0_6px_rgba(200,214,228,0.35)] transition-opacity duration-200"
                                                 style={{
                                                     top: `calc(${12 + Math.min(renderProgress, 0.995) * 76}% - 2px)`,
                                                     opacity: stage === "completed" ? 0 : 1,
@@ -234,8 +240,11 @@ export default function ScoutExecuteScanScreen() {
                                             />
 
                                             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.02),transparent_20%,transparent_80%,rgba(255,255,255,0.03))]" />
-                                            <div className="absolute inset-0 bg-[repeating-linear-gradient(180deg,rgba(255,255,255,0.018)_0px,rgba(255,255,255,0.018)_1px,transparent_1px,transparent_3px)] opacity-25" />
-                                            <div className="absolute inset-y-0 left-1/2 w-[2px] -translate-x-1/2 bg-[linear-gradient(180deg,transparent,rgba(220,230,240,0.3)_10%,rgba(220,230,240,0.3)_90%,transparent)]" />
+                                            <div className="absolute inset-0 bg-[repeating-linear-gradient(180deg,rgba(255,255,255,0.016)_0px,rgba(255,255,255,0.016)_1px,transparent_1px,transparent_3px)] opacity-18" />
+                                            <div className="absolute inset-y-0 left-1/2 w-[2px] -translate-x-1/2 bg-[linear-gradient(180deg,transparent,rgba(220,230,240,0.18)_10%,rgba(220,230,240,0.18)_90%,transparent)]" />
+                                        <div className="absolute left-3 top-3 text-[10px] font-bold tracking-[0.14em] text-[#C7D3DF]/85">R</div>
+                                        <div className="absolute right-3 top-3 text-[10px] font-bold tracking-[0.14em] text-[#C7D3DF]/85">L</div>
+                                        <div className="absolute left-3 bottom-3 text-[9px] font-bold tracking-[0.1em] text-[#9FB1C3]/85">AP LOCALIZER</div>
                                         </div>
 
                                         <div className="absolute inset-y-[14%] left-[calc(50%-170px)] w-px bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.08),transparent)]" />
@@ -244,9 +253,9 @@ export default function ScoutExecuteScanScreen() {
                                 </div>
                             </div>
 
-                            <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-full border border-[#28485A] bg-[#0E1821]/88 px-5 py-2 text-[11px] font-bold tracking-[0.18em] text-[#A7F3D0] shadow-[0_18px_36px_rgba(0,0,0,0.35)] backdrop-blur-sm">
-                                <span className="h-2 w-2 rounded-full bg-[#22C55E] shadow-[0_0_10px_rgba(34,197,94,0.9)]" />
-                                {stage === "completed" ? "SCOUT READY" : "SCOUT RENDERING"}
+                            <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-md border border-[#3A4C5F] bg-[#111A24]/88 px-4 py-1.5 text-[10px] font-bold tracking-[0.14em] text-[#B7C6D5] shadow-[0_12px_24px_rgba(0,0,0,0.3)]">
+                                <span className="h-2 w-2 rounded-full bg-[#8FA5BB] shadow-[0_0_4px_rgba(158,177,196,0.35)]" />
+                                {stage === "completed" ? "SCOUT IMAGE READY" : "SCOUT IMAGE BUILDING"}
                             </div>
                         </div>
                     </div>
