@@ -5,7 +5,8 @@ export default function ScoutExecuteScanScreen() {
         <div className="relative w-[1024px] h-[768px]">
             <ScanConfirmScreen activeScoutStepIndex={2} readOnlyMode />
 
-            <div className="pointer-events-none absolute inset-y-[88px] right-0 z-40 flex items-stretch">
+            <div className="pointer-events-none absolute top-[88px] bottom-[84px] right-0 z-40 flex items-stretch">
+                <div className="w-12 bg-gradient-to-l from-black/18 to-transparent" />
                 <div className="pointer-events-auto w-[380px] rounded-l-2xl border border-r-0 border-[#CBD5E1] bg-[#EDF1F7] shadow-[-24px_0_48px_rgba(15,23,42,0.22)] overflow-hidden">
                     <div className="border-b border-slate-200 px-5 py-4">
                         <div className="text-[14px] font-black text-slate-700">实体按键操作引导</div>
