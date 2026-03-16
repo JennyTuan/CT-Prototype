@@ -38,12 +38,14 @@ interface ScoutScanScreenProps {
     firstStepLabel?: string;
     bottomPanelMode?: "positioning" | "breathing";
     viewportBgClassName?: string;
+    breathingWorkflowVariant?: "training" | "acquisition";
 }
 
 const ScoutScanScreen = ({
-    firstStepLabel = "打开激光灯获取定位",
+    firstStepLabel = "激光灯定位",
     bottomPanelMode = "positioning",
     viewportBgClassName = "bg-[#1A222B]",
+    breathingWorkflowVariant = "training",
 }: ScoutScanScreenProps) => {
     const [startPos, setStartPos] = useState("472.95");
     const [endPos, setEndPos] = useState("595.17");
@@ -163,8 +165,8 @@ const ScoutScanScreen = ({
             id: 'g1',
             name: 'Head_FacialBoneVolume',
             sequences: [
-                { id: 's1', name: 'Scout', steps: ["呼吸采集", "激光灯定位", "参数确认"] },
-                { id: 's2', name: 'Helical Scan', steps: [firstStepLabel, '参数确认', '执行扫描'] }
+                { id: 's1', name: 'Scout', steps: [firstStepLabel, "参数确认", "执行扫描"] },
+                { id: 's2', name: 'Helical Scan', steps: ["呼吸训练", '参数确认', '执行扫描'] }
             ]
         }
     ]);
@@ -175,7 +177,9 @@ const ScoutScanScreen = ({
     const [showAbortConfirm, setShowAbortConfirm] = useState(false);
     const [selectedPosition, setSelectedPosition] = useState<"start" | "end" | null>(null);
     const [activeStepIdx, setActiveStepIdx] = useState(0); // Add state for active step tracking
-    const [expandedSeqId, setExpandedSeqId] = useState<string | null>("s1");
+    const [expandedSeqId, setExpandedSeqId] = useState<string | null>(
+        bottomPanelMode === "breathing" && breathingWorkflowVariant === "training" ? "s2" : "s1"
+    );
 
     useEffect(() => {
         if (bottomPanelMode !== "breathing") return;
@@ -186,17 +190,17 @@ const ScoutScanScreen = ({
                     id: "g1",
                     name: "Head_FacialBoneVolume",
                     sequences: [
-                        { id: "s1", name: "Scout", steps: ["呼吸采集", "激光灯定位", "参数确认"] },
-                        { id: "s2", name: "Helical Scan", steps: [firstStepLabel, '参数确认', '执行扫描'] },
+                        { id: "s1", name: "Scout", steps: [firstStepLabel, "参数确认", "执行扫描"] },
+                        { id: "s2", name: "Helical Scan", steps: ["呼吸训练", '参数确认', '执行扫描'] },
                     ],
                 },
             ]);
-            setExpandedSeqId("s2");
+            setExpandedSeqId(breathingWorkflowVariant === "training" ? "s2" : "s1");
             setActiveStepIdx(0);
         }, 0);
 
         return () => clearTimeout(timer);
-    }, [bottomPanelMode, firstStepLabel]);
+    }, [bottomPanelMode, breathingWorkflowVariant, firstStepLabel]);
 
     const toggleSelection = (id: string) => {
         setSelectedIds(prev => {
@@ -357,9 +361,15 @@ const ScoutScanScreen = ({
                                                     ? seq.name === '呼吸采集'
                                                     : seq.name === 'Scout';
                                                 const isExpanded = expandedSeqId === seq.id;
-                                                const isCompletedSequence = bottomPanelMode === 'breathing' && seq.name === 'Scout';
+                                                const isBreathingScoutSequence = bottomPanelMode === 'breathing' && seq.name === 'Scout';
                                                 const isBreathingHelicalSequence = bottomPanelMode === 'breathing' && seq.name === 'Helical Scan';
-                                                const isUnifiedActiveSequence = bottomPanelMode === 'breathing' ? isBreathingHelicalSequence : seq.name === 'Scout' || isActiveSequence;
+                                                const resolvedActiveSequence = bottomPanelMode === 'breathing'
+                                                    ? (breathingWorkflowVariant === 'training' ? isBreathingHelicalSequence : isBreathingScoutSequence)
+                                                    : seq.name === 'Scout';
+                                                const isCompletedSequence = bottomPanelMode === 'breathing'
+                                                    && breathingWorkflowVariant === 'training'
+                                                    && seq.name === 'Scout';
+                                                const isUnifiedActiveSequence = bottomPanelMode === 'breathing' ? resolvedActiveSequence : seq.name === 'Scout' || isActiveSequence;
                                                 const shouldShowSteps = !!seq.steps?.length && isExpanded;
 
                                                 return (

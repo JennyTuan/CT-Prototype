@@ -3,8 +3,9 @@ import html2canvas from "html2canvas";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import PatientListScreen from "./screens/PatientListScreen";
 import ScoutScanScreen from "./screens/ScoutScanScreen";
-import FourDScanScreen from "./screens/FourDScanScreen";
+import BreathingAcquisitionScreen from "./screens/BreathingAcquisitionScreen";
 import BreathingTrainingScreen from "./screens/BreathingTrainingScreen";
+import FourDBreathingPreparationScreen from "./screens/FourDBreathingPreparationScreen";
 import ProtocolSetupScreen from "./screens/ProtocolSetupScreen";
 import WT32ProtocolDetailScreen from "./screens/WT32ProtocolDetailScreen";
 import WT32ProtocolScoutDetailScreen from "./screens/WT32NewProtocolScoutDetailScreen";
@@ -13,6 +14,7 @@ import WT32ProtocolReconDetailScreen from "./screens/WT32NewProtocolReconDetailS
 import WT32ProtocolDoseDetailScreen from "./screens/WT32NewProtocolDoseDetailScreen";
 import ProtocolEditorModal from "./components/ProtocolEditorModal";
 import ScanConfirmScreen from "./screens/ScanConfirmScreen";
+import ScoutExecuteScanScreen from "./screens/ScoutExecuteScanScreen";
 import MockScanScreen from "./screens/MockScanScreen";
 import ViewScreen from "./screens/ViewScreen";
 import TubeWarmupScreen from "./screens/TubeWarmupScreen";
@@ -70,11 +72,13 @@ export default function Gallery() {
                     { key: "protocol_recon_soft", name: "协议详情-重建(软组织)", component: <ProtocolEditorModal><WT32ProtocolReconDetailScreen type="soft" /></ProtocolEditorModal> },
                     { key: "protocol_recon_bone", name: "协议详情-重建(骨骼)", component: <ProtocolEditorModal><WT32ProtocolReconDetailScreen type="bone" /></ProtocolEditorModal> },
                     { key: "protocol_dose_detail", name: "协议详情-剂量通知", component: <ProtocolEditorModal><WT32ProtocolDoseDetailScreen /></ProtocolEditorModal> },
-                    { key: "scout_scan", name: "激光灯定位", component: <ScoutScanScreen /> },
-                    { key: "scan_confirm", name: "参数确认", component: <ScanConfirmScreen /> },
+                    { key: "scout_scan", name: "激光灯定位-定位像", component: <ScoutScanScreen /> },
+                    { key: "scan_confirm", name: "参数确认-定位像", component: <ScanConfirmScreen /> },
+                    { key: "scout_execute_scan", name: "执行扫描-定位像", component: <ScoutExecuteScanScreen /> },
                     { key: "view", name: "图像浏览", component: <ViewScreen /> },
-                    { key: "4d-scan", name: "4D 扫描", component: <FourDScanScreen /> },
+                    { key: "4d-scan", name: "呼吸采集", component: <BreathingAcquisitionScreen /> },
                     { key: "breathing-training", name: "呼吸训练", component: <BreathingTrainingScreen /> },
+                    { key: "4d-breathing-prep", name: "4D-呼吸准备界面", component: <FourDBreathingPreparationScreen /> },
                     { key: "mock_scan", name: "模拟按键", component: <MockScanScreen /> },
                     { key: "tube-warmup", name: "球管预热", component: <TubeWarmupScreen /> },
                     { key: "air-calibration", name: "空气校正", component: <AirCalibrationScreen /> },
@@ -307,6 +311,3 @@ export default function Gallery() {
         </div>
     );
 }
-
-
-

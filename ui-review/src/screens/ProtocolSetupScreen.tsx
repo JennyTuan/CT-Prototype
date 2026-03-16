@@ -24,7 +24,7 @@ import {
     Siren,
     AlertTriangle,
 } from "lucide-react";
-import { convertBusinessSnapshotToProtocolCases, ensureBusinessSnapshotImported, loadProtocolCasesFromDb } from "../lib/protocolDb";
+import { ensureBusinessSnapshotImported, loadProtocolCasesFromDb } from "../lib/protocolDb";
 
 type RawProtocol = {
     id: string;
@@ -110,7 +110,7 @@ const normalizeModeTags = (modes: string[] | undefined): string[] => {
     return modes.map((mode) => mode.trim());
 };
 
-const protocolCaseData: RawProtocolCase[] = [
+export const protocolCaseData: RawProtocolCase[] = [
     {
         protocol: {
             id: "origin-1",
@@ -389,14 +389,9 @@ const ProtocolSetupScreen = ({ onOpenProtocolDetail }: ProtocolSetupScreenProps)
     const [planListOpen, setPlanListOpen] = useState(true);
     const [collapsedPlanIds, setCollapsedPlanIds] = useState<string[]>([]);
     const [patientType, setPatientType] = useState<"adult" | "child">("adult");
-    const [snapshotProtocolCases, setSnapshotProtocolCases] = useState<RawProtocolCase[]>([]);
 
     // 选中序列 ID 和重建方案索引
-    const [selectedSeqId, setSelectedSeqId] = useState(() => {
-        const first = protocolCaseData[0];
-        const firstSeq = first?.sequences?.[0];
-        return first && firstSeq ? `${first.protocol.id}-${firstSeq.id}` : "";
-    });
+    const [selectedSeqId, setSelectedSeqId] = useState("");
     const [selectedReconIndex, setSelectedReconIndex] = useState(0);
 
     // 多选删除相关
@@ -413,10 +408,9 @@ const ProtocolSetupScreen = ({ onOpenProtocolDetail }: ProtocolSetupScreenProps)
                 if (!response.ok) return;
                 const snapshot = await response.json();
                 if (cancelled) return;
-                setSnapshotProtocolCases(convertBusinessSnapshotToProtocolCases(snapshot));
                 await ensureBusinessSnapshotImported(snapshot);
             } catch {
-                // Keep local mock data as a fallback if the snapshot is unavailable.
+                // Leave the screen empty if the snapshot import fails; UI reads only from DB.
             }
         };
 
@@ -432,15 +426,10 @@ const ProtocolSetupScreen = ({ onOpenProtocolDetail }: ProtocolSetupScreenProps)
         [],
         [] as RawProtocolCase[]
     );
-    const protocolSource = snapshotProtocolCases.length > 0
-        ? snapshotProtocolCases
-        : dbProtocolCases.length > 0
-            ? dbProtocolCases
-            : protocolCaseData;
 
     const protocolCatalog = useMemo(
-        () => protocolSource.map((entry, idx) => ({ id: idx + 1, entry })),
-        [protocolSource]
+        () => dbProtocolCases.map((entry, idx) => ({ id: idx + 1, entry })),
+        [dbProtocolCases]
     );
 
     const libraryData = useMemo(
