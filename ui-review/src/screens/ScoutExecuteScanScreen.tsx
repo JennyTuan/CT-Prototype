@@ -7,7 +7,7 @@ export default function ScoutExecuteScanScreen() {
 
             <div className="pointer-events-none absolute top-[88px] bottom-[84px] right-0 z-40 flex items-stretch">
                 <div className="w-12 bg-gradient-to-l from-black/18 to-transparent" />
-                <div className="pointer-events-auto w-[380px] rounded-l-2xl border border-r-0 border-[#CBD5E1] bg-[#EDF1F7] shadow-[-24px_0_48px_rgba(15,23,42,0.22)] overflow-hidden">
+                <div className="pointer-events-auto w-[235px] rounded-l-2xl border border-r-0 border-[#CBD5E1] bg-[#EDF1F7] shadow-[-24px_0_48px_rgba(15,23,42,0.22)] overflow-hidden h-full">
                     <div className="border-b border-slate-200 px-5 py-4">
                         <div className="text-[14px] font-black text-slate-700">实体按键操作引导</div>
                         <div className="mt-1 text-[11px] font-medium text-slate-400">执行扫描前请确认实体控制器状态</div>
@@ -15,12 +15,12 @@ export default function ScoutExecuteScanScreen() {
 
                     <div className="flex h-full flex-col">
                         <div className="flex-1 flex items-start justify-end overflow-hidden pt-2">
-                            <div className="relative h-[500px] w-fit">
+                            <div className="relative w-[220px] h-full flex items-start justify-end">
                                 <img
                                     src="/弹出实体按键.png"
                                     alt="实体按键引导"
                                     draggable={false}
-                                    className="h-[500px] w-auto max-w-none object-contain select-none"
+                                    className="w-[220px] h-auto max-h-full max-w-none object-contain select-none"
                                 />
                                 <div className="pointer-events-none absolute left-[15%] top-[31%] flex -translate-x-1/2 flex-col items-center animate-bounce">
                                     <div className="rounded-md bg-[#008D64] px-3 py-1 text-[10px] font-black text-white shadow-md">
