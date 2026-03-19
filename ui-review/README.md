@@ -143,6 +143,28 @@ npm install
 npm run dev
 ```
 
+# 中文编码建议
+
+如果你使用 Codex CLI 或 PowerShell 修改包含大量中文的界面文件，建议先把当前终端切到 UTF-8，再进行编辑或运行命令。
+
+```powershell
+. .\scripts\Enable-Utf8Terminal.ps1
+```
+
+执行后应看到：
+
+```text
+InputEncoding : utf-8
+OutputEncoding: utf-8
+Code page     : 65001
+```
+
+说明：
+
+* 当前项目里大部分源码文件已经是 UTF-8。
+* 如果终端仍停留在 `936`（GBK），即使文件本身没坏，也可能在 Codex CLI 编辑、终端输出、日志查看时出现乱码。
+* 若某个文件已经保存成乱码内容，切换终端到 UTF-8 只能防止继续损坏，不能自动恢复历史乱码文本。
+
 ---
 
 # 📌 本工程定位总结
