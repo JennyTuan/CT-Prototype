@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import * as dicomParser from "dicom-parser";
 import {
     User,
     Settings,
@@ -32,6 +33,284 @@ interface ProtocolGroup {
     id: string;
     name: string;
     sequences: Sequence[];
+}
+
+const BREATHING_SCOUT_SERIES = {
+    basePath: "/dicom/QIN LUNG CT/QIN-LUNG-01-0007/01-12-2000-1-CT Thorax wContrast-47252/2.000000-THORAX W  3.0 B41 Soft Tissue-52055",
+    count: 118,
+    fallbackWindowWidth: 350,
+    fallbackWindowLevel: 45,
+};
+
+type BreathingProjectionMeta = {
+    width: number;
+    height: number;
+    ww: number;
+    wl: number;
+    kvp: string;
+    mas: string;
+    thickness: string;
+};
+
+type BreathingLoadedSlice = {
+    instanceNumber: number;
+    positionZ: number;
+    rows: number;
+    cols: number;
+    hu: Float32Array;
+    ww: number;
+    wl: number;
+    kvp: string;
+    mas: string;
+    thickness: string;
+};
+
+function clamp01(value: number) {
+    return Math.min(1, Math.max(0, value));
+}
+
+function BreathingScoutViewport() {
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const viewportRef = useRef<HTMLDivElement | null>(null);
+    const projectionRef = useRef<Uint8ClampedArray | null>(null);
+    const projectionSizeRef = useRef<{ width: number; height: number } | null>(null);
+    const metaRef = useRef<BreathingProjectionMeta | null>(null);
+    const [meta, setMeta] = useState<BreathingProjectionMeta | null>(null);
+    const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadSlices = async () => {
+            try {
+                const sliceNumbers = Array.from({ length: BREATHING_SCOUT_SERIES.count }, (_, index) => index + 1);
+                const slices: BreathingLoadedSlice[] = [];
+                const concurrency = 8;
+
+                for (let start = 0; start < sliceNumbers.length; start += concurrency) {
+                    const batch = sliceNumbers.slice(start, start + concurrency);
+                    const loadedBatch = await Promise.all(
+                        batch.map(async (sliceNumber) => {
+                            const fileName = `1-${String(sliceNumber).padStart(3, "0")}.dcm`;
+                            const response = await fetch(`${BREATHING_SCOUT_SERIES.basePath}/${fileName}`);
+                            if (!response.ok) throw new Error(`Failed to fetch ${fileName}`);
+
+                            const arrayBuffer = await response.arrayBuffer();
+                            const byteArray = new Uint8Array(arrayBuffer);
+                            const dataSet = dicomParser.parseDicom(byteArray);
+                            const rows = dataSet.uint16("x00280010") ?? 0;
+                            const cols = dataSet.uint16("x00280011") ?? 0;
+                            const bitsAllocated = dataSet.uint16("x00280100") ?? 16;
+                            const pixelRepresentation = dataSet.uint16("x00280103") ?? 0;
+                            const intercept = Number(dataSet.string("x00281052") ?? "0");
+                            const slope = Number(dataSet.string("x00281053") ?? "1");
+                            const positionZ = Number((dataSet.string("x00200032") ?? "0\\0\\0").split("\\")[2] ?? 0);
+                            const pixelDataElement = dataSet.elements.x7fe00010;
+                            if (!pixelDataElement || rows === 0 || cols === 0) {
+                                throw new Error(`Missing pixel data for ${fileName}`);
+                            }
+
+                            const pixelData = byteArray.slice(
+                                pixelDataElement.dataOffset,
+                                pixelDataElement.dataOffset + pixelDataElement.length
+                            );
+                            const pixelBuffer = pixelData.buffer.slice(
+                                pixelData.byteOffset,
+                                pixelData.byteOffset + pixelData.byteLength
+                            );
+
+                            const values =
+                                bitsAllocated === 16
+                                    ? pixelRepresentation === 1
+                                        ? new Int16Array(pixelBuffer)
+                                        : new Uint16Array(pixelBuffer)
+                                    : new Uint16Array(pixelBuffer);
+
+                            const hu = new Float32Array(values.length);
+                            for (let i = 0; i < values.length; i += 1) {
+                                hu[i] = values[i] * slope + intercept;
+                            }
+
+                            return {
+                                instanceNumber: Number(dataSet.string("x00200013") ?? sliceNumber),
+                                positionZ,
+                                rows,
+                                cols,
+                                hu,
+                                ww: Number(dataSet.string("x00281051") ?? `${BREATHING_SCOUT_SERIES.fallbackWindowWidth}`),
+                                wl: Number(dataSet.string("x00281050") ?? `${BREATHING_SCOUT_SERIES.fallbackWindowLevel}`),
+                                kvp: dataSet.string("x00180060") ?? "120",
+                                mas: dataSet.string("x00181152") ?? "Auto",
+                                thickness: dataSet.string("x00180050") ?? "3.0 mm",
+                            };
+                        })
+                    );
+
+                    loadedBatch.forEach((slice) => {
+                        slices.push(slice);
+                        if (!metaRef.current) {
+                            metaRef.current = {
+                                width: slice.cols,
+                                height: BREATHING_SCOUT_SERIES.count,
+                                ww: Number.isFinite(slice.ww) && slice.ww > 1 ? slice.ww : BREATHING_SCOUT_SERIES.fallbackWindowWidth,
+                                wl: Number.isFinite(slice.wl) ? slice.wl : BREATHING_SCOUT_SERIES.fallbackWindowLevel,
+                                kvp: slice.kvp,
+                                mas: slice.mas,
+                                thickness: slice.thickness,
+                            };
+                        }
+                    });
+                }
+
+                slices.sort((a, b) => b.positionZ - a.positionZ || a.instanceNumber - b.instanceNumber);
+                if (slices.length === 0) throw new Error("No DICOM slices loaded.");
+
+                const rows = slices[0].rows;
+                const cols = slices[0].cols;
+                const bandHalfHeight = Math.max(10, Math.floor(rows * 0.08));
+                const centerY = Math.floor(rows / 2);
+                const sampleStart = Math.max(0, centerY - bandHalfHeight);
+                const sampleEnd = Math.min(rows, centerY + bandHalfHeight);
+                const ww = metaRef.current?.ww ?? BREATHING_SCOUT_SERIES.fallbackWindowWidth;
+                const wl = metaRef.current?.wl ?? BREATHING_SCOUT_SERIES.fallbackWindowLevel;
+                const minVal = wl - ww / 2;
+                const maxVal = wl + ww / 2;
+                const range = Math.max(maxVal - minVal, 1);
+                const output = new Uint8ClampedArray(cols * slices.length);
+
+                slices.forEach((slice, sliceIndex) => {
+                    for (let x = 0; x < cols; x += 1) {
+                        let accum = 0;
+                        let samples = 0;
+                        for (let y = sampleStart; y < sampleEnd; y += 1) {
+                            accum += slice.hu[y * cols + x];
+                            samples += 1;
+                        }
+                        const meanHu = accum / Math.max(samples, 1);
+                        const normalized = clamp01((meanHu - minVal) / range);
+                        output[sliceIndex * cols + x] = 255 - Math.round(normalized * 255);
+                    }
+                });
+
+                if (cancelled) return;
+                projectionRef.current = output;
+                projectionSizeRef.current = { width: cols, height: slices.length };
+                setMeta({
+                    width: cols,
+                    height: slices.length,
+                    ww,
+                    wl,
+                    kvp: metaRef.current?.kvp ?? "120",
+                    mas: metaRef.current?.mas ?? "Auto",
+                    thickness: metaRef.current?.thickness ?? "3.0 mm",
+                });
+                setLoadState("ready");
+            } catch (error) {
+                console.error("Failed to load breathing scout projection.", error);
+                if (!cancelled) setLoadState("error");
+            }
+        };
+
+        void loadSlices();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        const viewport = viewportRef.current;
+        const pixels = projectionRef.current;
+        const size = projectionSizeRef.current;
+        if (!canvas || !viewport || !pixels || !size) return;
+
+        const viewW = Math.max(1, Math.floor(viewport.clientWidth));
+        const viewH = Math.max(1, Math.floor(viewport.clientHeight));
+        if (canvas.width !== viewW || canvas.height !== viewH) {
+            canvas.width = viewW;
+            canvas.height = viewH;
+        }
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        const offscreen = document.createElement("canvas");
+        offscreen.width = size.width;
+        offscreen.height = size.height;
+        const offCtx = offscreen.getContext("2d");
+        if (!offCtx) return;
+
+        const imageData = offCtx.createImageData(size.width, size.height);
+        const out = imageData.data;
+        for (let i = 0; i < pixels.length; i += 1) {
+            const j = i * 4;
+            const value = pixels[i];
+            out[j] = value;
+            out[j + 1] = value;
+            out[j + 2] = value;
+            out[j + 3] = 255;
+        }
+        offCtx.putImageData(imageData, 0, 0);
+
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, viewW, viewH);
+
+        const fitScale = Math.min(viewW / size.width, viewH / size.height);
+        const drawScale = fitScale * 0.98;
+        const drawW = size.width * drawScale;
+        const drawH = size.height * drawScale;
+        const x = (viewW - drawW) / 2;
+        const y = (viewH - drawH) / 2;
+
+        ctx.save();
+        ctx.imageSmoothingEnabled = true;
+        ctx.filter = "contrast(1.08) brightness(0.9)";
+        ctx.drawImage(offscreen, x, y, drawW, drawH);
+        ctx.restore();
+    }, [loadState]);
+
+    return (
+        <div ref={viewportRef} className="absolute inset-0 overflow-hidden bg-black">
+            <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/60 to-transparent" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/65 to-transparent" />
+
+            {loadState === "loading" && (
+                <div className="absolute inset-0 flex items-center justify-center text-[12px] font-medium tracking-[0.12em] text-[#9FB2C5]">
+                    正在载入真实 DICOM 影像...
+                </div>
+            )}
+
+            {loadState === "error" && (
+                <div className="absolute inset-0 flex items-center justify-center text-[12px] font-medium tracking-[0.08em] text-[#D1D9E1]">
+                    真实影像加载失败
+                </div>
+            )}
+
+            {meta && (
+                <>
+                    <div className="pointer-events-none absolute left-3 top-3 text-[10px] font-mono leading-[1.35] text-[#CFD8DC]">
+                        <div className="font-bold">Scout Projection</div>
+                        <div>{meta.width} x {meta.height}</div>
+                    </div>
+                    <div className="pointer-events-none absolute right-3 top-3 text-right text-[10px] font-mono leading-[1.35] text-[#CFD8DC]">
+                        <div className="font-bold">QIN LUNG CT</div>
+                        <div>KV {meta.kvp} | mAs {meta.mas}</div>
+                    </div>
+                    <div className="pointer-events-none absolute bottom-3 left-3 text-[10px] font-mono leading-[1.35] text-[#CFD8DC]">
+                        <div>WW/WL {Math.round(meta.ww)} / {Math.round(meta.wl)}</div>
+                        <div>Thick {meta.thickness}</div>
+                    </div>
+                    <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[11px] font-bold tracking-[0.12em] text-[#DCE5ED]">
+                        R
+                    </div>
+                    <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-bold tracking-[0.12em] text-[#DCE5ED]">
+                        L
+                    </div>
+                </>
+            )}
+        </div>
+    );
 }
 
 interface ScoutScanScreenProps {
@@ -559,27 +838,13 @@ const ScoutScanScreen = ({
                     )}
                 </aside>
 
-                {/* Right Viewport Card - Redesigned for Breathing */}
-                <section className={`flex-1 ${viewportBgClassName} rounded-lg border border-[#B0C4DE] shadow-sm flex flex-col overflow-hidden relative`}>
+                {/* Right Viewport Area */}
+                <section className={`flex-1 ${bottomPanelMode === 'breathing' ? 'bg-transparent border-0 shadow-none' : `${viewportBgClassName} rounded-lg border border-[#B0C4DE] shadow-sm`} flex flex-col overflow-hidden relative`}>
                     {bottomPanelMode === 'breathing' ? (
-                        <div className="flex-1 flex flex-col p-4 gap-3 bg-[#EEF2F9]/50">
+                        <div className="flex-1 flex flex-col gap-2 bg-transparent">
                             <div className="min-h-0 flex-[1.2] rounded-md border border-[#B0C4DE]/30 bg-transparent p-0 flex flex-col shadow-sm overflow-hidden">
-                                <div className="min-h-0 flex-1 rounded-md border border-[#B0C4DE]/40 bg-[#0F1720] relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(120,144,156,0.24),_rgba(15,23,32,0.96)_70%)]"></div>
-                                    <div className="absolute inset-6 rounded-[50%] border border-dashed border-[#8FA7BA]/30"></div>
-                                    <div className="absolute left-1/2 top-6 bottom-6 w-px -translate-x-1/2 bg-[#9FB3C8]/30"></div>
-                                    <div className="absolute top-1/2 left-6 right-6 h-px -translate-y-1/2 bg-[#9FB3C8]/30"></div>
-                                    <div className="absolute inset-x-[18%] top-[22%] h-[54%] rounded-[45%] border border-[#D7E7F5]/35 bg-[linear-gradient(180deg,rgba(220,235,245,0.16),rgba(95,115,130,0.08))] blur-[1px]"></div>
-                                    <div className="absolute left-[28%] top-[30%] h-[36%] w-[16%] rounded-full border border-[#E8F1F8]/30"></div>
-                                    <div className="absolute right-[28%] top-[30%] h-[36%] w-[16%] rounded-full border border-[#E8F1F8]/30"></div>
-                                    <div className="absolute inset-x-[24%] top-[18%] h-[3px] rounded-full bg-[#7EAAFF]/80 shadow-[0_0_18px_rgba(126,170,255,0.8)]"></div>
-                                    <div className="absolute inset-x-[24%] bottom-[18%] h-[3px] rounded-full bg-[#66BB6A]/75 shadow-[0_0_16px_rgba(102,187,106,0.7)]"></div>
-                                    <div className="absolute left-3 top-3 rounded border border-white/10 bg-black/35 px-2 py-1 text-[10px] font-bold text-[#DCE6F2]">
-                                        AP Preview
-                                    </div>
-                                    <div className="absolute right-3 top-3 rounded border border-[#C8E6C9]/30 bg-[#E8F5E9]/10 px-2 py-1 text-[10px] font-bold text-[#C8E6C9]">
-                                        Ready
-                                    </div>
+                                <div className="min-h-0 flex-1 rounded-md border border-[#B0C4DE]/30 bg-[#0F1720] relative overflow-hidden">
+                                    <BreathingScoutViewport />
                                 </div>
                             </div>
 
