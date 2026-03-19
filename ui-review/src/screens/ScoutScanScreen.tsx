@@ -562,9 +562,9 @@ const ScoutScanScreen = ({
                 {/* Right Viewport Card - Redesigned for Breathing */}
                 <section className={`flex-1 ${viewportBgClassName} rounded-lg border border-[#B0C4DE] shadow-sm flex flex-col overflow-hidden relative`}>
                     {bottomPanelMode === 'breathing' ? (
-                        <div className="flex-1 flex flex-col p-4 gap-4 bg-[#EEF2F9]/50">
-                            <div className="min-h-0 flex-1 rounded-md border border-[#D7E3F0] bg-white p-3 flex flex-col gap-3 shadow-sm">
-                                <div className="min-h-0 flex-1 rounded-md border border-[#B0C4DE]/50 bg-[#0F1720] relative overflow-hidden">
+                        <div className="flex-1 flex flex-col p-4 gap-3 bg-[#EEF2F9]/50">
+                            <div className="min-h-0 flex-[1.2] rounded-md border border-[#B0C4DE]/30 bg-transparent p-0 flex flex-col shadow-sm overflow-hidden">
+                                <div className="min-h-0 flex-1 rounded-md border border-[#B0C4DE]/40 bg-[#0F1720] relative overflow-hidden">
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(120,144,156,0.24),_rgba(15,23,32,0.96)_70%)]"></div>
                                     <div className="absolute inset-6 rounded-[50%] border border-dashed border-[#8FA7BA]/30"></div>
                                     <div className="absolute left-1/2 top-6 bottom-6 w-px -translate-x-1/2 bg-[#9FB3C8]/30"></div>
@@ -583,13 +583,13 @@ const ScoutScanScreen = ({
                                 </div>
                             </div>
 
-                            <div className="h-[210px] shrink-0 bg-white rounded-md border border-[#B0C4DE]/40 shadow-inner p-3 relative overflow-hidden">
+                            <div className="h-[168px] shrink-0 bg-white rounded-md border border-[#B0C4DE]/40 shadow-inner p-3 relative overflow-hidden">
                                 <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded border border-[#C8E6C9] bg-[#E8F5E9] px-2 py-1">
                                     <div className="w-1.5 h-1.5 rounded-full bg-[#4CAF50] animate-pulse"></div>
                                     <span className="text-[10px] font-bold text-[#2E7D32]">实时波形</span>
                                 </div>
 
-                                <div className="absolute inset-x-8 top-8 bottom-8 flex flex-col justify-between pointer-events-none opacity-20">
+                                <div className="absolute inset-x-8 top-7 bottom-7 flex flex-col justify-between pointer-events-none opacity-20">
                                     {[1100, 1000, 800, 600, 400, 200, 0].map(val => (
                                         <div key={val} className="flex items-center gap-2">
                                             <span className="text-[10px] w-6 text-right font-mono text-[#90A4AE]">{val}</span>
@@ -598,17 +598,17 @@ const ScoutScanScreen = ({
                                     ))}
                                 </div>
 
-                                <div className="absolute inset-x-0 inset-y-6 flex flex-col justify-end px-14">
-                                    <svg viewBox="0 0 800 200" className="w-full h-full overflow-visible" preserveAspectRatio="none">
+                                <div className="absolute inset-x-0 inset-y-5 flex flex-col justify-end px-14">
+                                    <svg viewBox="0 0 800 160" className="w-full h-full overflow-visible" preserveAspectRatio="none">
                                         <path
-                                            d={`M ${rawWaveData.map((val, i) => `${(i / (rawWaveData.length - 1)) * 800},${200 - (val / 1100) * 200}`).join(' L ')}`}
+                                            d={`M ${rawWaveData.map((val, i) => `${(i / (rawWaveData.length - 1)) * 800},${160 - (val / 1100) * 160}`).join(' L ')}`}
                                             fill="none"
                                             stroke="#B0BEC5"
                                             strokeWidth="1.2"
                                             className="opacity-40"
                                         />
                                         <path
-                                            d={`M ${filteredWaveData.map((val, i) => `${(i / (filteredWaveData.length - 1)) * 800},${200 - (val / 1100) * 200}`).join(' L ')}`}
+                                            d={`M ${filteredWaveData.map((val, i) => `${(i / (filteredWaveData.length - 1)) * 800},${160 - (val / 1100) * 160}`).join(' L ')}`}
                                             fill="none"
                                             stroke="#4D94FF"
                                             strokeWidth="2.5"
@@ -630,7 +630,7 @@ const ScoutScanScreen = ({
                                                     <circle
                                                         key={`pk-${i}`}
                                                         cx={(i / (filteredWaveData.length - 1)) * 800}
-                                                        cy={200 - (val / 1100) * 200}
+                                                        cy={160 - (val / 1100) * 160}
                                                         r="4"
                                                         fill="#FF1744"
                                                         stroke="#FFF"
@@ -644,7 +644,7 @@ const ScoutScanScreen = ({
                                                     <circle
                                                         key={`vl-${i}`}
                                                         cx={(i / (filteredWaveData.length - 1)) * 800}
-                                                        cy={200 - (val / 1100) * 200}
+                                                        cy={160 - (val / 1100) * 160}
                                                         r="3.5"
                                                         fill="#FFD600"
                                                         stroke="#FFF"
