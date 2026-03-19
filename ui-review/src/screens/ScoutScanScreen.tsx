@@ -564,16 +564,6 @@ const ScoutScanScreen = ({
                     {bottomPanelMode === 'breathing' ? (
                         <div className="flex-1 flex flex-col p-4 gap-4 bg-[#EEF2F9]/50">
                             <div className="min-h-0 flex-1 rounded-md border border-[#D7E3F0] bg-white p-3 flex flex-col gap-3 shadow-sm">
-                                <div className="flex items-center justify-between shrink-0">
-                                    <div>
-                                        <div className="text-[14px] font-black text-[#37474F]">图像浏览区</div>
-                                        <div className="mt-0.5 text-[11px] text-[#78909C]">训练参考图像与当前定位预览</div>
-                                    </div>
-                                    <div className="rounded-full border border-[#C8D8EA] bg-[#F8FBFF] px-2.5 py-1 text-[10px] font-bold text-[#607D8B]">
-                                        SER 01 / IMG 128
-                                    </div>
-                                </div>
-
                                 <div className="min-h-0 flex-1 rounded-md border border-[#B0C4DE]/50 bg-[#0F1720] relative overflow-hidden">
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(120,144,156,0.24),_rgba(15,23,32,0.96)_70%)]"></div>
                                     <div className="absolute inset-6 rounded-[50%] border border-dashed border-[#8FA7BA]/30"></div>
@@ -590,21 +580,6 @@ const ScoutScanScreen = ({
                                     <div className="absolute right-3 top-3 rounded border border-[#C8E6C9]/30 bg-[#E8F5E9]/10 px-2 py-1 text-[10px] font-bold text-[#C8E6C9]">
                                         Ready
                                     </div>
-                                </div>
-
-                                <div className="shrink-0 flex gap-2 overflow-hidden">
-                                    {[1, 2, 3, 4].map((item) => (
-                                        <div
-                                            key={item}
-                                            className={`flex-1 rounded-md border p-1.5 ${item === 2 ? "border-[#7EAAFF] bg-[#EEF4FF]" : "border-[#D7E3F0] bg-[#F8FAFD]"}`}
-                                        >
-                                            <div className="h-14 rounded bg-[linear-gradient(180deg,#2B3642,#111821)] relative overflow-hidden">
-                                                <div className="absolute inset-x-[30%] top-2 bottom-2 rounded-full border border-white/20"></div>
-                                                <div className="absolute inset-x-[24%] top-1/2 h-px -translate-y-1/2 bg-white/20"></div>
-                                            </div>
-                                            <div className="mt-1.5 text-center text-[10px] font-bold text-[#607D8B]">IMG {124 + item}</div>
-                                        </div>
-                                    ))}
                                 </div>
                             </div>
 
@@ -842,4 +817,3 @@ const MetricRow = ({ icon, label, value, isMain }: {
 };
 
 export default ScoutScanScreen;
-
