@@ -203,8 +203,8 @@ const ScanConfirmScreen = ({ activeScoutStepIndex = 1, readOnlyMode = false, onE
                         </div>
                     </div>
                     <div className="flex flex-col gap-0.5 text-[#546E7A] opacity-60">
-                        <div className="text-[9px] font-bold italic">? 0</div>
-                        <div className="text-[9px] font-bold">? 0</div>
+                        <div className="text-[9px] font-bold italic">♂ 0</div>
+                        <div className="text-[9px] font-bold">♀ 0</div>
                         <div className="flex items-center gap-1 text-[11px] font-bold">
                             <Flame size={14} />
                             <span>0%</span>
@@ -214,7 +214,7 @@ const ScanConfirmScreen = ({ activeScoutStepIndex = 1, readOnlyMode = false, onE
 
                 <div className="text-center">
                     <div className="text-[28px] font-bold tracking-tight text-[#37474F] leading-none">13:52</div>
-                    <div className="text-[12px] text-[#546E7A] font-medium mt-1 uppercase opacity-80">2?26? ??</div>
+                    <div className="text-[12px] text-[#546E7A] font-medium mt-1 uppercase opacity-80">2月26日 周四</div>
                 </div>
 
                 <div className="flex items-center gap-5 pr-2">

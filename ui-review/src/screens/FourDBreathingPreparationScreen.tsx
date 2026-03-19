@@ -117,8 +117,8 @@ export default function FourDBreathingPreparationScreen() {
                         </div>
                     </div>
                     <div className="flex flex-col gap-0.5 text-[#546E7A] opacity-60">
-                        <div className="text-[9px] font-bold italic">? 0</div>
-                        <div className="text-[9px] font-bold">? 0</div>
+                        <div className="text-[9px] font-bold italic">♂ 0</div>
+                        <div className="text-[9px] font-bold">♀ 0</div>
                         <div className="flex items-center gap-1 text-[11px] font-bold">
                             <Flame size={14} />
                             <span>0%</span>
