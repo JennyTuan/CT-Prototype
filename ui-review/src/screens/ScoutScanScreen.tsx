@@ -167,37 +167,37 @@ function BreathingScoutViewport() {
 
                 const rows = slices[0].rows;
                 const cols = slices[0].cols;
-                const bandHalfHeight = Math.max(10, Math.floor(rows * 0.08));
-                const centerY = Math.floor(rows / 2);
-                const sampleStart = Math.max(0, centerY - bandHalfHeight);
-                const sampleEnd = Math.min(rows, centerY + bandHalfHeight);
+                const depthCenter = Math.floor(slices.length / 2);
+                const depthHalfBand = Math.max(4, Math.floor(slices.length * 0.06));
+                const depthStart = Math.max(0, depthCenter - depthHalfBand);
+                const depthEnd = Math.min(slices.length, depthCenter + depthHalfBand + 1);
                 const ww = metaRef.current?.ww ?? BREATHING_SCOUT_SERIES.fallbackWindowWidth;
                 const wl = metaRef.current?.wl ?? BREATHING_SCOUT_SERIES.fallbackWindowLevel;
                 const minVal = wl - ww / 2;
                 const maxVal = wl + ww / 2;
                 const range = Math.max(maxVal - minVal, 1);
-                const output = new Uint8ClampedArray(cols * slices.length);
+                const output = new Uint8ClampedArray(cols * rows);
 
-                slices.forEach((slice, sliceIndex) => {
+                for (let y = 0; y < rows; y += 1) {
                     for (let x = 0; x < cols; x += 1) {
                         let accum = 0;
                         let samples = 0;
-                        for (let y = sampleStart; y < sampleEnd; y += 1) {
-                            accum += slice.hu[y * cols + x];
+                        for (let z = depthStart; z < depthEnd; z += 1) {
+                            accum += slices[z].hu[y * cols + x];
                             samples += 1;
                         }
                         const meanHu = accum / Math.max(samples, 1);
                         const normalized = clamp01((meanHu - minVal) / range);
-                        output[sliceIndex * cols + x] = 255 - Math.round(normalized * 255);
+                        output[y * cols + x] = 255 - Math.round(normalized * 255);
                     }
-                });
+                }
 
                 if (cancelled) return;
                 projectionRef.current = output;
-                projectionSizeRef.current = { width: cols, height: slices.length };
+                projectionSizeRef.current = { width: cols, height: rows };
                 setMeta({
                     width: cols,
-                    height: slices.length,
+                    height: rows,
                     ww,
                     wl,
                     kvp: metaRef.current?.kvp ?? "120",
