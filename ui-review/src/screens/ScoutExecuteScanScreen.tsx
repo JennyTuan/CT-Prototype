@@ -1,17 +1,337 @@
 import { useEffect, useRef, useState } from "react";
+import * as dicomParser from "dicom-parser";
 import { CircleDot, Zap } from "lucide-react";
-import lungCtSample from "../assets/lung-ct-sample.svg";
 import ScanConfirmScreen from "./ScanConfirmScreen";
 
 const HOLD_DURATION_MS = 3000;
 const EXPOSURE_DURATION_MS = 1200;
 const RENDER_DURATION_MS = 2200;
-const SCOUT_RULER_TICKS = Array.from({ length: 9 }, (_, index) => ({
-    label: `${index * 50}`,
-    top: `${8 + index * 10.5}%`,
-}));
+const SCOUT_SERIES = {
+    basePath: "/dicom/QIN LUNG CT/QIN-LUNG-01-0007/01-12-2000-1-CT Thorax wContrast-47252/2.000000-THORAX W  3.0 B41 Soft Tissue-52055",
+    count: 118,
+    fallbackWindowWidth: 350,
+    fallbackWindowLevel: 45,
+};
 
 type ScanStage = "idle" | "arming" | "enabled" | "exposing" | "rendering" | "completed";
+
+type ProjectionMeta = {
+    width: number;
+    height: number;
+    ww: number;
+    wl: number;
+    kvp: string;
+    mas: string;
+    thickness: string;
+};
+
+type LoadedSlice = {
+    instanceNumber: number;
+    positionZ: number;
+    rows: number;
+    cols: number;
+    pixelSpacingX: number;
+    sliceThickness: number;
+    hu: Float32Array;
+};
+
+function clamp01(value: number) {
+    return Math.min(1, Math.max(0, value));
+}
+
+function ScoutProjectionViewport({
+    renderProgress,
+    active,
+}: {
+    renderProgress: number;
+    active: boolean;
+}) {
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const viewportRef = useRef<HTMLDivElement | null>(null);
+    const projectionRef = useRef<Uint8ClampedArray | null>(null);
+    const projectionSizeRef = useRef<{ width: number; height: number } | null>(null);
+    const metaRef = useRef<ProjectionMeta | null>(null);
+    const [meta, setMeta] = useState<ProjectionMeta | null>(null);
+    const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadSlices = async () => {
+            try {
+                const sliceNumbers = Array.from({ length: SCOUT_SERIES.count }, (_, index) => index + 1);
+                const slices: LoadedSlice[] = [];
+                const concurrency = 8;
+
+                for (let start = 0; start < sliceNumbers.length; start += concurrency) {
+                    const batch = sliceNumbers.slice(start, start + concurrency);
+                    const loadedBatch = await Promise.all(
+                        batch.map(async (sliceNumber) => {
+                            const fileName = `1-${String(sliceNumber).padStart(3, "0")}.dcm`;
+                            const response = await fetch(`${SCOUT_SERIES.basePath}/${fileName}`);
+                            if (!response.ok) {
+                                throw new Error(`Failed to fetch ${fileName}`);
+                            }
+
+                            const arrayBuffer = await response.arrayBuffer();
+                            const byteArray = new Uint8Array(arrayBuffer);
+                            const dataSet = dicomParser.parseDicom(byteArray);
+
+                            const rows = dataSet.uint16("x00280010") ?? 0;
+                            const cols = dataSet.uint16("x00280011") ?? 0;
+                            const bitsAllocated = dataSet.uint16("x00280100") ?? 16;
+                            const pixelRepresentation = dataSet.uint16("x00280103") ?? 0;
+                            const intercept = Number(dataSet.string("x00281052") ?? "0");
+                            const slope = Number(dataSet.string("x00281053") ?? "1");
+                            const positionZ = Number((dataSet.string("x00200032") ?? "0\\0\\0").split("\\")[2] ?? 0);
+                            const pixelSpacing = (dataSet.string("x00280030") ?? "1\\1").split("\\").map(Number);
+                            const sliceThickness = Number(dataSet.string("x00180050") ?? "1");
+                            const pixelDataElement = dataSet.elements.x7fe00010;
+                            if (!pixelDataElement || rows === 0 || cols === 0) {
+                                throw new Error(`Missing pixel data for ${fileName}`);
+                            }
+
+                            const pixelData = byteArray.slice(
+                                pixelDataElement.dataOffset,
+                                pixelDataElement.dataOffset + pixelDataElement.length
+                            );
+                            const pixelBuffer = pixelData.buffer.slice(
+                                pixelData.byteOffset,
+                                pixelData.byteOffset + pixelData.byteLength
+                            );
+
+                            const values =
+                                bitsAllocated === 16
+                                    ? pixelRepresentation === 1
+                                        ? new Int16Array(pixelBuffer)
+                                        : new Uint16Array(pixelBuffer)
+                                    : new Uint16Array(pixelBuffer);
+
+                            const hu = new Float32Array(values.length);
+                            for (let i = 0; i < values.length; i += 1) {
+                                hu[i] = values[i] * slope + intercept;
+                            }
+
+                            return {
+                                instanceNumber: Number(dataSet.string("x00200013") ?? sliceNumber),
+                                positionZ,
+                                rows,
+                                cols,
+                                pixelSpacingX: pixelSpacing[1] || 1,
+                                sliceThickness: Number.isFinite(sliceThickness) && sliceThickness > 0 ? sliceThickness : 1,
+                                hu,
+                                ww: Number(dataSet.string("x00281051") ?? `${SCOUT_SERIES.fallbackWindowWidth}`),
+                                wl: Number(dataSet.string("x00281050") ?? `${SCOUT_SERIES.fallbackWindowLevel}`),
+                                kvp: dataSet.string("x00180060") ?? "120",
+                                mas: dataSet.string("x00181152") ?? "Auto",
+                                thickness: dataSet.string("x00180050") ?? "3.0 mm",
+                            };
+                        })
+                    );
+
+                    loadedBatch.forEach((slice) => {
+                        slices.push({
+                            instanceNumber: slice.instanceNumber,
+                            positionZ: slice.positionZ,
+                            rows: slice.rows,
+                            cols: slice.cols,
+                            pixelSpacingX: slice.pixelSpacingX,
+                            sliceThickness: slice.sliceThickness,
+                            hu: slice.hu,
+                        });
+
+                        if (!metaRef.current) {
+                            metaRef.current = {
+                                width: slice.cols,
+                                height: SCOUT_SERIES.count,
+                                ww: Number.isFinite(slice.ww) && slice.ww > 1 ? slice.ww : SCOUT_SERIES.fallbackWindowWidth,
+                                wl: Number.isFinite(slice.wl) ? slice.wl : SCOUT_SERIES.fallbackWindowLevel,
+                                kvp: slice.kvp,
+                                mas: slice.mas,
+                                thickness: slice.thickness,
+                            };
+                        }
+                    });
+                }
+
+                slices.sort((a, b) => b.positionZ - a.positionZ || a.instanceNumber - b.instanceNumber);
+                if (slices.length === 0) {
+                    throw new Error("No DICOM slices loaded.");
+                }
+
+                const rows = slices[0].rows;
+                const cols = slices[0].cols;
+                const bandHalfHeight = Math.max(10, Math.floor(rows * 0.08));
+                const centerY = Math.floor(rows / 2);
+                const sampleStart = Math.max(0, centerY - bandHalfHeight);
+                const sampleEnd = Math.min(rows, centerY + bandHalfHeight);
+                const ww = metaRef.current?.ww ?? SCOUT_SERIES.fallbackWindowWidth;
+                const wl = metaRef.current?.wl ?? SCOUT_SERIES.fallbackWindowLevel;
+                const minVal = wl - ww / 2;
+                const maxVal = wl + ww / 2;
+                const range = Math.max(maxVal - minVal, 1);
+                const output = new Uint8ClampedArray(cols * slices.length);
+
+                slices.forEach((slice, sliceIndex) => {
+                    for (let x = 0; x < cols; x += 1) {
+                        let accum = 0;
+                        let samples = 0;
+
+                        for (let y = sampleStart; y < sampleEnd; y += 1) {
+                            accum += slice.hu[y * cols + x];
+                            samples += 1;
+                        }
+
+                        const meanHu = accum / Math.max(samples, 1);
+                        const normalized = clamp01((meanHu - minVal) / range);
+                        const gray = Math.round(normalized * 255);
+                        output[sliceIndex * cols + x] = 255 - gray;
+                    }
+                });
+
+                if (cancelled) return;
+
+                projectionRef.current = output;
+                projectionSizeRef.current = { width: cols, height: slices.length };
+                setMeta({
+                    width: cols,
+                    height: slices.length,
+                    ww,
+                    wl,
+                    kvp: metaRef.current?.kvp ?? "120",
+                    mas: metaRef.current?.mas ?? "Auto",
+                    thickness: metaRef.current?.thickness ?? "3.0 mm",
+                });
+                setLoadState("ready");
+            } catch (error) {
+                console.error(error);
+                if (!cancelled) {
+                    setLoadState("error");
+                }
+            }
+        };
+
+        void loadSlices();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        const viewport = viewportRef.current;
+        const pixels = projectionRef.current;
+        const size = projectionSizeRef.current;
+        if (!canvas || !viewport || !pixels || !size) return;
+
+        const viewW = Math.max(1, Math.floor(viewport.clientWidth));
+        const viewH = Math.max(1, Math.floor(viewport.clientHeight));
+        if (canvas.width !== viewW || canvas.height !== viewH) {
+            canvas.width = viewW;
+            canvas.height = viewH;
+        }
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        const offscreen = document.createElement("canvas");
+        offscreen.width = size.width;
+        offscreen.height = size.height;
+        const offCtx = offscreen.getContext("2d");
+        if (!offCtx) return;
+
+        const imageData = offCtx.createImageData(size.width, size.height);
+        const out = imageData.data;
+        for (let i = 0; i < pixels.length; i += 1) {
+            const j = i * 4;
+            const value = pixels[i];
+            out[j] = value;
+            out[j + 1] = value;
+            out[j + 2] = value;
+            out[j + 3] = 255;
+        }
+        offCtx.putImageData(imageData, 0, 0);
+
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, viewW, viewH);
+
+        const fitScale = Math.min(viewW / size.width, viewH / size.height);
+        const drawScale = fitScale * 0.9;
+        const drawW = size.width * drawScale;
+        const drawH = size.height * drawScale;
+        const x = (viewW - drawW) / 2;
+        const y = (viewH - drawH) / 2;
+
+        ctx.save();
+        ctx.imageSmoothingEnabled = true;
+        ctx.globalAlpha = 0.28 + renderProgress * 0.72;
+        ctx.filter = `contrast(${1.04 + renderProgress * 0.08}) brightness(${0.84 + renderProgress * 0.1})`;
+        ctx.drawImage(offscreen, x, y, drawW, drawH);
+        ctx.restore();
+    }, [renderProgress, loadState]);
+
+    return (
+        <div ref={viewportRef} className="absolute inset-0 overflow-hidden bg-black">
+            <canvas
+                ref={canvasRef}
+                className="absolute inset-0 h-full w-full"
+                style={{
+                    clipPath: `inset(${(1 - renderProgress) * 100}% 0 0 0)`,
+                    opacity: active ? 1 : 0,
+                    transition: "opacity 180ms ease",
+                }}
+            />
+
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-black/55 to-transparent" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/55 to-transparent" />
+
+            {loadState === "loading" && (
+                <div className="absolute inset-0 flex items-center justify-center text-[12px] font-medium tracking-[0.12em] text-[#9FB2C5]">
+                    正在载入定位像数据...
+                </div>
+            )}
+
+            {loadState === "error" && (
+                <div className="absolute inset-0 flex items-center justify-center text-[12px] font-medium tracking-[0.08em] text-[#D1D9E1]">
+                    定位像加载失败
+                </div>
+            )}
+
+            {meta && (
+                <>
+                    <div className="pointer-events-none absolute left-3 top-3 text-[10px] font-mono leading-[1.35] text-[#CFD8DC]">
+                        <div className="font-bold">Scout Projection</div>
+                        <div>{meta.width} x {meta.height}</div>
+                    </div>
+                    <div className="pointer-events-none absolute right-3 top-3 text-right text-[10px] font-mono leading-[1.35] text-[#CFD8DC]">
+                        <div className="font-bold">CT</div>
+                        <div>KV {meta.kvp} | mAs {meta.mas}</div>
+                    </div>
+                    <div className="pointer-events-none absolute bottom-3 left-3 text-[10px] font-mono leading-[1.35] text-[#CFD8DC]">
+                        <div>WW/WL {Math.round(meta.ww)} / {Math.round(meta.wl)}</div>
+                        <div>Thick {meta.thickness}</div>
+                    </div>
+                    <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[11px] font-bold tracking-[0.12em] text-[#DCE5ED]">
+                        R
+                    </div>
+                    <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-bold tracking-[0.12em] text-[#DCE5ED]">
+                        L
+                    </div>
+                </>
+            )}
+
+            <div
+                className="pointer-events-none absolute left-[12%] right-[12%] h-px bg-[linear-gradient(90deg,transparent,rgba(215,227,239,0.9),transparent)]"
+                style={{
+                    top: `${Math.min(renderProgress, 0.995) * 100}%`,
+                    opacity: active && renderProgress < 1 ? 1 : 0,
+                    transition: "opacity 160ms ease",
+                }}
+            />
+        </div>
+    );
+}
 
 export default function ScoutExecuteScanScreen() {
     const [stage, setStage] = useState<ScanStage>("idle");
@@ -45,7 +365,6 @@ export default function ScoutExecuteScanScreen() {
         const tick = (timestamp: number) => {
             const startedAt = progressStartRef.current ?? timestamp;
             const nextProgress = Math.min((timestamp - startedAt) / RENDER_DURATION_MS, 1);
-
             setRenderProgress(nextProgress);
 
             if (nextProgress < 1) {
@@ -95,7 +414,6 @@ export default function ScoutExecuteScanScreen() {
         const tick = (timestamp: number) => {
             const startedAt = holdStartRef.current ?? timestamp;
             const nextProgress = Math.min((timestamp - startedAt) / HOLD_DURATION_MS, 1);
-
             setHoldProgress(nextProgress);
 
             if (nextProgress >= 1) {
@@ -156,107 +474,15 @@ export default function ScoutExecuteScanScreen() {
                         <span className="text-[11px] text-[#90A4AE]">{statusText}</span>
                     </div>
 
-                    <div className="relative flex-1 overflow-hidden bg-[linear-gradient(180deg,#121A23_0%,#151E28_52%,#1A242F_100%)]">
-                        <div className={`absolute inset-0 transition-opacity duration-500 ${stage === "idle" || stage === "arming" || stage === "enabled" ? "opacity-100" : "opacity-30"}`}>
-                            <div className="flex h-full items-center justify-center text-[46px] font-thin uppercase tracking-[10px] text-[#4D5B6A]/55">
+                    <div className="relative flex-1 overflow-hidden bg-[#05080C]">
+                        <div className={`absolute inset-0 transition-opacity duration-500 ${stage === "idle" || stage === "arming" || stage === "enabled" ? "opacity-100" : "opacity-0"}`}>
+                            <div className="flex h-full items-center justify-center text-[42px] font-thin uppercase tracking-[8px] text-[#44515F]/55">
                                 Viewport
                             </div>
                         </div>
 
                         <div className={`absolute inset-0 transition-opacity duration-500 ${stage === "rendering" || stage === "completed" ? "opacity-100" : "opacity-0"}`}>
-                            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),transparent_16%,transparent_84%,rgba(255,255,255,0.04))]" />
-                            <div className="absolute inset-[28px] rounded-[28px] border border-white/10 bg-[#0B1219] shadow-[0_22px_50px_rgba(0,0,0,0.45)]">
-                                <div className="absolute inset-x-0 top-0 flex h-[34px] items-center justify-between border-b border-white/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.01))] px-4 text-[10px] font-bold tracking-[0.22em] text-[#8FA5BB]">
-                                    <span>SCOUT AP</span>
-                                    <span>120kV / 50mA</span>
-                                    <span>SL 450mm · FOV 500</span>
-                                </div>
-
-                                <div className="absolute inset-x-[18px] bottom-[18px] top-[52px] flex gap-4">
-                                    <div className="relative w-[56px] rounded-[16px] border border-white/6 bg-[linear-gradient(180deg,rgba(17,24,32,0.96),rgba(12,17,24,0.96))]">
-                                        <div className="absolute inset-x-0 top-3 text-center text-[9px] font-black tracking-[0.28em] text-[#6C8197]">
-                                            MM
-                                        </div>
-                                        {SCOUT_RULER_TICKS.map((tick) => (
-                                            <div
-                                                key={tick.label}
-                                                className="absolute left-0 right-0"
-                                                style={{ top: tick.top }}
-                                            >
-                                                <div className="flex items-center gap-2 px-2">
-                                                    <div className="h-px flex-1 bg-[#506170]" />
-                                                    <span className="w-[22px] text-right text-[9px] font-bold text-[#89A0B8]">{tick.label}</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-[#263443] bg-[#101821] px-2 py-1 text-[9px] font-bold tracking-[0.18em] text-[#6C8197]">
-                                            HFS
-                                        </div>
-                                    </div>
-
-                                    <div className="relative flex-1 overflow-hidden rounded-[14px] border border-white/10 bg-[linear-gradient(180deg,#0E151D_0%,#101822_100%)]">
-                                        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.02),transparent_14%,transparent_86%,rgba(255,255,255,0.02))]" />
-                                        <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-[linear-gradient(180deg,transparent,rgba(143,165,187,0.45)_12%,rgba(143,165,187,0.45)_88%,transparent)]" />
-
-                                        <div className="absolute inset-x-[16%] top-[16%] h-px border-t border-dashed border-[#B7C6D5]/55" />
-                                        <div className="absolute right-[10%] top-[calc(16%-10px)] rounded border border-[#3D5368] bg-[#0F1821]/88 px-2 py-1 text-[9px] font-bold tracking-[0.16em] text-[#AFC3D8]">
-                                            START
-                                        </div>
-                                        <div className="absolute inset-x-[16%] bottom-[16%] h-px border-t border-dashed border-[#B7C6D5]/55" />
-                                        <div className="absolute right-[10%] bottom-[calc(16%-10px)] rounded border border-[#3D5368] bg-[#0F1821]/88 px-2 py-1 text-[9px] font-bold tracking-[0.16em] text-[#AFC3D8]">
-                                            END
-                                        </div>
-
-                                        <div className="absolute inset-y-[6%] left-1/2 w-[290px] -translate-x-1/2 overflow-hidden rounded-[8px] border border-[#70879E]/35 bg-[#0F1720] shadow-[inset_0_0_18px_rgba(0,0,0,0.45)]">
-                                            <img
-                                                src={lungCtSample}
-                                                alt="定位像模拟出图"
-                                                draggable={false}
-                                                className="absolute inset-0 h-full w-full object-cover object-center select-none transition-opacity duration-300"
-                                                style={{
-                                                    clipPath: `inset(${(1 - renderProgress) * 100}% 0 0 0)`,
-                                                    opacity: 0.18 + renderProgress * 0.62,
-                                                    filter: `grayscale(1) contrast(${1.06 + renderProgress * 0.2}) brightness(${0.46 + renderProgress * 0.12}) blur(${Math.max(0, 0.5 - renderProgress * 0.5)}px)`,
-                                                    transform: "scale(1.36, 1.04)",
-                                                    transformOrigin: "center center",
-                                                }}
-                                            />
-
-                                            <div
-                                                className="absolute inset-x-[10%] rounded-[6px] border border-[#9FB1C6]/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))]"
-                                                style={{
-                                                    top: "12%",
-                                                    bottom: "12%",
-                                                    opacity: 0.14 + renderProgress * 0.12,
-                                                }}
-                                            />
-
-                                            <div
-                                                className="pointer-events-none absolute left-[10%] right-[10%] h-[2px] bg-[linear-gradient(90deg,transparent,rgba(198,214,230,0.75),rgba(240,246,252,0.92),rgba(198,214,230,0.75),transparent)] shadow-[0_0_6px_rgba(200,214,228,0.35)] transition-opacity duration-200"
-                                                style={{
-                                                    top: `calc(${12 + Math.min(renderProgress, 0.995) * 76}% - 2px)`,
-                                                    opacity: stage === "completed" ? 0 : 1,
-                                                }}
-                                            />
-
-                                            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.02),transparent_20%,transparent_80%,rgba(255,255,255,0.03))]" />
-                                            <div className="absolute inset-0 bg-[repeating-linear-gradient(180deg,rgba(255,255,255,0.016)_0px,rgba(255,255,255,0.016)_1px,transparent_1px,transparent_3px)] opacity-18" />
-                                            <div className="absolute inset-y-0 left-1/2 w-[2px] -translate-x-1/2 bg-[linear-gradient(180deg,transparent,rgba(220,230,240,0.18)_10%,rgba(220,230,240,0.18)_90%,transparent)]" />
-                                        <div className="absolute left-3 top-3 text-[10px] font-bold tracking-[0.14em] text-[#C7D3DF]/85">R</div>
-                                        <div className="absolute right-3 top-3 text-[10px] font-bold tracking-[0.14em] text-[#C7D3DF]/85">L</div>
-                                        <div className="absolute left-3 bottom-3 text-[9px] font-bold tracking-[0.1em] text-[#9FB1C3]/85">AP LOCALIZER</div>
-                                        </div>
-
-                                        <div className="absolute inset-y-[14%] left-[calc(50%-170px)] w-px bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.08),transparent)]" />
-                                        <div className="absolute inset-y-[14%] right-[calc(50%-170px)] w-px bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.08),transparent)]" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-md border border-[#3A4C5F] bg-[#111A24]/88 px-4 py-1.5 text-[10px] font-bold tracking-[0.14em] text-[#B7C6D5] shadow-[0_12px_24px_rgba(0,0,0,0.3)]">
-                                <span className="h-2 w-2 rounded-full bg-[#8FA5BB] shadow-[0_0_4px_rgba(158,177,196,0.35)]" />
-                                {stage === "completed" ? "SCOUT IMAGE READY" : "SCOUT IMAGE BUILDING"}
-                            </div>
+                            <ScoutProjectionViewport renderProgress={renderProgress} active={stage === "rendering" || stage === "completed"} />
                         </div>
                     </div>
                 </div>
@@ -267,7 +493,7 @@ export default function ScoutExecuteScanScreen() {
                 <div className="pointer-events-auto flex h-full w-[235px] flex-col overflow-hidden rounded-l-2xl border border-r-0 border-[#CBD5E1] bg-[#EDF1F7] shadow-[-24px_0_48px_rgba(15,23,42,0.22)]">
                     <div className="border-b border-slate-200 px-5 py-4">
                         <div className="text-[14px] font-black text-slate-700">实体按键操作引导</div>
-                        <div className="mt-1 text-[11px] font-medium text-slate-400">演示长按三秒后触发使能与曝光，并模拟右侧出图。</div>
+                        <div className="mt-1 text-[11px] font-medium text-slate-400">演示长按三秒后触发使能与曝光，并在右侧生成定位像。</div>
                     </div>
 
                     <div className="flex flex-1 flex-col">

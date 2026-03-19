@@ -49,14 +49,7 @@ const ScoutScanScreen = ({
 }: ScoutScanScreenProps) => {
     const [startPos, setStartPos] = useState("472.95");
     const [endPos, setEndPos] = useState("595.17");
-    const [breathingEditableParams, setBreathingEditableParams] = useState({
-        minSpacing: "2.0",
-        filterThreshold: "0.45",
-        peakThreshold: "1.20",
-        valleyThreshold: "0.35",
-        gain: "1.5",
-    });
-    const [isBreathingSignalEnabled, setIsBreathingSignalEnabled] = useState(true);
+    const isBreathingSignalEnabled = true;
 
     const [breathingPhase, setBreathingPhase] = useState<"training" | "stable">("training");
     const [trainingTimer, setTrainingTimer] = useState(30);
@@ -143,18 +136,11 @@ const ScoutScanScreen = ({
     useEffect(() => {
         if (bottomPanelMode !== "breathing") return;
 
-        if (!isBreathingSignalEnabled) {
-            setRawWaveData(new Array(500).fill(0));
-            setFilteredWaveData(new Array(500).fill(0));
-            setMetrics({ bpm: "--", peakErr: "--", freqErr: "--" });
-            return;
-        }
-
         setRawWaveData(new Array(500).fill(100));
         setFilteredWaveData(new Array(500).fill(100));
         setMetrics({ bpm: "14.8", peakErr: "1.7", freqErr: "1.9" });
         tRef.current = 0;
-    }, [bottomPanelMode, isBreathingSignalEnabled]);
+    }, [bottomPanelMode]);
 
     // Metrics are now handled in the update loop state
 
@@ -577,111 +563,68 @@ const ScoutScanScreen = ({
                 <section className={`flex-1 ${viewportBgClassName} rounded-lg border border-[#B0C4DE] shadow-sm flex flex-col overflow-hidden relative`}>
                     {bottomPanelMode === 'breathing' ? (
                         <div className="flex-1 flex flex-col p-4 gap-4 bg-[#EEF2F9]/50">
-                            <div className="flex items-center justify-between rounded-md border border-[#DCE6F2] bg-white px-4 py-3 shadow-sm">
-                                <div>
-                                    <div className="text-[15px] font-black text-[#37474F]">呼吸信号输入</div>
-                                    <div className="mt-0.5 text-[11px] font-medium text-[#78909C]">
-                                        控制右侧呼吸波形与实时监测输入
+                            <div className="min-h-0 flex-1 rounded-md border border-[#D7E3F0] bg-white p-3 flex flex-col gap-3 shadow-sm">
+                                <div className="flex items-center justify-between shrink-0">
+                                    <div>
+                                        <div className="text-[14px] font-black text-[#37474F]">图像浏览区</div>
+                                        <div className="mt-0.5 text-[11px] text-[#78909C]">训练参考图像与当前定位预览</div>
                                     </div>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsBreathingSignalEnabled((prev) => !prev)}
-                                    className={`flex items-center gap-3 rounded-full border px-3 py-2 transition-all active:scale-95 ${
-                                        isBreathingSignalEnabled
-                                            ? "border-[#4D94FF]/30 bg-[#EEF6FF] text-[#4D94FF]"
-                                            : "border-[#CFD8DC] bg-[#F5F7FA] text-[#90A4AE]"
-                                    }`}
-                                >
-                                    <span className="text-[12px] font-bold">
-                                        {isBreathingSignalEnabled ? "已开启" : "已关闭"}
-                                    </span>
-                                    <span
-                                        className={`relative h-6 w-11 rounded-full transition-colors ${
-                                            isBreathingSignalEnabled ? "bg-[#4D94FF]" : "bg-[#B0BEC5]"
-                                        }`}
-                                    >
-                                        <span
-                                            className={`absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-white shadow-sm transition-all ${
-                                                isBreathingSignalEnabled ? "left-[22px]" : "left-[2px]"
-                                            }`}
-                                        />
-                                    </span>
-                                </button>
-                            </div>
-
-                            {/* Parameter Sliders */}
-                            <div className={`grid grid-cols-2 gap-x-12 gap-y-4 px-4 py-2 transition-opacity ${isBreathingSignalEnabled ? "opacity-100" : "pointer-events-none opacity-45"}`}>
-                                <BreathSliderItem
-                                    label="最小间隔"
-                                    value={breathingEditableParams.minSpacing}
-                                    onChange={(v) => setBreathingEditableParams(p => ({ ...p, minSpacing: v }))}
-                                    unit="S"
-                                />
-                                <BreathSliderItem
-                                    label="滤波阈值"
-                                    value={breathingEditableParams.filterThreshold}
-                                    onChange={(v) => setBreathingEditableParams(p => ({ ...p, filterThreshold: v }))}
-                                    dropdownOptions={["13"]}
-                                />
-                                <BreathSliderItem
-                                    label="波峰阈值"
-                                    value={breathingEditableParams.peakThreshold}
-                                    onChange={(v) => setBreathingEditableParams(p => ({ ...p, peakThreshold: v }))}
-                                    rawValue="450"
-                                />
-                                <BreathSliderItem
-                                    label="波谷阈值"
-                                    value={breathingEditableParams.valleyThreshold}
-                                    onChange={(v) => setBreathingEditableParams(p => ({ ...p, valleyThreshold: v }))}
-                                    rawValue="800"
-                                />
-                                <BreathSliderItem
-                                    label="增益"
-                                    value={breathingEditableParams.gain}
-                                    onChange={(v) => setBreathingEditableParams(p => ({ ...p, gain: v }))}
-                                    rawValue="0"
-                                />
-                            </div>
-
-                            {/* Waveform Chart Area - Dynamic */}
-                            <div className="flex-1 bg-white rounded-md border border-[#B0C4DE]/40 shadow-inner mt-2 p-10 relative overflow-hidden">
-                                {/* Legend */}
-                                <div className="absolute left-10 top-2 flex items-center gap-6 z-10">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-[#B0BEC5]"></div>
-                                        <span className="text-[11px] font-bold text-[#546E7A]">原始数据</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-[#4D94FF]"></div>
-                                        <span className="text-[11px] font-bold text-[#546E7A]">滤波数据</span>
+                                    <div className="rounded-full border border-[#C8D8EA] bg-[#F8FBFF] px-2.5 py-1 text-[10px] font-bold text-[#607D8B]">
+                                        SER 01 / IMG 128
                                     </div>
                                 </div>
 
-                                <div className="absolute inset-x-12 top-10 bottom-12 flex flex-col justify-between pointer-events-none">
+                                <div className="min-h-0 flex-1 rounded-md border border-[#B0C4DE]/50 bg-[#0F1720] relative overflow-hidden">
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(120,144,156,0.24),_rgba(15,23,32,0.96)_70%)]"></div>
+                                    <div className="absolute inset-6 rounded-[50%] border border-dashed border-[#8FA7BA]/30"></div>
+                                    <div className="absolute left-1/2 top-6 bottom-6 w-px -translate-x-1/2 bg-[#9FB3C8]/30"></div>
+                                    <div className="absolute top-1/2 left-6 right-6 h-px -translate-y-1/2 bg-[#9FB3C8]/30"></div>
+                                    <div className="absolute inset-x-[18%] top-[22%] h-[54%] rounded-[45%] border border-[#D7E7F5]/35 bg-[linear-gradient(180deg,rgba(220,235,245,0.16),rgba(95,115,130,0.08))] blur-[1px]"></div>
+                                    <div className="absolute left-[28%] top-[30%] h-[36%] w-[16%] rounded-full border border-[#E8F1F8]/30"></div>
+                                    <div className="absolute right-[28%] top-[30%] h-[36%] w-[16%] rounded-full border border-[#E8F1F8]/30"></div>
+                                    <div className="absolute inset-x-[24%] top-[18%] h-[3px] rounded-full bg-[#7EAAFF]/80 shadow-[0_0_18px_rgba(126,170,255,0.8)]"></div>
+                                    <div className="absolute inset-x-[24%] bottom-[18%] h-[3px] rounded-full bg-[#66BB6A]/75 shadow-[0_0_16px_rgba(102,187,106,0.7)]"></div>
+                                    <div className="absolute left-3 top-3 rounded border border-white/10 bg-black/35 px-2 py-1 text-[10px] font-bold text-[#DCE6F2]">
+                                        AP Preview
+                                    </div>
+                                    <div className="absolute right-3 top-3 rounded border border-[#C8E6C9]/30 bg-[#E8F5E9]/10 px-2 py-1 text-[10px] font-bold text-[#C8E6C9]">
+                                        Ready
+                                    </div>
+                                </div>
+
+                                <div className="shrink-0 flex gap-2 overflow-hidden">
+                                    {[1, 2, 3, 4].map((item) => (
+                                        <div
+                                            key={item}
+                                            className={`flex-1 rounded-md border p-1.5 ${item === 2 ? "border-[#7EAAFF] bg-[#EEF4FF]" : "border-[#D7E3F0] bg-[#F8FAFD]"}`}
+                                        >
+                                            <div className="h-14 rounded bg-[linear-gradient(180deg,#2B3642,#111821)] relative overflow-hidden">
+                                                <div className="absolute inset-x-[30%] top-2 bottom-2 rounded-full border border-white/20"></div>
+                                                <div className="absolute inset-x-[24%] top-1/2 h-px -translate-y-1/2 bg-white/20"></div>
+                                            </div>
+                                            <div className="mt-1.5 text-center text-[10px] font-bold text-[#607D8B]">IMG {124 + item}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="h-[210px] shrink-0 bg-white rounded-md border border-[#B0C4DE]/40 shadow-inner p-3 relative overflow-hidden">
+                                <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded border border-[#C8E6C9] bg-[#E8F5E9] px-2 py-1">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[#4CAF50] animate-pulse"></div>
+                                    <span className="text-[10px] font-bold text-[#2E7D32]">实时波形</span>
+                                </div>
+
+                                <div className="absolute inset-x-8 top-8 bottom-8 flex flex-col justify-between pointer-events-none opacity-20">
                                     {[1100, 1000, 800, 600, 400, 200, 0].map(val => (
-                                        <div key={val} className="flex items-center gap-4">
-                                            <span className="text-[10px] w-10 text-right font-mono text-[#90A4AE] font-bold">
-                                                {val >= 1000 ? val.toLocaleString() : val}
-                                            </span>
-                                            <div className="flex-1 h-[1px] bg-[#EEF2F9]"></div>
+                                        <div key={val} className="flex items-center gap-2">
+                                            <span className="text-[10px] w-6 text-right font-mono text-[#90A4AE]">{val}</span>
+                                            <div className="flex-1 h-[1px] bg-[#B0C4DE]"></div>
                                         </div>
                                     ))}
                                 </div>
 
-                                {/* X-axis labels - Real-time 10s window */}
-                                <div className="absolute inset-x-24 bottom-4 flex justify-between px-2 text-[10px] font-bold text-[#90A4AE]">
-                                    <span>10s</span>
-                                    <span>8s</span>
-                                    <span>6s</span>
-                                    <span>4s</span>
-                                    <span>2s</span>
-                                    <span className="text-[#4D94FF]">0s (实时)</span>
-                                </div>
-
-                                <div className="absolute inset-x-8 top-10 bottom-12 px-12">
+                                <div className="absolute inset-x-0 inset-y-6 flex flex-col justify-end px-14">
                                     <svg viewBox="0 0 800 200" className="w-full h-full overflow-visible" preserveAspectRatio="none">
-                                        {/* Original/Raw Wave - Pulse spikes */}
                                         <path
                                             d={`M ${rawWaveData.map((val, i) => `${(i / (rawWaveData.length - 1)) * 800},${200 - (val / 1100) * 200}`).join(' L ')}`}
                                             fill="none"
@@ -689,7 +632,6 @@ const ScoutScanScreen = ({
                                             strokeWidth="1.2"
                                             className="opacity-40"
                                         />
-                                        {/* Filtered Wave - Smooth breathing */}
                                         <path
                                             d={`M ${filteredWaveData.map((val, i) => `${(i / (filteredWaveData.length - 1)) * 800},${200 - (val / 1100) * 200}`).join(' L ')}`}
                                             fill="none"
@@ -698,11 +640,9 @@ const ScoutScanScreen = ({
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
                                         />
-                                        {/* Markers */}
                                         {filteredWaveData.map((val, i) => {
                                             if (i < 10 || i > filteredWaveData.length - 10) return null;
 
-                                            // Stable peak/valley detection with 3-point neighborhood
                                             const isLocalMax = val > filteredWaveData[i - 1] && val > filteredWaveData[i + 1] &&
                                                 val > filteredWaveData[i - 2] && val > filteredWaveData[i + 2] &&
                                                 val > filteredWaveData[i - 3] && val > filteredWaveData[i + 3];
@@ -710,47 +650,42 @@ const ScoutScanScreen = ({
                                                 val < filteredWaveData[i - 2] && val < filteredWaveData[i + 2] &&
                                                 val < filteredWaveData[i - 3] && val < filteredWaveData[i + 3];
 
-                                            const isPeak = isLocalMax && val >= 650;
-                                            const isValley = isLocalMin && val <= 380;
+                                            if (isLocalMax && val >= 650) {
+                                                return (
+                                                    <circle
+                                                        key={`pk-${i}`}
+                                                        cx={(i / (filteredWaveData.length - 1)) * 800}
+                                                        cy={200 - (val / 1100) * 200}
+                                                        r="4"
+                                                        fill="#FF1744"
+                                                        stroke="#FFF"
+                                                        strokeWidth="1.5"
+                                                    />
+                                                );
+                                            }
 
-                                            if (isPeak) return (
-                                                <circle
-                                                    key={`pk-${i}`}
-                                                    cx={(i / (filteredWaveData.length - 1)) * 800}
-                                                    cy={200 - (val / 1100) * 200}
-                                                    r="4"
-                                                    fill="#FF1744"
-                                                    stroke="#FFF"
-                                                    strokeWidth="1.5"
-                                                />
-                                            );
-                                            if (isValley) return (
-                                                <circle
-                                                    key={`vl-${i}`}
-                                                    cx={(i / (filteredWaveData.length - 1)) * 800}
-                                                    cy={200 - (val / 1100) * 200}
-                                                    r="3.5"
-                                                    fill="#FFD600"
-                                                    stroke="#FFF"
-                                                    strokeWidth="1"
-                                                />
-                                            );
+                                            if (isLocalMin && val <= 380) {
+                                                return (
+                                                    <circle
+                                                        key={`vl-${i}`}
+                                                        cx={(i / (filteredWaveData.length - 1)) * 800}
+                                                        cy={200 - (val / 1100) * 200}
+                                                        r="3.5"
+                                                        fill="#FFD600"
+                                                        stroke="#FFF"
+                                                        strokeWidth="1"
+                                                    />
+                                                );
+                                            }
+
                                             return null;
                                         })}
                                     </svg>
                                 </div>
-                                {!isBreathingSignalEnabled && (
-                                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/84 backdrop-blur-[1px]">
-                                        <div className="rounded-full border border-[#CFD8DC] bg-[#F5F7FA] px-4 py-1 text-[11px] font-black tracking-[0.08em] text-[#78909C]">
-                                            SIGNAL OFF
-                                        </div>
-                                        <div className="mt-3 text-[16px] font-bold text-[#546E7A]">呼吸信号输入已关闭</div>
-                                        <div className="mt-1 text-[12px] text-[#90A4AE]">打开右上角开关后恢复实时波形输入</div>
-                                    </div>
-                                )}
-                                <div className={`absolute right-6 top-6 flex items-center gap-1.5 rounded-full border px-2.5 py-1 shadow-sm ${isBreathingSignalEnabled ? 'border-[#C8E6C9] bg-[#E8F5E9]' : 'border-[#CFD8DC] bg-[#F5F7FA]'}`}>
-                                    <div className={`w-1.5 h-1.5 rounded-full ${isBreathingSignalEnabled ? 'bg-[#4CAF50] animate-pulse' : 'bg-[#90A4AE]'}`}></div>
-                                    <span className="text-[10px] font-black text-[#2E7D32]">实时监测</span>
+
+                                <div className="absolute right-4 top-4 rounded border border-[#B0C4DE]/50 bg-white p-2 shadow-xl z-10 scale-90">
+                                    <div className="text-[10px] font-bold text-[#546E7A]">实时数据</div>
+                                    <div className="text-[10px] text-[#90A4AE]">采样值 : {filteredWaveData[filteredWaveData.length - 1].toFixed(1)}</div>
                                 </div>
                             </div>
                         </div>
@@ -865,81 +800,6 @@ const ScoutScanScreen = ({
                     </div>
                 </div>
             )}
-        </div>
-    );
-};
-
-const BreathSliderItem = ({ label, value, unit, dropdownOptions, rawValue, onChange }: {
-    label: string,
-    value: string,
-    unit?: string,
-    dropdownOptions?: string[],
-    rawValue?: string,
-    onChange?: (v: string) => void
-}) => {
-    const trackRef = useRef<HTMLDivElement>(null);
-
-    // Convert string value to number for slider position
-    const numValue = parseFloat(value) || 0;
-    // Assume ranges based on labels
-    let min = 0;
-    let max = 2; // Default max
-    if (label === "增益") max = 5;
-    else if (label === "最小间隔") max = 10;
-    else if (label === "波峰阈值" || label === "波谷阈值") {
-        min = 0.5; // Assuming thresholds are factors, not raw values
-        max = 1.5;
-    }
-
-
-    const percentage = Math.min(Math.max(((numValue - min) / (max - min)) * 100, 0), 100);
-
-    const handleInteraction = (e: React.MouseEvent | React.TouchEvent) => {
-        if (!trackRef.current || dropdownOptions) return;
-        const rect = trackRef.current.getBoundingClientRect();
-        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        const x = clientX - rect.left;
-        const p = Math.min(Math.max(x / rect.width, 0), 1);
-        const nextVal = (min + p * (max - min)).toFixed(2);
-        onChange?.(nextVal);
-    };
-
-    return (
-        <div className="flex items-center gap-4">
-            <span className="text-[13px] font-bold text-[#37474F] w-[64px] shrink-0">{label}</span>
-            <div className="flex-1 flex items-center gap-2">
-                <div
-                    ref={trackRef}
-                    onClick={handleInteraction}
-                    className="flex-1 h-3 bg-[#EEF2F9] rounded-full relative border border-[#B0C4DE]/30 cursor-pointer"
-                >
-                    <div
-                        className="absolute top-1/2 -translate-y-1/2 w-4.5 h-4.5 bg-white border-2 border-[#4D94FF] rounded-full shadow-md transition-all duration-75 pointer-events-none"
-                        style={{ left: `calc(${percentage}% - 9px)` }}
-                    ></div>
-                    <div
-                        className="absolute left-0 top-0 bottom-0 bg-[#4D94FF] rounded-full transition-all duration-75"
-                        style={{ width: `${percentage}%` }}
-                    ></div>
-                </div>
-                {dropdownOptions ? (
-                    <div className="group relative">
-                        <div className="w-[80px] h-[32px] bg-white border border-[#B0C4DE] rounded px-2 flex items-center justify-between text-[13px] text-[#546E7A] cursor-pointer hover:border-[#4D94FF]">
-                            {dropdownOptions[0]} <ChevronDown size={14} />
-                        </div>
-                    </div>
-                ) : (
-                    <div className="w-[80px] h-[32px] bg-white border border-[#B0C4DE] rounded flex items-center justify-center gap-1 focus-within:border-[#4D94FF] transition-colors shadow-sm">
-                        <input
-                            type="text"
-                            value={rawValue || value}
-                            onChange={(e) => onChange?.(e.target.value)}
-                            className="w-[40px] text-center text-[13px] font-bold text-[#546E7A] outline-none bg-transparent"
-                        />
-                        {unit && <span className="text-[13px] text-[#90A4AE] font-bold">{unit}</span>}
-                    </div>
-                )}
-            </div>
         </div>
     );
 };
