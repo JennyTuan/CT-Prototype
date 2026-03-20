@@ -14,6 +14,8 @@ import WT32ProtocolReconDetailScreen from "./screens/WT32NewProtocolReconDetailS
 import WT32ProtocolDoseDetailScreen from "./screens/WT32NewProtocolDoseDetailScreen";
 import ProtocolEditorModal from "./components/ProtocolEditorModal";
 import ScanConfirmScreen from "./screens/ScanConfirmScreen";
+import SequenceScanConfirmScreen from "./screens/SequenceScanConfirmScreen";
+import HelicalScanConfirmScreen from "./screens/HelicalScanConfirmScreen";
 import ScoutExecuteScanScreen from "./screens/ScoutExecuteScanScreen";
 import MockScanScreen from "./screens/MockScanScreen";
 import ViewScreen from "./screens/ViewScreen";
@@ -75,6 +77,8 @@ export default function Gallery() {
                     { key: "scout_scan", name: "激光灯定位-定位像", component: <ScoutScanScreen /> },
                     { key: "scan_confirm", name: "参数确认-定位像", component: <ScanConfirmScreen /> },
                     { key: "scout_execute_scan", name: "执行扫描-定位像", component: <ScoutExecuteScanScreen /> },
+                    { key: "sequence_scan_confirm", name: "参数确认-序列扫描", component: <SequenceScanConfirmScreen /> },
+                    { key: "helical_scan_confirm", name: "参数确认-螺旋扫描", component: <HelicalScanConfirmScreen /> },
                     { key: "view", name: "图像浏览", component: <ViewScreen /> },
                     { key: "4d-scan", name: "呼吸采集", component: <BreathingAcquisitionScreen /> },
                     { key: "breathing-training", name: "呼吸训练", component: <BreathingTrainingScreen /> },

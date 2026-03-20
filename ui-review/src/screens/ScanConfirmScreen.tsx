@@ -39,6 +39,12 @@ interface ProtocolGroup {
 
 type ScanConfirmScreenProps = {
     activeScoutStepIndex?: number;
+    activeSequenceId?: "s1" | "s2";
+    activeSequenceStepIndex?: number;
+    parameterPanelMode?: "scout" | "tomographicScan" | "helicalScan";
+    tomographicParamOverrides?: Partial<TomographicScanDisplayParams>;
+    helicalParamOverrides?: Partial<HelicalScanDisplayParams>;
+    rightViewportContent?: React.ReactNode;
     readOnlyMode?: boolean;
     onExecuteScan?: () => void;
 };
@@ -49,7 +55,44 @@ type ScoutDisplayParams = {
     kV: string;
     angle: string;
     position: string;
+    doseCtdiVol: string;
+    doseDlp: string;
+    notifyCtdiVol: string;
+    notifyDlp: string;
+};
+
+type TomographicScanDisplayParams = {
+    scanLength: string;
+    mA: string;
+    kV: string;
+    angle: string;
+    position: string;
+    rotationTime: string;
+    collimation: string;
+    scanIncrement: string;
+    cycleCount: string;
+    scanningDirection: string;
     scoutFov: string;
+};
+
+type HelicalScanDisplayParams = {
+    scanLength: string;
+    mA: string;
+    kV: string;
+    angle: string;
+    position: string;
+    rotationTime: string;
+    collimation: string;
+    pitch: string;
+    scanningDirection: string;
+    scoutFov: string;
+};
+
+type ScoutDoseDisplayParams = {
+    doseCtdiVol: string;
+    doseDlp: string;
+    notifyCtdiVol: string;
+    notifyDlp: string;
 };
 
 const DEFAULT_SCOUT_PARAMS: ScoutDisplayParams = {
@@ -58,7 +101,44 @@ const DEFAULT_SCOUT_PARAMS: ScoutDisplayParams = {
     kV: "--",
     angle: "--",
     position: "--",
+    doseCtdiVol: "--",
+    doseDlp: "--",
+    notifyCtdiVol: "--",
+    notifyDlp: "--",
+};
+
+const DEFAULT_TOMOGRAPHIC_SCAN_PARAMS: TomographicScanDisplayParams = {
+    scanLength: "--",
+    mA: "--",
+    kV: "--",
+    angle: "--",
+    position: "--",
+    rotationTime: "--",
+    collimation: "--",
+    scanIncrement: "--",
+    cycleCount: "--",
+    scanningDirection: "--",
     scoutFov: "--",
+};
+
+const DEFAULT_HELICAL_SCAN_PARAMS: HelicalScanDisplayParams = {
+    scanLength: "--",
+    mA: "--",
+    kV: "--",
+    angle: "--",
+    position: "--",
+    rotationTime: "--",
+    collimation: "--",
+    pitch: "--",
+    scanningDirection: "--",
+    scoutFov: "--",
+};
+
+const DEFAULT_SCOUT_DOSE_PARAMS: ScoutDoseDisplayParams = {
+    doseCtdiVol: "--",
+    doseDlp: "--",
+    notifyCtdiVol: "--",
+    notifyDlp: "--",
 };
 
 const toDisplayValue = (value: string | number | boolean | undefined, fractionDigits?: number): string => {
@@ -87,11 +167,79 @@ const getScoutDisplayParams = (protocolCases: RawProtocolCase[] | undefined): Sc
         kV: toDisplayValue(scoutSequence.scanParams.kV),
         angle: toDisplayValue(scoutSequence.scanParams.angle),
         position: protocolCase.protocol.supportedPositions[0] ?? "--",
-        scoutFov: toDisplayValue(scoutSequence.scanParams.scoutFOV),
+        doseCtdiVol: "--",
+        doseDlp: "--",
+        notifyCtdiVol: "--",
+        notifyDlp: "--",
     };
 };
 
-const ScanConfirmScreen = ({ activeScoutStepIndex = 1, readOnlyMode = false, onExecuteScan }: ScanConfirmScreenProps) => {
+const getTomographicScanDisplayParams = (protocolCases: RawProtocolCase[] | undefined): TomographicScanDisplayParams => {
+    if (!protocolCases || protocolCases.length === 0) return DEFAULT_TOMOGRAPHIC_SCAN_PARAMS;
+
+    const protocolCase = protocolCases.find((item) =>
+        item.sequences.some((sequence) => sequence.sequenceType === "scan" && sequence.mode === "断层扫描")
+    );
+    if (!protocolCase) return DEFAULT_TOMOGRAPHIC_SCAN_PARAMS;
+
+    const scanSequence = protocolCase.sequences.find(
+        (sequence) => sequence.sequenceType === "scan" && sequence.mode === "断层扫描"
+    );
+    if (!scanSequence) return DEFAULT_TOMOGRAPHIC_SCAN_PARAMS;
+
+    return {
+        scanLength: toDisplayValue(scanSequence.scanParams.scanLength, 2),
+        mA: toDisplayValue(scanSequence.scanParams.mA),
+        kV: toDisplayValue(scanSequence.scanParams.kV),
+        angle: toDisplayValue(scanSequence.scanParams.angle),
+        position: protocolCase.protocol.supportedPositions[0] ?? "--",
+        rotationTime: toDisplayValue(scanSequence.scanParams.rotationTime),
+        collimation: toDisplayValue(scanSequence.scanParams.collimation),
+        scanIncrement: toDisplayValue(scanSequence.scanParams.scanIncrement, 1),
+        cycleCount: toDisplayValue(scanSequence.scanParams.cycleCount),
+        scanningDirection: toDisplayValue(scanSequence.scanParams.scanningDirection),
+        scoutFov: toDisplayValue(scanSequence.scanParams.scoutFOV),
+    };
+};
+
+const getHelicalScanDisplayParams = (protocolCases: RawProtocolCase[] | undefined): HelicalScanDisplayParams => {
+    if (!protocolCases || protocolCases.length === 0) return DEFAULT_HELICAL_SCAN_PARAMS;
+
+    const protocolCase = protocolCases.find((item) =>
+        item.sequences.some((sequence) => sequence.sequenceType === "scan" && sequence.mode === "螺旋扫描")
+    );
+    if (!protocolCase) return DEFAULT_HELICAL_SCAN_PARAMS;
+
+    const scanSequence = protocolCase.sequences.find(
+        (sequence) => sequence.sequenceType === "scan" && sequence.mode === "螺旋扫描"
+    );
+    if (!scanSequence) return DEFAULT_HELICAL_SCAN_PARAMS;
+
+    return {
+        scanLength: toDisplayValue(scanSequence.scanParams.scanLength, 2),
+        mA: toDisplayValue(scanSequence.scanParams.mA),
+        kV: toDisplayValue(scanSequence.scanParams.kV),
+        angle: toDisplayValue(scanSequence.scanParams.angle),
+        position: protocolCase.protocol.supportedPositions[0] ?? "--",
+        rotationTime: toDisplayValue(scanSequence.scanParams.rotationTime),
+        collimation: toDisplayValue(scanSequence.scanParams.collimation),
+        pitch: toDisplayValue(scanSequence.scanParams.pitch, 3),
+        scanningDirection: toDisplayValue(scanSequence.scanParams.scanningDirection),
+        scoutFov: toDisplayValue(scanSequence.scanParams.scoutFOV),
+    };
+};
+
+const ScanConfirmScreen = ({
+    activeScoutStepIndex = 1,
+    activeSequenceId = "s1",
+    activeSequenceStepIndex,
+    parameterPanelMode = "scout",
+    tomographicParamOverrides,
+    helicalParamOverrides,
+    rightViewportContent,
+    readOnlyMode = false,
+    onExecuteScan,
+}: ScanConfirmScreenProps) => {
     const [isTreeCollapsed, setIsTreeCollapsed] = useState(false);
     const [bedMode, setBedMode] = useState<"in" | "out">("in");
     const [patientPosition, setPatientPosition] = useState("HFS");
@@ -108,11 +256,12 @@ const ScanConfirmScreen = ({ activeScoutStepIndex = 1, readOnlyMode = false, onE
         }
     ]);
 
-    const [expandedSeqId, setExpandedSeqId] = useState<string | null>('s1');
+    const [expandedSeqId, setExpandedSeqId] = useState<string | null>(activeSequenceId);
     const [checkedSeqIds, setCheckedSeqIds] = useState<string[]>([]);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [showAbortConfirm, setShowAbortConfirm] = useState(false);
     const [showPatientConfirm, setShowPatientConfirm] = useState(false);
+    const [scoutDoseDisplayParams, setScoutDoseDisplayParams] = useState<ScoutDoseDisplayParams>(DEFAULT_SCOUT_DOSE_PARAMS);
 
     useEffect(() => {
         let isMounted = true;
@@ -124,6 +273,21 @@ const ScanConfirmScreen = ({ activeScoutStepIndex = 1, readOnlyMode = false, onE
                 const snapshot = await response.json();
                 if (!isMounted) return;
                 await ensureBusinessSnapshotImported(snapshot);
+
+                const protocolRows = snapshot?.tables?.protocol?.rows;
+                if (!Array.isArray(protocolRows) || protocolRows.length === 0) return;
+
+                const matchingProtocol =
+                    protocolRows.find((row: { supportedModes?: string; doseCtdiVol?: number; doseDlp?: number }) =>
+                        typeof row.supportedModes === "string" && row.supportedModes.includes("定位像")
+                    ) ?? protocolRows[0];
+
+                setScoutDoseDisplayParams({
+                    doseCtdiVol: toDisplayValue(matchingProtocol?.doseCtdiVol, 2),
+                    doseDlp: toDisplayValue(matchingProtocol?.doseDlp, 2),
+                    notifyCtdiVol: toDisplayValue(matchingProtocol?.notifyCtdiVol, 2),
+                    notifyDlp: toDisplayValue(matchingProtocol?.notifyDlp, 2),
+                });
             } catch (error) {
                 console.error("Failed to import protocol snapshot for scan confirm screen.", error);
             }
@@ -138,12 +302,41 @@ const ScanConfirmScreen = ({ activeScoutStepIndex = 1, readOnlyMode = false, onE
 
     const dbProtocolCases = useLiveQuery(() => loadProtocolCasesFromDb(), [], []);
     const scoutDisplayParams = getScoutDisplayParams(dbProtocolCases);
+    const tomographicScanDisplayParams = getTomographicScanDisplayParams(dbProtocolCases);
+    const helicalScanDisplayParams = getHelicalScanDisplayParams(dbProtocolCases);
+    const resolvedTomographicScanDisplayParams = {
+        ...tomographicScanDisplayParams,
+        ...tomographicParamOverrides,
+    };
+    const resolvedHelicalScanDisplayParams = {
+        ...helicalScanDisplayParams,
+        ...helicalParamOverrides,
+    };
 
     useEffect(() => {
-        if (scoutDisplayParams.position !== "--") {
-            setPatientPosition(scoutDisplayParams.position);
+        const resolvedPosition = parameterPanelMode === "tomographicScan"
+            ? resolvedTomographicScanDisplayParams.position
+            : parameterPanelMode === "helicalScan"
+                ? resolvedHelicalScanDisplayParams.position
+                : scoutDisplayParams.position;
+        if (resolvedPosition !== "--") {
+            setPatientPosition(resolvedPosition);
         }
-    }, [scoutDisplayParams.position]);
+    }, [parameterPanelMode, scoutDisplayParams.position, resolvedTomographicScanDisplayParams.position, resolvedHelicalScanDisplayParams.position]);
+
+    useEffect(() => {
+        if (parameterPanelMode !== "tomographicScan" && parameterPanelMode !== "helicalScan") return;
+        const direction = parameterPanelMode === "helicalScan"
+            ? resolvedHelicalScanDisplayParams.scanningDirection
+            : resolvedTomographicScanDisplayParams.scanningDirection;
+        if (direction === "IN" || direction === "OUT") {
+            setBedMode(direction === "IN" ? "in" : "out");
+        }
+    }, [parameterPanelMode, resolvedTomographicScanDisplayParams.scanningDirection, resolvedHelicalScanDisplayParams.scanningDirection]);
+
+    useEffect(() => {
+        setExpandedSeqId(activeSequenceId);
+    }, [activeSequenceId]);
 
     const toggleCheck = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -283,7 +476,7 @@ const ScanConfirmScreen = ({ activeScoutStepIndex = 1, readOnlyMode = false, onE
                                 <div className="flex flex-col">
                                     {group.sequences.map(seq => {
                                         const isExpanded = expandedSeqId === seq.id;
-                                        const isActive = seq.id === 's1';
+                                        const isActive = seq.id === activeSequenceId;
 
                                         return (
                                             <div key={seq.id} className="mb-1">
@@ -317,9 +510,12 @@ const ScanConfirmScreen = ({ activeScoutStepIndex = 1, readOnlyMode = false, onE
                                                         <div className="absolute left-[7px] top-2 bottom-6 w-[1px] bg-[#B0C4DE]"></div>
 
                                                         {seq.steps.map((step, idx) => {
-                                                            const isScoutSequence = seq.id === 's1';
-                                                            const isStepCompleted = isScoutSequence && idx < activeScoutStepIndex;
-                                                            const isStepInProgress = isScoutSequence && idx === activeScoutStepIndex;
+                                                            const isActiveSequence = seq.id === activeSequenceId;
+                                                            const resolvedStepIndex = seq.id === "s1"
+                                                                ? activeScoutStepIndex
+                                                                : (activeSequenceStepIndex ?? 0);
+                                                            const isStepCompleted = isActiveSequence && idx < resolvedStepIndex;
+                                                            const isStepInProgress = isActiveSequence && idx === resolvedStepIndex;
 
                                                             return (
                                                                 <div key={idx} className="flex items-center gap-3 z-10">
@@ -410,93 +606,285 @@ const ScanConfirmScreen = ({ activeScoutStepIndex = 1, readOnlyMode = false, onE
 
                         {/* Reorganized Parameter Grid - 2 Column Layout */}
                         <div className="flex-1 p-2 pt-2 flex flex-col gap-2 overflow-y-auto">
-                            <div className="grid grid-cols-2 gap-2">
-                                <label className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm cursor-pointer">
-                                    <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">进出床</span>
-                                    <div className="relative w-full">
-                                        <select
-                                            value={bedMode}
-                                            onChange={(event) => setBedMode(event.target.value as "in" | "out")}
-                                            className="h-[18px] w-full appearance-none bg-transparent px-1 pr-4 text-center text-[13px] font-black text-[#37474F] outline-none"
-                                        >
-                                            <option value="in">进床</option>
-                                            <option value="out">出床</option>
-                                        </select>
-                                        <ChevronDown size={9} className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-[#90A4AE]" />
-                                    </div>
-                                </label>
+                            {parameterPanelMode === "tomographicScan" ? (
+                                <div className="grid grid-cols-2 gap-2">
+                                    <label className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm cursor-pointer">
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">进出床</span>
+                                        <div className="relative w-full">
+                                            <select
+                                                value={bedMode}
+                                                onChange={(event) => setBedMode(event.target.value as "in" | "out")}
+                                                className="h-[18px] w-full appearance-none bg-transparent px-1 pr-4 text-center text-[13px] font-black text-[#37474F] outline-none"
+                                            >
+                                                <option value="in">进床</option>
+                                                <option value="out">出床</option>
+                                            </select>
+                                            <ChevronDown size={9} className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-[#90A4AE]" />
+                                        </div>
+                                    </label>
 
-                                <label className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm cursor-pointer">
-                                    <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">体位</span>
-                                    <div className="relative w-full">
-                                        <select
-                                            value={patientPosition}
-                                            onChange={(event) => setPatientPosition(event.target.value)}
-                                            className="h-[18px] w-full appearance-none bg-transparent px-1 pr-4 text-center text-[13px] font-black text-[#37474F] outline-none"
-                                        >
-                                            <option value="HFS">HFS</option>
-                                            <option value="FFS">FFS</option>
-                                            <option value="HFP">HFP</option>
-                                            <option value="FFP">FFP</option>
-                                            <option value="HFDR">HFDR</option>
-                                            <option value="FFDR">FFDR</option>
-                                            <option value="HFDL">HFDL</option>
-                                            <option value="FFDL">FFDL</option>
-                                        </select>
-                                        <ChevronDown size={9} className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-[#90A4AE]" />
-                                    </div>
-                                </label>
+                                    <label className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm cursor-pointer">
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">体位</span>
+                                        <div className="relative w-full">
+                                            <select
+                                                value={patientPosition}
+                                                onChange={(event) => setPatientPosition(event.target.value)}
+                                                className="h-[18px] w-full appearance-none bg-transparent px-1 pr-4 text-center text-[13px] font-black text-[#37474F] outline-none"
+                                            >
+                                                <option value="HFS">HFS</option>
+                                                <option value="FFS">FFS</option>
+                                                <option value="HFP">HFP</option>
+                                                <option value="FFP">FFP</option>
+                                                <option value="HFDR">HFDR</option>
+                                                <option value="FFDR">FFDR</option>
+                                                <option value="HFDL">HFDL</option>
+                                                <option value="FFDL">FFDL</option>
+                                            </select>
+                                            <ChevronDown size={9} className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-[#90A4AE]" />
+                                        </div>
+                                    </label>
 
-                                {/* Scan Length */}
-                                <div className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm">
-                                    <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">扫描长度</span>
-                                    <span className="text-[13px] font-black text-[#B0BEC5] mt-[1px]">{scoutDisplayParams.scanLength}</span>
+                                    <div className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm">
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">扫描长度</span>
+                                        <span className="text-[13px] font-black text-[#37474F] mt-[1px]">{resolvedTomographicScanDisplayParams.scanLength}</span>
+                                    </div>
+
+                                    <div className={`p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm group ${readOnlyMode ? "cursor-default" : "hover:border-[#4D94FF] cursor-pointer"}`}>
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">mA</span>
+                                        <div className="flex items-center gap-1 mt-[1px]">
+                                            <span className="text-[13px] font-black text-[#37474F]">{resolvedTomographicScanDisplayParams.mA}</span>
+                                            <ChevronDown size={9} className={`text-[#90A4AE] ${readOnlyMode ? "" : "group-hover:text-[#4D94FF]"}`} />
+                                        </div>
+                                    </div>
+
+                                    <div className={`p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm group ${readOnlyMode ? "cursor-default" : "hover:border-[#4D94FF] cursor-pointer"}`}>
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">KV</span>
+                                        <div className="flex items-center gap-1 mt-[1px]">
+                                            <span className="text-[13px] font-black text-[#37474F]">{resolvedTomographicScanDisplayParams.kV}</span>
+                                            <ChevronDown size={9} className={`text-[#90A4AE] ${readOnlyMode ? "" : "group-hover:text-[#4D94FF]"}`} />
+                                        </div>
+                                    </div>
+
+                                    <div className={`p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm group ${readOnlyMode ? "cursor-default" : "hover:border-[#4D94FF] cursor-pointer"}`}>
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">旋转时间</span>
+                                        <div className="flex items-center gap-1 mt-[1px]">
+                                            <span className="text-[13px] font-black text-[#37474F]">{resolvedTomographicScanDisplayParams.rotationTime}</span>
+                                            <ChevronDown size={9} className={`text-[#90A4AE] ${readOnlyMode ? "" : "group-hover:text-[#4D94FF]"}`} />
+                                        </div>
+                                    </div>
+
+                                    <div className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm">
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">准直器</span>
+                                        <span className="text-[13px] font-black text-[#37474F] mt-[1px]">{resolvedTomographicScanDisplayParams.collimation}</span>
+                                    </div>
+
+                                    <div className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm">
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">扫描增量</span>
+                                        <span className="text-[13px] font-black text-[#37474F] mt-[1px]">{resolvedTomographicScanDisplayParams.scanIncrement}</span>
+                                    </div>
+
+                                    <div className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm">
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">循环次数</span>
+                                        <span className="text-[13px] font-black text-[#37474F] mt-[1px]">{resolvedTomographicScanDisplayParams.cycleCount}</span>
+                                    </div>
+                                    <div className={`p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm group ${readOnlyMode ? "cursor-default" : "hover:border-[#4D94FF] cursor-pointer"}`}>
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">FOV</span>
+                                        <div className="flex items-center gap-1 mt-[1px]">
+                                            <span className="text-[13px] font-black text-[#37474F]">{resolvedTomographicScanDisplayParams.scoutFov}</span>
+                                            <ChevronDown size={9} className={`text-[#90A4AE] ${readOnlyMode ? "" : "group-hover:text-[#4D94FF]"}`} />
+                                        </div>
+                                    </div>
+
+                                    <div className={`p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm group ${readOnlyMode ? "cursor-default" : "hover:border-[#4D94FF] cursor-pointer"}`}>
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">床倾角</span>
+                                        <div className="flex items-center gap-1 mt-[1px]">
+                                            <span className="text-[13px] font-black text-[#37474F]">{resolvedTomographicScanDisplayParams.angle}</span>
+                                            <ChevronDown size={9} className={`text-[#90A4AE] ${readOnlyMode ? "" : "group-hover:text-[#4D94FF]"}`} />
+                                        </div>
+                                    </div>
                                 </div>
+                            ) : parameterPanelMode === "helicalScan" ? (
+                                <div className="grid grid-cols-2 gap-2">
+                                    <label className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm cursor-pointer">
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">进出床</span>
+                                        <div className="relative w-full">
+                                            <select
+                                                value={bedMode}
+                                                onChange={(event) => setBedMode(event.target.value as "in" | "out")}
+                                                className="h-[18px] w-full appearance-none bg-transparent px-1 pr-4 text-center text-[13px] font-black text-[#37474F] outline-none"
+                                            >
+                                                <option value="in">进床</option>
+                                                <option value="out">出床</option>
+                                            </select>
+                                            <ChevronDown size={9} className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-[#90A4AE]" />
+                                        </div>
+                                    </label>
 
-                                {/* mA */}
-                                <div className={`p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm group ${readOnlyMode ? "cursor-default" : "hover:border-[#4D94FF] cursor-pointer"}`}>
-                                    <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">mA</span>
-                                    <div className="flex items-center gap-1 mt-[1px]">
-                                        <span className="text-[13px] font-black text-[#37474F]">{scoutDisplayParams.mA}</span>
-                                        <ChevronDown size={9} className={`text-[#90A4AE] ${readOnlyMode ? "" : "group-hover:text-[#4D94FF]"}`} />
+                                    <label className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm cursor-pointer">
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">体位</span>
+                                        <div className="relative w-full">
+                                            <select
+                                                value={patientPosition}
+                                                onChange={(event) => setPatientPosition(event.target.value)}
+                                                className="h-[18px] w-full appearance-none bg-transparent px-1 pr-4 text-center text-[13px] font-black text-[#37474F] outline-none"
+                                            >
+                                                <option value="HFS">HFS</option>
+                                                <option value="FFS">FFS</option>
+                                                <option value="HFP">HFP</option>
+                                                <option value="FFP">FFP</option>
+                                                <option value="HFDR">HFDR</option>
+                                                <option value="FFDR">FFDR</option>
+                                                <option value="HFDL">HFDL</option>
+                                                <option value="FFDL">FFDL</option>
+                                            </select>
+                                            <ChevronDown size={9} className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-[#90A4AE]" />
+                                        </div>
+                                    </label>
+
+                                    <div className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm">
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">扫描长度</span>
+                                        <span className="text-[13px] font-black text-[#37474F] mt-[1px]">{resolvedHelicalScanDisplayParams.scanLength}</span>
+                                    </div>
+
+                                    <div className={`p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm group ${readOnlyMode ? "cursor-default" : "hover:border-[#4D94FF] cursor-pointer"}`}>
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">mA</span>
+                                        <div className="flex items-center gap-1 mt-[1px]">
+                                            <span className="text-[13px] font-black text-[#37474F]">{resolvedHelicalScanDisplayParams.mA}</span>
+                                            <ChevronDown size={9} className={`text-[#90A4AE] ${readOnlyMode ? "" : "group-hover:text-[#4D94FF]"}`} />
+                                        </div>
+                                    </div>
+
+                                    <div className={`p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm group ${readOnlyMode ? "cursor-default" : "hover:border-[#4D94FF] cursor-pointer"}`}>
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">KV</span>
+                                        <div className="flex items-center gap-1 mt-[1px]">
+                                            <span className="text-[13px] font-black text-[#37474F]">{resolvedHelicalScanDisplayParams.kV}</span>
+                                            <ChevronDown size={9} className={`text-[#90A4AE] ${readOnlyMode ? "" : "group-hover:text-[#4D94FF]"}`} />
+                                        </div>
+                                    </div>
+
+                                    <div className={`p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm group ${readOnlyMode ? "cursor-default" : "hover:border-[#4D94FF] cursor-pointer"}`}>
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">旋转时间</span>
+                                        <div className="flex items-center gap-1 mt-[1px]">
+                                            <span className="text-[13px] font-black text-[#37474F]">{resolvedHelicalScanDisplayParams.rotationTime}</span>
+                                            <ChevronDown size={9} className={`text-[#90A4AE] ${readOnlyMode ? "" : "group-hover:text-[#4D94FF]"}`} />
+                                        </div>
+                                    </div>
+
+                                    <div className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm">
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">准直器</span>
+                                        <span className="text-[13px] font-black text-[#37474F] mt-[1px]">{resolvedHelicalScanDisplayParams.collimation}</span>
+                                    </div>
+
+                                    <div className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm">
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">Pitch</span>
+                                        <span className="text-[13px] font-black text-[#37474F] mt-[1px]">{resolvedHelicalScanDisplayParams.pitch}</span>
+                                    </div>
+
+                                    <div className={`p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm group ${readOnlyMode ? "cursor-default" : "hover:border-[#4D94FF] cursor-pointer"}`}>
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">FOV</span>
+                                        <div className="flex items-center gap-1 mt-[1px]">
+                                            <span className="text-[13px] font-black text-[#37474F]">{resolvedHelicalScanDisplayParams.scoutFov}</span>
+                                            <ChevronDown size={9} className={`text-[#90A4AE] ${readOnlyMode ? "" : "group-hover:text-[#4D94FF]"}`} />
+                                        </div>
+                                    </div>
+
+                                    <div className={`p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm group ${readOnlyMode ? "cursor-default" : "hover:border-[#4D94FF] cursor-pointer"}`}>
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">床倾角</span>
+                                        <div className="flex items-center gap-1 mt-[1px]">
+                                            <span className="text-[13px] font-black text-[#37474F]">{resolvedHelicalScanDisplayParams.angle}</span>
+                                            <ChevronDown size={9} className={`text-[#90A4AE] ${readOnlyMode ? "" : "group-hover:text-[#4D94FF]"}`} />
+                                        </div>
                                     </div>
                                 </div>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-2">
+                                    <label className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm cursor-pointer">
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">进出床</span>
+                                        <div className="relative w-full">
+                                            <select
+                                                value={bedMode}
+                                                onChange={(event) => setBedMode(event.target.value as "in" | "out")}
+                                                className="h-[18px] w-full appearance-none bg-transparent px-1 pr-4 text-center text-[13px] font-black text-[#37474F] outline-none"
+                                            >
+                                                <option value="in">进床</option>
+                                                <option value="out">出床</option>
+                                            </select>
+                                            <ChevronDown size={9} className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-[#90A4AE]" />
+                                        </div>
+                                    </label>
 
-                                {/* KV */}
-                                <div className={`p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm group ${readOnlyMode ? "cursor-default" : "hover:border-[#4D94FF] cursor-pointer"}`}>
-                                    <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">KV</span>
-                                    <div className="flex items-center gap-1 mt-[1px]">
-                                        <span className="text-[13px] font-black text-[#37474F]">{scoutDisplayParams.kV}</span>
-                                        <ChevronDown size={9} className={`text-[#90A4AE] ${readOnlyMode ? "" : "group-hover:text-[#4D94FF]"}`} />
+                                    <label className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm cursor-pointer">
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">体位</span>
+                                        <div className="relative w-full">
+                                            <select
+                                                value={patientPosition}
+                                                onChange={(event) => setPatientPosition(event.target.value)}
+                                                className="h-[18px] w-full appearance-none bg-transparent px-1 pr-4 text-center text-[13px] font-black text-[#37474F] outline-none"
+                                            >
+                                                <option value="HFS">HFS</option>
+                                                <option value="FFS">FFS</option>
+                                                <option value="HFP">HFP</option>
+                                                <option value="FFP">FFP</option>
+                                                <option value="HFDR">HFDR</option>
+                                                <option value="FFDR">FFDR</option>
+                                                <option value="HFDL">HFDL</option>
+                                                <option value="FFDL">FFDL</option>
+                                            </select>
+                                            <ChevronDown size={9} className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-[#90A4AE]" />
+                                        </div>
+                                    </label>
+
+                                    <div className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm">
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">扫描长度</span>
+                                        <span className="text-[13px] font-black text-[#B0BEC5] mt-[1px]">{scoutDisplayParams.scanLength}</span>
+                                    </div>
+
+                                    <div className={`p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm group ${readOnlyMode ? "cursor-default" : "hover:border-[#4D94FF] cursor-pointer"}`}>
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">mA</span>
+                                        <div className="flex items-center gap-1 mt-[1px]">
+                                            <span className="text-[13px] font-black text-[#37474F]">{scoutDisplayParams.mA}</span>
+                                            <ChevronDown size={9} className={`text-[#90A4AE] ${readOnlyMode ? "" : "group-hover:text-[#4D94FF]"}`} />
+                                        </div>
+                                    </div>
+
+                                    <div className={`p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm group ${readOnlyMode ? "cursor-default" : "hover:border-[#4D94FF] cursor-pointer"}`}>
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">KV</span>
+                                        <div className="flex items-center gap-1 mt-[1px]">
+                                            <span className="text-[13px] font-black text-[#37474F]">{scoutDisplayParams.kV}</span>
+                                            <ChevronDown size={9} className={`text-[#90A4AE] ${readOnlyMode ? "" : "group-hover:text-[#4D94FF]"}`} />
+                                        </div>
+                                    </div>
+
+                                    <div className={`p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm group ${readOnlyMode ? "cursor-default" : "hover:border-[#4D94FF] cursor-pointer"}`}>
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">平扫角度</span>
+                                        <div className="flex items-center gap-1 mt-[1px]">
+                                            <span className="text-[13px] font-black text-[#37474F]">{scoutDisplayParams.angle}</span>
+                                            <ChevronDown size={9} className={`text-[#90A4AE] ${readOnlyMode ? "" : "group-hover:text-[#4D94FF]"}`} />
+                                        </div>
+                                    </div>
+
+                                    <div className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm">
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">CTDIvol</span>
+                                        <span className="text-[13px] font-black text-[#37474F] mt-[1px]">{scoutDoseDisplayParams.doseCtdiVol}</span>
+                                    </div>
+
+                                    <div className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm">
+                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">DLP</span>
+                                        <span className="text-[13px] font-black text-[#37474F] mt-[1px]">{scoutDoseDisplayParams.doseDlp}</span>
+                                    </div>
+
+                                    <div className="hidden">
+                                        <div className="flex items-center gap-1.5 mb-0.5">
+                                            <StretchHorizontal size={14} className="text-[#4D94FF]" />
+                                            <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">体位 (Position)</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[14px] font-black text-[#37474F]">{scoutDisplayParams.position}</span>
+                                            <ChevronDown size={12} className="text-[#90A4AE] group-hover:text-[#4D94FF]" />
+                                        </div>
                                     </div>
                                 </div>
-
-                                {/* Plane Angle */}
-                                <div className={`p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm group ${readOnlyMode ? "cursor-default" : "hover:border-[#4D94FF] cursor-pointer"}`}>
-                                    <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">平扫角度</span>
-                                    <div className="flex items-center gap-1 mt-[1px]">
-                                        <span className="text-[13px] font-black text-[#37474F]">{scoutDisplayParams.angle}</span>
-                                        <ChevronDown size={9} className={`text-[#90A4AE] ${readOnlyMode ? "" : "group-hover:text-[#4D94FF]"}`} />
-                                    </div>
-                                </div>
-
-                                <div className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm">
-                                    <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">FOV</span>
-                                    <span className="text-[13px] font-black text-[#37474F] mt-[1px]">{scoutDisplayParams.scoutFov}</span>
-                                </div>
-
-                                {/* Body Position (Full width or double? Keeping single for now to match 2-col requested) */}
-                                <div className="hidden">
-                                    <div className="flex items-center gap-1.5 mb-0.5">
-                                        <StretchHorizontal size={14} className="text-[#4D94FF]" />
-                                        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">体位 (Position)</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[14px] font-black text-[#37474F]">{scoutDisplayParams.position}</span>
-                                        <ChevronDown size={12} className="text-[#90A4AE] group-hover:text-[#4D94FF]" />
-                                    </div>
-                                </div>
-                            </div>
+                            )}
                         </div>
 
                         {/* Details Button */}
@@ -510,12 +898,13 @@ const ScanConfirmScreen = ({ activeScoutStepIndex = 1, readOnlyMode = false, onE
 
                 {/* Right Viewport Card */}
                 <section className="flex-1 bg-[#1A222B] rounded-lg border border-[#B0C4DE] shadow-sm flex flex-col overflow-hidden relative">
-                    {/* Mock Viewport Content */}
-                    <div className="flex-1 flex items-center justify-center overflow-hidden">
-                        <div className="w-full h-full opacity-10 bg-gradient-to-br from-blue-900/40 to-transparent flex items-center justify-center text-[#546E7A] uppercase font-thin text-[52px] tracking-[16px]">
-                            Viewport
+                    {rightViewportContent ?? (
+                        <div className="flex-1 flex items-center justify-center overflow-hidden">
+                            <div className="w-full h-full opacity-10 bg-gradient-to-br from-blue-900/40 to-transparent flex items-center justify-center text-[#546E7A] uppercase font-thin text-[52px] tracking-[16px]">
+                                Viewport
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </section>
             </main>
 

@@ -72,11 +72,15 @@ function clamp01(value: number) {
 function BreathingScoutViewport() {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const viewportRef = useRef<HTMLDivElement | null>(null);
-    const projectionRef = useRef<Uint8ClampedArray | null>(null);
+    const projectionRef = useRef<Float32Array | null>(null);
     const projectionSizeRef = useRef<{ width: number; height: number } | null>(null);
     const metaRef = useRef<BreathingProjectionMeta | null>(null);
+    const dragStateRef = useRef<{ startX: number; startY: number; startWw: number; startWl: number } | null>(null);
     const [meta, setMeta] = useState<BreathingProjectionMeta | null>(null);
     const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
+    const [windowWidth, setWindowWidth] = useState(BREATHING_SCOUT_SERIES.fallbackWindowWidth);
+    const [windowLevel, setWindowLevel] = useState(BREATHING_SCOUT_SERIES.fallbackWindowLevel);
+    const [isAdjustingWindow, setIsAdjustingWindow] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -173,10 +177,7 @@ function BreathingScoutViewport() {
                 const depthEnd = Math.min(slices.length, depthCenter + depthHalfBand + 1);
                 const ww = metaRef.current?.ww ?? BREATHING_SCOUT_SERIES.fallbackWindowWidth;
                 const wl = metaRef.current?.wl ?? BREATHING_SCOUT_SERIES.fallbackWindowLevel;
-                const minVal = wl - ww / 2;
-                const maxVal = wl + ww / 2;
-                const range = Math.max(maxVal - minVal, 1);
-                const output = new Uint8ClampedArray(cols * rows);
+                const output = new Float32Array(cols * rows);
 
                 for (let y = 0; y < rows; y += 1) {
                     for (let x = 0; x < cols; x += 1) {
@@ -186,9 +187,7 @@ function BreathingScoutViewport() {
                             accum += slices[z].hu[y * cols + x];
                             samples += 1;
                         }
-                        const meanHu = accum / Math.max(samples, 1);
-                        const normalized = clamp01((meanHu - minVal) / range);
-                        output[y * cols + x] = 255 - Math.round(normalized * 255);
+                        output[y * cols + x] = accum / Math.max(samples, 1);
                     }
                 }
 
@@ -204,6 +203,8 @@ function BreathingScoutViewport() {
                     mas: metaRef.current?.mas ?? "Auto",
                     thickness: metaRef.current?.thickness ?? "3.0 mm",
                 });
+                setWindowWidth(ww);
+                setWindowLevel(wl);
                 setLoadState("ready");
             } catch (error) {
                 console.error("Failed to load breathing scout projection.", error);
@@ -220,9 +221,9 @@ function BreathingScoutViewport() {
     useEffect(() => {
         const canvas = canvasRef.current;
         const viewport = viewportRef.current;
-        const pixels = projectionRef.current;
+        const projectedHu = projectionRef.current;
         const size = projectionSizeRef.current;
-        if (!canvas || !viewport || !pixels || !size) return;
+        if (!canvas || !viewport || !projectedHu || !size) return;
 
         const viewW = Math.max(1, Math.floor(viewport.clientWidth));
         const viewH = Math.max(1, Math.floor(viewport.clientHeight));
@@ -242,9 +243,13 @@ function BreathingScoutViewport() {
 
         const imageData = offCtx.createImageData(size.width, size.height);
         const out = imageData.data;
-        for (let i = 0; i < pixels.length; i += 1) {
+        const minVal = windowLevel - windowWidth / 2;
+        const maxVal = windowLevel + windowWidth / 2;
+        const range = Math.max(maxVal - minVal, 1);
+        for (let i = 0; i < projectedHu.length; i += 1) {
             const j = i * 4;
-            const value = pixels[i];
+            const normalized = clamp01((projectedHu[i] - minVal) / range);
+            const value = 255 - Math.round(normalized * 255);
             out[j] = value;
             out[j + 1] = value;
             out[j + 2] = value;
@@ -264,13 +269,58 @@ function BreathingScoutViewport() {
 
         ctx.save();
         ctx.imageSmoothingEnabled = true;
-        ctx.filter = "contrast(1.08) brightness(0.9)";
+        ctx.filter = "contrast(1.12) brightness(0.94)";
         ctx.drawImage(offscreen, x, y, drawW, drawH);
         ctx.restore();
-    }, [loadState]);
+    }, [loadState, windowLevel, windowWidth]);
+
+    useEffect(() => {
+        if (!isAdjustingWindow) return;
+
+        const handleMouseMove = (event: MouseEvent) => {
+            const dragState = dragStateRef.current;
+            if (!dragState) return;
+
+            const deltaX = event.clientX - dragState.startX;
+            const deltaY = event.clientY - dragState.startY;
+            const nextWw = Math.min(1800, Math.max(80, dragState.startWw + deltaX * 4));
+            const nextWl = Math.min(300, Math.max(-300, dragState.startWl - deltaY * 2));
+            setWindowWidth(nextWw);
+            setWindowLevel(nextWl);
+        };
+
+        const handleMouseUp = () => {
+            dragStateRef.current = null;
+            setIsAdjustingWindow(false);
+        };
+
+        window.addEventListener("mousemove", handleMouseMove);
+        window.addEventListener("mouseup", handleMouseUp);
+
+        return () => {
+            window.removeEventListener("mousemove", handleMouseMove);
+            window.removeEventListener("mouseup", handleMouseUp);
+        };
+    }, [isAdjustingWindow]);
+
+    const handleViewportMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+        if (loadState !== "ready") return;
+
+        dragStateRef.current = {
+            startX: event.clientX,
+            startY: event.clientY,
+            startWw: windowWidth,
+            startWl: windowLevel,
+        };
+        setIsAdjustingWindow(true);
+    };
 
     return (
-        <div ref={viewportRef} className="absolute inset-0 overflow-hidden bg-black">
+        <div
+            ref={viewportRef}
+            onMouseDown={handleViewportMouseDown}
+            className={`absolute inset-0 overflow-hidden bg-black ${loadState === "ready" ? (isAdjustingWindow ? "cursor-grabbing" : "cursor-crosshair") : ""}`}
+        >
             <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
             <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/60 to-transparent" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/65 to-transparent" />
@@ -298,8 +348,12 @@ function BreathingScoutViewport() {
                         <div>KV {meta.kvp} | mAs {meta.mas}</div>
                     </div>
                     <div className="pointer-events-none absolute bottom-3 left-3 text-[10px] font-mono leading-[1.35] text-[#CFD8DC]">
-                        <div>WW/WL {Math.round(meta.ww)} / {Math.round(meta.wl)}</div>
+                        <div>WW/WL {Math.round(windowWidth)} / {Math.round(windowLevel)}</div>
                         <div>Thick {meta.thickness}</div>
+                    </div>
+                    <div className="pointer-events-none absolute bottom-3 right-3 text-right text-[10px] font-mono leading-[1.35] text-[#CFD8DC]">
+                        <div>左右拖动: WW</div>
+                        <div>上下拖动: WL</div>
                     </div>
                     <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[11px] font-bold tracking-[0.12em] text-[#DCE5ED]">
                         R
@@ -308,6 +362,56 @@ function BreathingScoutViewport() {
                         L
                     </div>
                 </>
+            )}
+
+            {false && loadState === "ready" && (
+                <div className="absolute bottom-3 right-3 w-[220px] rounded-md border border-white/10 bg-black/45 px-3 py-2 text-[#DCE5ED] backdrop-blur-sm">
+                    <div className="mb-2 flex items-center justify-between text-[10px] font-bold tracking-[0.08em]">
+                        <span>窗宽 / 窗位</span>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setWindowWidth(metaRef.current?.ww ?? BREATHING_SCOUT_SERIES.fallbackWindowWidth);
+                                setWindowLevel(metaRef.current?.wl ?? BREATHING_SCOUT_SERIES.fallbackWindowLevel);
+                            }}
+                            className="rounded border border-white/15 px-2 py-0.5 text-[9px] text-white/80 hover:bg-white/10"
+                        >
+                            重置
+                        </button>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="block">
+                            <div className="mb-1 flex items-center justify-between text-[10px]">
+                                <span>WW</span>
+                                <span>{Math.round(windowWidth)}</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="200"
+                                max="1800"
+                                step="10"
+                                value={windowWidth}
+                                onChange={(event) => setWindowWidth(Number(event.target.value))}
+                                className="w-full accent-[#7EAAFF]"
+                            />
+                        </label>
+                        <label className="block">
+                            <div className="mb-1 flex items-center justify-between text-[10px]">
+                                <span>WL</span>
+                                <span>{Math.round(windowLevel)}</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="-250"
+                                max="250"
+                                step="5"
+                                value={windowLevel}
+                                onChange={(event) => setWindowLevel(Number(event.target.value))}
+                                className="w-full accent-[#66BB6A]"
+                            />
+                        </label>
+                    </div>
+                </div>
             )}
         </div>
     );
@@ -326,9 +430,18 @@ const ScoutScanScreen = ({
     viewportBgClassName = "bg-[#1A222B]",
     breathingWorkflowVariant = "training",
 }: ScoutScanScreenProps) => {
+    const isBreathingTraining = bottomPanelMode === "breathing" && breathingWorkflowVariant === "training";
+    const isBreathingAcquisition = bottomPanelMode === "breathing" && breathingWorkflowVariant === "acquisition";
     const [startPos, setStartPos] = useState("472.95");
     const [endPos, setEndPos] = useState("595.17");
     const isBreathingSignalEnabled = true;
+    const [breathingAcquisitionParams, setBreathingAcquisitionParams] = useState({
+        minSpacing: 2.0,
+        filterThreshold: 0.45,
+        peakThreshold: 1.2,
+        valleyThreshold: 0.35,
+        gain: 1.5,
+    });
 
     const [breathingPhase, setBreathingPhase] = useState<"training" | "stable">("training");
     const [trainingTimer, setTrainingTimer] = useState(30);
@@ -427,12 +540,17 @@ const ScoutScanScreen = ({
     // Initial data
     const [groups, setGroups] = useState<ProtocolGroup[]>([
         {
-            id: 'g1',
-            name: 'Head_FacialBoneVolume',
-            sequences: [
-                { id: 's1', name: 'Scout', steps: [firstStepLabel, "参数确认", "执行扫描"] },
-                { id: 's2', name: 'Helical Scan', steps: ["呼吸训练", '参数确认', '执行扫描'] }
-            ]
+            id: "g1",
+            name: "Head_FacialBoneVolume",
+            sequences: isBreathingAcquisition
+                ? [
+                    { id: "s1", name: "Scout", steps: [firstStepLabel, "激光灯定位", "参数确认", "执行扫描"] },
+                    { id: "s2", name: "Helical Scan", steps: ["呼吸训练", "参数确认", "执行扫描"] }
+                ]
+                : [
+                    { id: "s1", name: "Scout", steps: [firstStepLabel, "参数确认", "执行扫描"] },
+                    { id: "s2", name: "Helical Scan", steps: ["呼吸训练", "参数确认", "执行扫描"] }
+                ]
         }
     ]);
 
@@ -454,18 +572,23 @@ const ScoutScanScreen = ({
                 {
                     id: "g1",
                     name: "Head_FacialBoneVolume",
-                    sequences: [
-                        { id: "s1", name: "Scout", steps: [firstStepLabel, "参数确认", "执行扫描"] },
-                        { id: "s2", name: "Helical Scan", steps: ["呼吸训练", '参数确认', '执行扫描'] },
-                    ],
+                    sequences: isBreathingAcquisition
+                        ? [
+                            { id: "s1", name: "Scout", steps: [firstStepLabel, "激光灯定位", "参数确认", "执行扫描"] },
+                            { id: "s2", name: "Helical Scan", steps: ["呼吸训练", "参数确认", "执行扫描"] }
+                        ]
+                        : [
+                            { id: "s1", name: "Scout", steps: [firstStepLabel, "参数确认", "执行扫描"] },
+                            { id: "s2", name: "Helical Scan", steps: ["呼吸训练", "参数确认", "执行扫描"] },
+                        ],
                 },
             ]);
-            setExpandedSeqId(breathingWorkflowVariant === "training" ? "s2" : "s1");
+            setExpandedSeqId(isBreathingTraining ? "s2" : "s1");
             setActiveStepIdx(0);
         }, 0);
 
         return () => clearTimeout(timer);
-    }, [bottomPanelMode, breathingWorkflowVariant, firstStepLabel]);
+    }, [bottomPanelMode, breathingWorkflowVariant, firstStepLabel, isBreathingAcquisition, isBreathingTraining]);
 
     const toggleSelection = (id: string) => {
         setSelectedIds(prev => {
@@ -623,7 +746,7 @@ const ScoutScanScreen = ({
                                         <div key={seq.id}>
                                             {(() => {
                                                 const isActiveSequence = bottomPanelMode === 'breathing'
-                                                    ? seq.name === '呼吸采集'
+                                                    ? seq.name === 'Scout'
                                                     : seq.name === 'Scout';
                                                 const isExpanded = expandedSeqId === seq.id;
                                                 const isBreathingScoutSequence = bottomPanelMode === 'breathing' && seq.name === 'Scout';
@@ -840,7 +963,7 @@ const ScoutScanScreen = ({
 
                 {/* Right Viewport Area */}
                 <section className={`flex-1 ${bottomPanelMode === 'breathing' ? 'bg-transparent border-0 shadow-none' : `${viewportBgClassName} rounded-lg border border-[#B0C4DE] shadow-sm`} flex flex-col overflow-hidden relative`}>
-                    {bottomPanelMode === 'breathing' ? (
+                    {isBreathingTraining ? (
                         <div className="flex-1 flex flex-col gap-2 bg-transparent">
                             <div className="min-h-0 flex-[1.2] rounded-md border border-[#B0C4DE]/30 bg-transparent p-0 flex flex-col shadow-sm overflow-hidden">
                                 <div className="min-h-0 flex-1 rounded-md border border-[#B0C4DE]/30 bg-[#0F1720] relative overflow-hidden">
@@ -849,6 +972,140 @@ const ScoutScanScreen = ({
                             </div>
 
                             <div className="h-[168px] shrink-0 bg-white rounded-md border border-[#B0C4DE]/40 shadow-inner p-3 relative overflow-hidden">
+                                <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded border border-[#C8E6C9] bg-[#E8F5E9] px-2 py-1">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[#4CAF50] animate-pulse"></div>
+                                    <span className="text-[10px] font-bold text-[#2E7D32]">实时波形</span>
+                                </div>
+
+                                <div className="absolute inset-x-8 top-7 bottom-7 flex flex-col justify-between pointer-events-none opacity-20">
+                                    {[1100, 1000, 800, 600, 400, 200, 0].map(val => (
+                                        <div key={val} className="flex items-center gap-2">
+                                            <span className="text-[10px] w-6 text-right font-mono text-[#90A4AE]">{val}</span>
+                                            <div className="flex-1 h-[1px] bg-[#B0C4DE]"></div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="absolute inset-x-0 inset-y-5 flex flex-col justify-end px-14">
+                                    <svg viewBox="0 0 800 160" className="w-full h-full overflow-visible" preserveAspectRatio="none">
+                                        <path
+                                            d={`M ${rawWaveData.map((val, i) => `${(i / (rawWaveData.length - 1)) * 800},${160 - (val / 1100) * 160}`).join(' L ')}`}
+                                            fill="none"
+                                            stroke="#B0BEC5"
+                                            strokeWidth="1.2"
+                                            className="opacity-40"
+                                        />
+                                        <path
+                                            d={`M ${filteredWaveData.map((val, i) => `${(i / (filteredWaveData.length - 1)) * 800},${160 - (val / 1100) * 160}`).join(' L ')}`}
+                                            fill="none"
+                                            stroke="#4D94FF"
+                                            strokeWidth="2.5"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                        {filteredWaveData.map((val, i) => {
+                                            if (i < 10 || i > filteredWaveData.length - 10) return null;
+
+                                            const isLocalMax = val > filteredWaveData[i - 1] && val > filteredWaveData[i + 1] &&
+                                                val > filteredWaveData[i - 2] && val > filteredWaveData[i + 2] &&
+                                                val > filteredWaveData[i - 3] && val > filteredWaveData[i + 3];
+                                            const isLocalMin = val < filteredWaveData[i - 1] && val < filteredWaveData[i + 1] &&
+                                                val < filteredWaveData[i - 2] && val < filteredWaveData[i + 2] &&
+                                                val < filteredWaveData[i - 3] && val < filteredWaveData[i + 3];
+
+                                            if (isLocalMax && val >= 650) {
+                                                return (
+                                                    <circle
+                                                        key={`pk-${i}`}
+                                                        cx={(i / (filteredWaveData.length - 1)) * 800}
+                                                        cy={160 - (val / 1100) * 160}
+                                                        r="4"
+                                                        fill="#FF1744"
+                                                        stroke="#FFF"
+                                                        strokeWidth="1.5"
+                                                    />
+                                                );
+                                            }
+
+                                            if (isLocalMin && val <= 380) {
+                                                return (
+                                                    <circle
+                                                        key={`vl-${i}`}
+                                                        cx={(i / (filteredWaveData.length - 1)) * 800}
+                                                        cy={160 - (val / 1100) * 160}
+                                                        r="3.5"
+                                                        fill="#FFD600"
+                                                        stroke="#FFF"
+                                                        strokeWidth="1"
+                                                    />
+                                                );
+                                            }
+
+                                            return null;
+                                        })}
+                                    </svg>
+                                </div>
+
+                                <div className="absolute right-4 top-4 rounded border border-[#B0C4DE]/50 bg-white p-2 shadow-xl z-10 scale-90">
+                                    <div className="text-[10px] font-bold text-[#546E7A]">实时数据</div>
+                                    <div className="text-[10px] text-[#90A4AE]">采样值 : {filteredWaveData[filteredWaveData.length - 1].toFixed(1)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : bottomPanelMode === 'breathing' ? (
+                        <div className="flex-1 flex flex-col gap-2 bg-transparent">
+                            <div className="shrink-0 rounded-md border border-[#B0C4DE]/40 bg-white p-4 shadow-sm">
+                                <div className="mb-3 flex items-center justify-between">
+                                    <div className="text-[14px] font-black text-[#37474F]">采集参数</div>
+                                    <div className="text-[10px] font-mono text-[#90A4AE]">Acquisition Controls</div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                                    <SliderField
+                                        label="最小间距"
+                                        min={0.5}
+                                        max={5}
+                                        step={0.1}
+                                        value={breathingAcquisitionParams.minSpacing}
+                                        onChange={(value) => setBreathingAcquisitionParams((prev) => ({ ...prev, minSpacing: value }))}
+                                    />
+                                    <SliderField
+                                        label="滤波阈值"
+                                        min={0.1}
+                                        max={1}
+                                        step={0.01}
+                                        value={breathingAcquisitionParams.filterThreshold}
+                                        onChange={(value) => setBreathingAcquisitionParams((prev) => ({ ...prev, filterThreshold: value }))}
+                                    />
+                                    <SliderField
+                                        label="峰值阈值"
+                                        min={0.5}
+                                        max={2.5}
+                                        step={0.05}
+                                        value={breathingAcquisitionParams.peakThreshold}
+                                        onChange={(value) => setBreathingAcquisitionParams((prev) => ({ ...prev, peakThreshold: value }))}
+                                    />
+                                    <SliderField
+                                        label="谷值阈值"
+                                        min={0.1}
+                                        max={1}
+                                        step={0.01}
+                                        value={breathingAcquisitionParams.valleyThreshold}
+                                        onChange={(value) => setBreathingAcquisitionParams((prev) => ({ ...prev, valleyThreshold: value }))}
+                                    />
+                                    <div className="col-span-2">
+                                        <SliderField
+                                            label="增益"
+                                            min={0.5}
+                                            max={3}
+                                            step={0.1}
+                                            value={breathingAcquisitionParams.gain}
+                                            onChange={(value) => setBreathingAcquisitionParams((prev) => ({ ...prev, gain: value }))}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="min-h-0 flex-1 bg-white rounded-md border border-[#B0C4DE]/40 shadow-inner p-3 relative overflow-hidden">
                                 <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded border border-[#C8E6C9] bg-[#E8F5E9] px-2 py-1">
                                     <div className="w-1.5 h-1.5 rounded-full bg-[#4CAF50] animate-pulse"></div>
                                     <span className="text-[10px] font-bold text-[#2E7D32]">实时波形</span>
@@ -1078,6 +1335,33 @@ const MetricRow = ({ icon, label, value, isMain }: {
                 )}
             </div>
         </div>
+    );
+};
+
+const SliderField = ({ label, value, min, max, step, onChange }: {
+    label: string,
+    value: number,
+    min: number,
+    max: number,
+    step: number,
+    onChange: (value: number) => void,
+}) => {
+    return (
+        <label className="block">
+            <div className="mb-1 flex items-center justify-between text-[11px] font-bold text-[#546E7A]">
+                <span>{label}</span>
+                <span className="font-mono text-[#37474F]">{value.toFixed(step < 0.1 ? 2 : 1)}</span>
+            </div>
+            <input
+                type="range"
+                min={min}
+                max={max}
+                step={step}
+                value={value}
+                onChange={(event) => onChange(Number(event.target.value))}
+                className="w-full accent-[#4D94FF]"
+            />
+        </label>
     );
 };
 
