@@ -97,9 +97,9 @@ function clamp01(value: number) {
 }
 
 const BreathingHelicalParamCard = ({ label, value }: { label: string; value: string }) => (
-    <div className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm">
+    <div className="px-1.5 py-1 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm">
         <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">{label}</span>
-        <span className="mt-[1px] text-[13px] font-black text-[#37474F]">{value}</span>
+        <span className="mt-px text-[12px] font-black text-[#37474F]">{value}</span>
     </div>
 );
 
@@ -988,8 +988,11 @@ const ScoutScanScreen = ({
 
                     {/* Bottom Controls / Params - Sidebar Detection Section */}
                     {isBreathingTraining ? (
-                        <div className="border-t border-[#EEF2F9] bg-[#F8FAFC] px-4 pt-4 pb-2 flex-1 flex flex-col gap-5 overflow-y-auto">
-                            <div className="grid grid-cols-2 gap-2">
+                        <div className="border-t border-[#EEF2F9] bg-[#F8FAFC] px-3 pt-3 pb-2 flex-1 flex flex-col gap-2 overflow-hidden">
+                            <button className="h-[28px] w-full rounded-md text-[10px] font-bold flex items-center justify-center border border-[#B0C4DE] bg-white text-[#4D94FF] hover:bg-blue-50 active:scale-95 shadow-sm transition-all">
+                                呼吸训练
+                            </button>
+                            <div className="grid grid-cols-2 gap-1.5">
                                 <BreathingHelicalParamCard label="进出床" value={BREATHING_HELICAL_PARAM_PREVIEW.bedMode} />
                                 <BreathingHelicalParamCard label="体位" value={BREATHING_HELICAL_PARAM_PREVIEW.position} />
                                 <BreathingHelicalParamCard label="扫描长度" value={BREATHING_HELICAL_PARAM_PREVIEW.scanLength} />
@@ -999,8 +1002,8 @@ const ScoutScanScreen = ({
                                 <BreathingHelicalParamCard label="准直器" value={BREATHING_HELICAL_PARAM_PREVIEW.collimation} />
                                 <BreathingHelicalParamCard label="Pitch" value={BREATHING_HELICAL_PARAM_PREVIEW.pitch} />
                             </div>
-                            <div className="mt-auto pt-1">
-                                <button className="h-[32px] w-full rounded-md text-[10px] font-bold flex items-center justify-center gap-1 border border-[#B0C4DE] bg-white text-[#4D94FF] hover:bg-blue-50 active:scale-95 shadow-sm transition-all">
+                            <div className="mt-auto pt-0.5">
+                                <button className="h-[28px] w-full rounded-md text-[10px] font-bold flex items-center justify-center gap-1 border border-[#B0C4DE] bg-white text-[#4D94FF] hover:bg-blue-50 active:scale-95 shadow-sm transition-all">
                                     <Info size={14} /> 参数详情
                                 </button>
                             </div>
