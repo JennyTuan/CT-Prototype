@@ -56,6 +56,8 @@ const BREATHING_HELICAL_PARAM_PREVIEW = {
     angle: "0",
 };
 
+const BREATHING_BED_POSITION_COUNT = 10;
+
 type BreathingProjectionMeta = {
     width: number;
     height: number;
@@ -1147,32 +1149,48 @@ const ScoutScanScreen = ({
                                 </div>
                             </div>
 
-                            <div className="h-[168px] shrink-0 bg-white rounded-md border border-[#B0C4DE]/40 shadow-inner p-3 relative overflow-hidden">
-                                <div className="absolute inset-x-8 top-7 bottom-7 flex flex-col justify-between pointer-events-none opacity-20">
+                            <div className="h-[168px] shrink-0 rounded-md border border-[#B0C4DE]/50 bg-[linear-gradient(180deg,#FFFFFF_0%,#F6FAFE_100%)] shadow-inner p-3 relative overflow-hidden">
+                                <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-[#EAF3FF]/70 to-transparent" />
+                                <div className="absolute inset-x-8 top-7 bottom-7 pointer-events-none">
+                                    <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(77,148,255,0.1)_1px,transparent_1px)] bg-[size:64px_100%] opacity-60" />
+                                </div>
+                                <div className="absolute inset-x-8 top-7 bottom-7 flex flex-col justify-between pointer-events-none opacity-35">
                                     {[1100, 1000, 800, 600, 400, 200, 0].map(val => (
                                         <div key={val} className="flex items-center gap-2">
-                                            <span className="text-[10px] w-6 text-right font-mono text-[#90A4AE]">{val}</span>
-                                            <div className="flex-1 h-[1px] bg-[#B0C4DE]"></div>
+                                            <span className="text-[10px] w-7 text-right font-mono font-bold text-[#70859A]">{val}</span>
+                                            <div className="flex-1 h-[1px] bg-[#9DB7D3]"></div>
                                         </div>
                                     ))}
                                 </div>
 
                                 <div className="absolute inset-x-0 inset-y-5 flex flex-col justify-end px-14">
                                     <svg viewBox="0 0 800 160" className="w-full h-full overflow-visible" preserveAspectRatio="none">
+                                        <defs>
+                                            <linearGradient id="breathing-wave-fill" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stopColor="#7EAAFF" stopOpacity="0.22" />
+                                                <stop offset="100%" stopColor="#7EAAFF" stopOpacity="0.02" />
+                                            </linearGradient>
+                                        </defs>
+                                        <line x1="0" y1="80" x2="800" y2="80" stroke="#7FA1C5" strokeWidth="1.2" strokeDasharray="4 4" opacity="0.55" />
                                         <path
                                             d={`M ${rawWaveData.map((val, i) => `${(i / (rawWaveData.length - 1)) * 800},${160 - (val / 1100) * 160}`).join(' L ')}`}
                                             fill="none"
-                                            stroke="#B0BEC5"
-                                            strokeWidth="1.2"
-                                            className="opacity-40"
+                                            stroke="#8FA3B8"
+                                            strokeWidth="1.4"
+                                            className="opacity-55"
+                                        />
+                                        <path
+                                            d={`M 0,160 L ${filteredWaveData.map((val, i) => `${(i / (filteredWaveData.length - 1)) * 800},${160 - (val / 1100) * 160}`).join(' L ')} L 800,160 Z`}
+                                            fill="url(#breathing-wave-fill)"
                                         />
                                         <path
                                             d={`M ${filteredWaveData.map((val, i) => `${(i / (filteredWaveData.length - 1)) * 800},${160 - (val / 1100) * 160}`).join(' L ')}`}
                                             fill="none"
-                                            stroke="#4D94FF"
-                                            strokeWidth="2.5"
+                                            stroke="#2F80FF"
+                                            strokeWidth="2.8"
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
+                                            style={{ filter: "drop-shadow(0 0 4px rgba(77,148,255,0.28))" }}
                                         />
                                         {filteredWaveData.map((val, i) => {
                                             if (i < 10 || i > filteredWaveData.length - 10) return null;
@@ -1190,7 +1208,7 @@ const ScoutScanScreen = ({
                                                         key={`pk-${i}`}
                                                         cx={(i / (filteredWaveData.length - 1)) * 800}
                                                         cy={160 - (val / 1100) * 160}
-                                                        r="4"
+                                                        r="4.5"
                                                         fill="#FF1744"
                                                         stroke="#FFF"
                                                         strokeWidth="1.5"
@@ -1204,10 +1222,10 @@ const ScoutScanScreen = ({
                                                         key={`vl-${i}`}
                                                         cx={(i / (filteredWaveData.length - 1)) * 800}
                                                         cy={160 - (val / 1100) * 160}
-                                                        r="3.5"
+                                                        r="4"
                                                         fill="#FFD600"
                                                         stroke="#FFF"
-                                                        strokeWidth="1"
+                                                        strokeWidth="1.2"
                                                     />
                                                 );
                                             }
@@ -1220,6 +1238,24 @@ const ScoutScanScreen = ({
                                 <div className="absolute right-4 top-4 rounded border border-[#B0C4DE]/50 bg-white p-2 shadow-xl z-10 scale-90">
                                     <div className="text-[10px] font-bold text-[#546E7A]">呼吸频率</div>
                                     <div className="text-[10px] text-[#90A4AE]">{metrics.bpm} BPM</div>
+                                    <div className="mt-1 text-[10px] font-bold text-[#546E7A]">频率误差</div>
+                                    <div className="text-[10px] text-[#90A4AE]">{metrics.freqErr}%</div>
+                                </div>
+
+                                <div className="pointer-events-none absolute left-12 top-2 text-[9px] font-mono font-bold tracking-[0.08em] text-[#8AA1B8]">
+                                    RESP SIGNAL
+                                </div>
+
+                                <div className="pointer-events-none absolute inset-x-10 bottom-0 flex items-end gap-2">
+                                    
+                                    <div className="flex min-w-0 flex-1 items-center gap-1 rounded border border-[#B0C4DE]/40 bg-[#F8FAFC]/90 px-2 py-1 shadow-sm">
+                                        {Array.from({ length: BREATHING_BED_POSITION_COUNT }, (_, index) => (
+                                            <div key={`bed-position-${index}`} className="flex min-w-0 flex-1 flex-col items-center gap-0.5">
+                                                <div className="h-2.5 w-full rounded-sm border border-[#9DB7D3] bg-gradient-to-b from-[#EAF2FB] to-[#D7E6F7]" />
+                                                <span className="text-[8px] leading-none font-mono text-[#7A8DA1]">{index + 1}</span>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
