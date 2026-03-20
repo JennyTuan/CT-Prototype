@@ -563,12 +563,7 @@ function BreathingScanPreviewViewport() {
                 <div>Preview pane reserved</div>
             </div>
 
-            <div className="absolute inset-0 flex items-center justify-center">
-                <div className="rounded-md border border-dashed border-[#7EAAFF]/40 bg-[#0B1220]/70 px-4 py-3 text-center shadow-[0_0_30px_rgba(126,170,255,0.08)]">
-                    <div className="text-[12px] font-black tracking-[0.18em] text-[#DCE5ED]">扫描影像</div>
-                    <div className="mt-1 text-[10px] font-medium text-[#8DA2B5]">后续扫描开始后在此显示</div>
-                </div>
-            </div>
+          
         </div>
     );
 }
@@ -1153,11 +1148,6 @@ const ScoutScanScreen = ({
                             </div>
 
                             <div className="h-[168px] shrink-0 bg-white rounded-md border border-[#B0C4DE]/40 shadow-inner p-3 relative overflow-hidden">
-                                <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded border border-[#C8E6C9] bg-[#E8F5E9] px-2 py-1">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-[#4CAF50] animate-pulse"></div>
-                                    <span className="text-[10px] font-bold text-[#2E7D32]">实时波形</span>
-                                </div>
-
                                 <div className="absolute inset-x-8 top-7 bottom-7 flex flex-col justify-between pointer-events-none opacity-20">
                                     {[1100, 1000, 800, 600, 400, 200, 0].map(val => (
                                         <div key={val} className="flex items-center gap-2">
@@ -1228,8 +1218,8 @@ const ScoutScanScreen = ({
                                 </div>
 
                                 <div className="absolute right-4 top-4 rounded border border-[#B0C4DE]/50 bg-white p-2 shadow-xl z-10 scale-90">
-                                    <div className="text-[10px] font-bold text-[#546E7A]">实时数据</div>
-                                    <div className="text-[10px] text-[#90A4AE]">采样值 : {filteredWaveData[filteredWaveData.length - 1].toFixed(1)}</div>
+                                    <div className="text-[10px] font-bold text-[#546E7A]">呼吸频率</div>
+                                    <div className="text-[10px] text-[#90A4AE]">{metrics.bpm} BPM</div>
                                 </div>
                             </div>
                         </div>
