@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as dicomParser from "dicom-parser";
-import { Move } from "lucide-react";
+import { Hand, Move, RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
 import ScanConfirmScreen from "./ScanConfirmScreen";
 
 const SCOUT_SERIES = {
@@ -61,6 +61,12 @@ export function TomographicScoutViewport({
         startY: number;
         initialBox: CropBox;
     } | null>(null);
+    const panStateRef = useRef<{
+        startX: number;
+        startY: number;
+        initialOffsetX: number;
+        initialOffsetY: number;
+    } | null>(null);
     const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
     const [cropBox, setCropBox] = useState<CropBox>({
         x: 0.18,
@@ -68,6 +74,9 @@ export function TomographicScoutViewport({
         width: 0.54,
         height: 0.46,
     });
+    const [toolMode, setToolMode] = useState<"crop" | "pan">("crop");
+    const [zoom, setZoom] = useState(1);
+    const [offset, setOffset] = useState({ x: 0, y: 0 });
 
     useEffect(() => {
         let cancelled = false;
@@ -227,13 +236,13 @@ export function TomographicScoutViewport({
         ctx.fillRect(0, 0, viewW, viewH);
 
         const fitScale = Math.min(viewW / meta.width, viewH / meta.height) * 0.92;
-        const drawW = meta.width * fitScale;
-        const drawH = meta.height * fitScale;
-        const drawX = (viewW - drawW) / 2;
-        const drawY = (viewH - drawH) / 2;
+        const drawW = meta.width * fitScale * zoom;
+        const drawH = meta.height * fitScale * zoom;
+        const drawX = (viewW - drawW) / 2 + offset.x;
+        const drawY = (viewH - drawH) / 2 + offset.y;
         ctx.imageSmoothingEnabled = false;
         ctx.drawImage(offscreen, drawX, drawY, drawW, drawH);
-    }, [loadState]);
+    }, [loadState, offset.x, offset.y, zoom]);
 
     useEffect(() => {
         const meta = metaRef.current;
@@ -249,8 +258,19 @@ export function TomographicScoutViewport({
     useEffect(() => {
         const handleMove = (event: MouseEvent) => {
             const viewport = viewportRef.current;
+            if (!viewport) return;
+
+            const panState = panStateRef.current;
+            if (panState) {
+                setOffset({
+                    x: panState.initialOffsetX + (event.clientX - panState.startX),
+                    y: panState.initialOffsetY + (event.clientY - panState.startY),
+                });
+                return;
+            }
+
             const dragState = dragStateRef.current;
-            if (!viewport || !dragState) return;
+            if (!dragState) return;
 
             const rect = viewport.getBoundingClientRect();
             const dx = (event.clientX - dragState.startX) / rect.width;
@@ -288,6 +308,7 @@ export function TomographicScoutViewport({
 
         const handleUp = () => {
             dragStateRef.current = null;
+            panStateRef.current = null;
         };
 
         window.addEventListener("mousemove", handleMove);
@@ -307,7 +328,29 @@ export function TomographicScoutViewport({
         };
     }, [cropBox]);
 
+    const startPan = (event: React.MouseEvent<HTMLDivElement>) => {
+        if (toolMode !== "pan") return;
+        event.preventDefault();
+        panStateRef.current = {
+            startX: event.clientX,
+            startY: event.clientY,
+            initialOffsetX: offset.x,
+            initialOffsetY: offset.y,
+        };
+    };
+
+    const adjustZoom = (delta: number) => {
+        setZoom((currentZoom) => clamp(Number((currentZoom + delta).toFixed(2)), 1, 3));
+    };
+
+    const resetView = () => {
+        setZoom(1);
+        setOffset({ x: 0, y: 0 });
+        setToolMode("crop");
+    };
+
     const startDrag = (handle: DragHandle) => (event: React.MouseEvent<HTMLDivElement>) => {
+        if (toolMode === "pan") return;
         event.preventDefault();
         event.stopPropagation();
         dragStateRef.current = {
@@ -319,8 +362,14 @@ export function TomographicScoutViewport({
     };
 
     return (
-        <div className="flex-1 relative bg-[#05080d] overflow-hidden">
-            <div ref={viewportRef} className="absolute inset-0">
+        <div className="flex-1 flex min-w-0 bg-[#05080d]">
+            <section
+                ref={viewportRef}
+                className={`relative flex-1 min-w-0 rounded-l-lg bg-black overflow-hidden ${
+                    toolMode === "pan" ? "cursor-grab" : "cursor-default"
+                }`}
+                onMouseDown={startPan}
+            >
                 <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
 
                 {loadState === "loading" && (
@@ -338,7 +387,9 @@ export function TomographicScoutViewport({
                 {loadState === "ready" && (
                     <>
                         <div
-                            className="absolute border-2 border-[#4D94FF] bg-[#4D94FF]/8 shadow-[0_0_0_1px_rgba(77,148,255,0.2),0_0_24px_rgba(77,148,255,0.15)] cursor-move"
+                            className={`absolute border-2 border-[#4D94FF] bg-[#4D94FF]/8 shadow-[0_0_0_1px_rgba(77,148,255,0.2),0_0_24px_rgba(77,148,255,0.15)] ${
+                                toolMode === "pan" ? "cursor-default opacity-80" : "cursor-move"
+                            }`}
                             style={{
                                 left: `${cropBox.x * 100}%`,
                                 top: `${cropBox.y * 100}%`,
@@ -352,41 +403,69 @@ export function TomographicScoutViewport({
                                 <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-white/20" />
                             </div>
 
-                            <div className="absolute -left-14 top-0 bottom-0 flex w-10 items-center justify-center">
-                                <div className="relative h-full w-full">
-                                    <div className="absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2 bg-[#93C5FD]/70" />
-                                    <div className="absolute left-1/2 top-0 h-px w-3 -translate-x-1/2 bg-[#93C5FD]" />
-                                    <div className="absolute left-1/2 top-1/2 h-px w-2 -translate-x-1/2 -translate-y-1/2 bg-[#93C5FD]/80" />
-                                    <div className="absolute left-1/2 bottom-0 h-px w-3 -translate-x-1/2 bg-[#93C5FD]" />
-                                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded border border-[#93C5FD]/40 bg-[#08111f]/90 px-2 py-1 text-[10px] font-black text-[#DBEAFE] shadow-lg">
-                                        {measurementLabels.scanLength}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="absolute -top-3 left-1/2 h-6 w-12 -translate-x-1/2 cursor-ns-resize" onMouseDown={startDrag("top")} />
-                            <div className="absolute -bottom-3 left-1/2 h-6 w-12 -translate-x-1/2 cursor-ns-resize" onMouseDown={startDrag("bottom")} />
-                            <div className="absolute left-0 top-1/2 h-12 w-6 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize" onMouseDown={startDrag("left")} />
-                            <div className="absolute right-0 top-1/2 h-12 w-6 translate-x-1/2 -translate-y-1/2 cursor-ew-resize" onMouseDown={startDrag("right")} />
+                            <div className={`absolute -top-3 left-1/2 h-6 w-12 -translate-x-1/2 ${toolMode === "pan" ? "cursor-default" : "cursor-ns-resize"}`} onMouseDown={startDrag("top")} />
+                            <div className={`absolute -bottom-3 left-1/2 h-6 w-12 -translate-x-1/2 ${toolMode === "pan" ? "cursor-default" : "cursor-ns-resize"}`} onMouseDown={startDrag("bottom")} />
+                            <div className={`absolute left-0 top-1/2 h-12 w-6 -translate-x-1/2 -translate-y-1/2 ${toolMode === "pan" ? "cursor-default" : "cursor-ew-resize"}`} onMouseDown={startDrag("left")} />
+                            <div className={`absolute right-0 top-1/2 h-12 w-6 translate-x-1/2 -translate-y-1/2 ${toolMode === "pan" ? "cursor-default" : "cursor-ew-resize"}`} onMouseDown={startDrag("right")} />
 
                             <div className="absolute -right-3 -top-3 flex h-6 w-6 items-center justify-center rounded-full border border-[#93C5FD] bg-[#0F172A] text-[#93C5FD] shadow-lg">
                                 <Move size={12} />
                             </div>
                         </div>
 
-                        <div className="absolute bottom-5 right-5 grid grid-cols-2 gap-2 rounded border border-white/10 bg-[#08111f]/88 p-3 text-white shadow-xl">
-                            <div className="rounded border border-white/10 bg-white/5 px-3 py-2">
-                                <div className="text-[10px] font-bold uppercase tracking-widest text-white/45">Scan Length</div>
-                                <div className="mt-1 text-[18px] font-black text-[#E0F2FE]">{measurementLabels.scanLength}</div>
-                            </div>
-                            <div className="rounded border border-white/10 bg-white/5 px-3 py-2">
-                                <div className="text-[10px] font-bold uppercase tracking-widest text-white/45">FOV</div>
-                                <div className="mt-1 text-[18px] font-black text-[#BFDBFE]">{measurementLabels.scoutFov}</div>
-                            </div>
+                        <div className="absolute bottom-2 left-2 text-[10px] text-[#CFD8DC] font-mono leading-[1.35] pointer-events-none">
+                            <div>Scan Length {measurementLabels.scanLength} mm</div>
+                            <div>FOV {measurementLabels.scoutFov} mm</div>
+                            <div>Zoom {zoom.toFixed(2)}x</div>
                         </div>
                     </>
                 )}
-            </div>
+            </section>
+
+            <aside className="flex w-[72px] shrink-0 flex-col overflow-hidden rounded-r-lg border-l border-white/10 bg-[#111827] shadow-sm">
+                <div className="flex h-[44px] items-center justify-center border-b border-white/10 bg-[#0F172A]">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#CBD5E1]">Tools</span>
+                </div>
+                <div className="flex flex-1 flex-col gap-1 p-2" onPointerDown={(event) => event.stopPropagation()}>
+                    <button
+                        type="button"
+                        title="Pan"
+                        onClick={() => setToolMode((current) => (current === "pan" ? "crop" : "pan"))}
+                        className={`flex h-[44px] w-[44px] items-center justify-center rounded-[10px] border transition-all ${
+                            toolMode === "pan"
+                                ? "border-[#60A5FA] bg-[#1D4ED8]/30 text-[#BFDBFE]"
+                                : "border-white/10 bg-white/[0.04] text-[#CBD5E1] hover:bg-white/[0.08]"
+                        }`}
+                    >
+                        <Hand size={20} strokeWidth={1.5} />
+                    </button>
+                    <div className="mx-1 my-1 h-px bg-white/[0.07]" />
+                    <button
+                        type="button"
+                        title="Zoom In"
+                        onClick={() => adjustZoom(0.2)}
+                        className="flex h-[44px] w-[44px] items-center justify-center rounded-[10px] border border-white/10 bg-white/[0.04] text-[#CBD5E1] transition-all hover:bg-white/[0.08]"
+                    >
+                        <ZoomIn size={20} strokeWidth={1.5} />
+                    </button>
+                    <button
+                        type="button"
+                        title="Zoom Out"
+                        onClick={() => adjustZoom(-0.2)}
+                        className="flex h-[44px] w-[44px] items-center justify-center rounded-[10px] border border-white/10 bg-white/[0.04] text-[#CBD5E1] transition-all hover:bg-white/[0.08]"
+                    >
+                        <ZoomOut size={20} strokeWidth={1.5} />
+                    </button>
+                    <button
+                        type="button"
+                        title="Reset"
+                        onClick={resetView}
+                        className="flex h-[44px] w-[44px] items-center justify-center rounded-[10px] border border-white/10 bg-white/[0.04] text-[#CBD5E1] transition-all hover:bg-white/[0.08]"
+                    >
+                        <RotateCcw size={20} strokeWidth={1.5} />
+                    </button>
+                </div>
+            </aside>
         </div>
     );
 }

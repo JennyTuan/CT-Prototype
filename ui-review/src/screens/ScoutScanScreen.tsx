@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import * as dicomParser from "dicom-parser";
 import {
     User,
@@ -19,6 +19,7 @@ import {
     Check,
     CheckCircle,
     Flame,
+    Info,
     Network,
     Siren
 } from "lucide-react";
@@ -40,6 +41,19 @@ const BREATHING_SCOUT_SERIES = {
     count: 118,
     fallbackWindowWidth: 350,
     fallbackWindowLevel: 45,
+};
+
+const BREATHING_HELICAL_PARAM_PREVIEW = {
+    bedMode: "OUT",
+    position: "HFS",
+    scanLength: "165.0",
+    mA: "215",
+    kV: "120",
+    rotationTime: "1.0",
+    collimation: "32×0.6",
+    pitch: "0.500",
+    scoutFov: "500",
+    angle: "0",
 };
 
 type BreathingProjectionMeta = {
@@ -65,9 +79,29 @@ type BreathingLoadedSlice = {
     thickness: string;
 };
 
+type BreathingCropBox = {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+};
+
+type BreathingDragHandle = "move" | "top" | "bottom" | "left" | "right";
+
+function clamp(value: number, min: number, max: number) {
+    return Math.min(max, Math.max(min, value));
+}
+
 function clamp01(value: number) {
     return Math.min(1, Math.max(0, value));
 }
+
+const BreathingHelicalParamCard = ({ label, value }: { label: string; value: string }) => (
+    <div className="p-1.5 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm">
+        <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">{label}</span>
+        <span className="mt-[1px] text-[13px] font-black text-[#37474F]">{value}</span>
+    </div>
+);
 
 function BreathingScoutViewport() {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -76,11 +110,23 @@ function BreathingScoutViewport() {
     const projectionSizeRef = useRef<{ width: number; height: number } | null>(null);
     const metaRef = useRef<BreathingProjectionMeta | null>(null);
     const dragStateRef = useRef<{ startX: number; startY: number; startWw: number; startWl: number } | null>(null);
+    const cropDragStateRef = useRef<{
+        handle: BreathingDragHandle;
+        startX: number;
+        startY: number;
+        initialBox: BreathingCropBox;
+    } | null>(null);
     const [meta, setMeta] = useState<BreathingProjectionMeta | null>(null);
     const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
     const [windowWidth, setWindowWidth] = useState(BREATHING_SCOUT_SERIES.fallbackWindowWidth);
     const [windowLevel, setWindowLevel] = useState(BREATHING_SCOUT_SERIES.fallbackWindowLevel);
     const [isAdjustingWindow, setIsAdjustingWindow] = useState(false);
+    const [cropBox, setCropBox] = useState<BreathingCropBox>({
+        x: 0.2,
+        y: 0.18,
+        width: 0.56,
+        height: 0.48,
+    });
 
     useEffect(() => {
         let cancelled = false;
@@ -275,9 +321,46 @@ function BreathingScoutViewport() {
     }, [loadState, windowLevel, windowWidth]);
 
     useEffect(() => {
-        if (!isAdjustingWindow) return;
-
         const handleMouseMove = (event: MouseEvent) => {
+            const cropDragState = cropDragStateRef.current;
+            const viewport = viewportRef.current;
+            if (cropDragState && viewport) {
+                const rect = viewport.getBoundingClientRect();
+                const dx = (event.clientX - cropDragState.startX) / rect.width;
+                const dy = (event.clientY - cropDragState.startY) / rect.height;
+                const minSize = 0.08;
+                const next = { ...cropDragState.initialBox };
+
+                switch (cropDragState.handle) {
+                    case "move":
+                        next.x = clamp(cropDragState.initialBox.x + dx, 0, 1 - cropDragState.initialBox.width);
+                        next.y = clamp(cropDragState.initialBox.y + dy, 0, 1 - cropDragState.initialBox.height);
+                        break;
+                    case "top": {
+                        const nextY = clamp(cropDragState.initialBox.y + dy, 0, cropDragState.initialBox.y + cropDragState.initialBox.height - minSize);
+                        next.height = cropDragState.initialBox.height + (cropDragState.initialBox.y - nextY);
+                        next.y = nextY;
+                        break;
+                    }
+                    case "bottom":
+                        next.height = clamp(cropDragState.initialBox.height + dy, minSize, 1 - cropDragState.initialBox.y);
+                        break;
+                    case "left": {
+                        const nextX = clamp(cropDragState.initialBox.x + dx, 0, cropDragState.initialBox.x + cropDragState.initialBox.width - minSize);
+                        next.width = cropDragState.initialBox.width + (cropDragState.initialBox.x - nextX);
+                        next.x = nextX;
+                        break;
+                    }
+                    case "right":
+                        next.width = clamp(cropDragState.initialBox.width + dx, minSize, 1 - cropDragState.initialBox.x);
+                        break;
+                }
+
+                setCropBox(next);
+                return;
+            }
+
+            if (!isAdjustingWindow) return;
             const dragState = dragStateRef.current;
             if (!dragState) return;
 
@@ -290,6 +373,7 @@ function BreathingScoutViewport() {
         };
 
         const handleMouseUp = () => {
+            cropDragStateRef.current = null;
             dragStateRef.current = null;
             setIsAdjustingWindow(false);
         };
@@ -313,6 +397,20 @@ function BreathingScoutViewport() {
             startWl: windowLevel,
         };
         setIsAdjustingWindow(true);
+    };
+
+    const startCropDrag = (handle: BreathingDragHandle) => (event: React.MouseEvent<HTMLDivElement>) => {
+        if (loadState !== "ready") return;
+        event.preventDefault();
+        event.stopPropagation();
+        cropDragStateRef.current = {
+            handle,
+            startX: event.clientX,
+            startY: event.clientY,
+            initialBox: cropBox,
+        };
+        dragStateRef.current = null;
+        setIsAdjustingWindow(false);
     };
 
     return (
@@ -360,6 +458,30 @@ function BreathingScoutViewport() {
                     </div>
                     <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-bold tracking-[0.12em] text-[#DCE5ED]">
                         L
+                    </div>
+
+                    <div
+                        className="absolute border-2 border-[#4D94FF] bg-[#4D94FF]/8 shadow-[0_0_0_1px_rgba(77,148,255,0.24),0_0_24px_rgba(77,148,255,0.18)] cursor-move"
+                        style={{
+                            left: `${cropBox.x * 100}%`,
+                            top: `${cropBox.y * 100}%`,
+                            width: `${cropBox.width * 100}%`,
+                            height: `${cropBox.height * 100}%`,
+                        }}
+                        onMouseDown={startCropDrag("move")}
+                    >
+                        <div className="absolute inset-0 border border-white/20">
+                            <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-white/20" />
+                            <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-white/20" />
+                        </div>
+                        <div className="pointer-events-none absolute left-2 top-2 rounded border border-[#93C5FD]/40 bg-[#08111f]/90 px-2 py-1 text-[10px] font-black tracking-[0.08em] text-[#DBEAFE]">
+                            扫描范围
+                        </div>
+
+                        <div className="absolute -top-3 left-1/2 h-6 w-12 -translate-x-1/2 cursor-ns-resize" onMouseDown={startCropDrag("top")} />
+                        <div className="absolute -bottom-3 left-1/2 h-6 w-12 -translate-x-1/2 cursor-ns-resize" onMouseDown={startCropDrag("bottom")} />
+                        <div className="absolute left-0 top-1/2 h-12 w-6 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize" onMouseDown={startCropDrag("left")} />
+                        <div className="absolute right-0 top-1/2 h-12 w-6 translate-x-1/2 -translate-y-1/2 cursor-ew-resize" onMouseDown={startCropDrag("right")} />
                     </div>
                 </>
             )}
@@ -413,6 +535,40 @@ function BreathingScoutViewport() {
                     </div>
                 </div>
             )}
+        </div>
+    );
+}
+
+function BreathingScanPreviewViewport() {
+    return (
+        <div className="absolute inset-0 overflow-hidden bg-black">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/60 to-transparent" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/65 to-transparent" />
+
+            <div className="pointer-events-none absolute inset-0 opacity-[0.08]">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(126,170,255,0.35),_transparent_62%)]" />
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-[size:28px_28px]" />
+            </div>
+
+            <div className="pointer-events-none absolute left-3 top-3 text-[10px] font-mono leading-[1.35] text-[#CFD8DC]">
+                <div className="font-bold">Scan Preview</div>
+                <div>Helical Acquisition</div>
+            </div>
+            <div className="pointer-events-none absolute right-3 top-3 text-right text-[10px] font-mono leading-[1.35] text-[#CFD8DC]">
+                <div className="font-bold">Pending</div>
+                <div>Waiting for scan start</div>
+            </div>
+            <div className="pointer-events-none absolute bottom-3 left-3 text-[10px] font-mono leading-[1.35] text-[#CFD8DC]">
+                <div>Image buffer not started</div>
+                <div>Preview pane reserved</div>
+            </div>
+
+            <div className="absolute inset-0 flex items-center justify-center">
+                <div className="rounded-md border border-dashed border-[#7EAAFF]/40 bg-[#0B1220]/70 px-4 py-3 text-center shadow-[0_0_30px_rgba(126,170,255,0.08)]">
+                    <div className="text-[12px] font-black tracking-[0.18em] text-[#DCE5ED]">扫描影像</div>
+                    <div className="mt-1 text-[10px] font-medium text-[#8DA2B5]">后续扫描开始后在此显示</div>
+                </div>
+            </div>
         </div>
     );
 }
@@ -493,7 +649,6 @@ const ScoutScanScreen = ({
             setRawWaveData(prev => [...prev.slice(1), rawVal]);
             setFilteredWaveData(prev => [...prev.slice(1), filteredVal]);
 
-            // Update metrics periodically using stable logic
             if (Math.random() > 0.98) {
                 setFilteredWaveData(currentData => {
                     let peaks = 0;
@@ -506,11 +661,11 @@ const ScoutScanScreen = ({
                     }
                     const baseBpm = (peaks / 500) * 1200;
                     const bpm = Math.max(14.2, Math.min(15.8, baseBpm + (Math.random() - 0.5) * 0.2));
-                    setMetrics(m => ({
-                        ...m,
+                    setMetrics((current) => ({
+                        ...current,
                         bpm: bpm.toFixed(1),
                         peakErr: (1.2 + Math.random() * 0.6).toFixed(1),
-                        freqErr: (1.5 + Math.random() * 0.5).toFixed(1)
+                        freqErr: (1.5 + Math.random() * 0.5).toFixed(1),
                     }));
                     return currentData;
                 });
@@ -533,8 +688,6 @@ const ScoutScanScreen = ({
         setMetrics({ bpm: "14.8", peakErr: "1.7", freqErr: "1.9" });
         tRef.current = 0;
     }, [bottomPanelMode]);
-
-    // Metrics are now handled in the update loop state
 
     // Initial data
     // Initial data
@@ -834,7 +987,25 @@ const ScoutScanScreen = ({
                     </div>
 
                     {/* Bottom Controls / Params - Sidebar Detection Section */}
-                    {bottomPanelMode === "breathing" ? (
+                    {isBreathingTraining ? (
+                        <div className="border-t border-[#EEF2F9] bg-[#F8FAFC] px-4 pt-4 pb-2 flex-1 flex flex-col gap-5 overflow-y-auto">
+                            <div className="grid grid-cols-2 gap-2">
+                                <BreathingHelicalParamCard label="进出床" value={BREATHING_HELICAL_PARAM_PREVIEW.bedMode} />
+                                <BreathingHelicalParamCard label="体位" value={BREATHING_HELICAL_PARAM_PREVIEW.position} />
+                                <BreathingHelicalParamCard label="扫描长度" value={BREATHING_HELICAL_PARAM_PREVIEW.scanLength} />
+                                <BreathingHelicalParamCard label="mA" value={BREATHING_HELICAL_PARAM_PREVIEW.mA} />
+                                <BreathingHelicalParamCard label="kV" value={BREATHING_HELICAL_PARAM_PREVIEW.kV} />
+                                <BreathingHelicalParamCard label="旋转时间" value={BREATHING_HELICAL_PARAM_PREVIEW.rotationTime} />
+                                <BreathingHelicalParamCard label="准直器" value={BREATHING_HELICAL_PARAM_PREVIEW.collimation} />
+                                <BreathingHelicalParamCard label="Pitch" value={BREATHING_HELICAL_PARAM_PREVIEW.pitch} />
+                            </div>
+                            <div className="mt-auto pt-1">
+                                <button className="h-[32px] w-full rounded-md text-[10px] font-bold flex items-center justify-center gap-1 border border-[#B0C4DE] bg-white text-[#4D94FF] hover:bg-blue-50 active:scale-95 shadow-sm transition-all">
+                                    <Info size={14} /> 参数详情
+                                </button>
+                            </div>
+                        </div>
+                    ) : bottomPanelMode === "breathing" ? (
                         <div className="border-t border-[#EEF2F9] bg-[#F8FAFC] p-4 flex-1 flex flex-col gap-5 overflow-y-auto">
                             <div className="flex items-center justify-between mb-1">
                                 <div className="text-[16px] font-black text-[#37474F] tracking-wide">呼吸检测</div>
@@ -965,9 +1136,16 @@ const ScoutScanScreen = ({
                 <section className={`flex-1 ${bottomPanelMode === 'breathing' ? 'bg-transparent border-0 shadow-none' : `${viewportBgClassName} rounded-lg border border-[#B0C4DE] shadow-sm`} flex flex-col overflow-hidden relative`}>
                     {isBreathingTraining ? (
                         <div className="flex-1 flex flex-col gap-2 bg-transparent">
-                            <div className="min-h-0 flex-[1.2] rounded-md border border-[#B0C4DE]/30 bg-transparent p-0 flex flex-col shadow-sm overflow-hidden">
-                                <div className="min-h-0 flex-1 rounded-md border border-[#B0C4DE]/30 bg-[#0F1720] relative overflow-hidden">
-                                    <BreathingScoutViewport />
+                            <div className="min-h-0 flex-[1.2] overflow-hidden rounded-md border border-[#B0C4DE]/30 bg-[#16202B]">
+                                <div className="grid h-full grid-cols-2 gap-[2px] bg-[#16202B]">
+                                    <div className="relative overflow-hidden bg-black">
+                                        
+                                        <BreathingScoutViewport />
+                                    </div>
+                                    <div className="relative overflow-hidden bg-black">
+                                       
+                                        <BreathingScanPreviewViewport />
+                                    </div>
                                 </div>
                             </div>
 
