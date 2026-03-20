@@ -307,15 +307,6 @@ export function TomographicScoutViewport({
         };
     }, [cropBox]);
 
-    const viewportLabels = useMemo(() => {
-        const meta = metaRef.current;
-        if (!meta) return { totalLength: "--", totalWidth: "--" };
-        return {
-            totalLength: (meta.height * meta.sliceThickness).toFixed(1),
-            totalWidth: (meta.width * meta.pixelSpacingX).toFixed(1),
-        };
-    }, [loadState]);
-
     const startDrag = (handle: DragHandle) => (event: React.MouseEvent<HTMLDivElement>) => {
         event.preventDefault();
         event.stopPropagation();
@@ -346,10 +337,6 @@ export function TomographicScoutViewport({
 
                 {loadState === "ready" && (
                     <>
-                        <div className="absolute left-5 top-1/2 flex -translate-y-1/2 flex-col items-center gap-2 rounded border border-white/10 bg-[#08111f]/80 px-2 py-3 text-[10px] font-bold text-white/70">
-                            <div className="h-28 w-px bg-white/15" />
-                            <span className="[writing-mode:vertical-rl] tracking-[0.2em]">全长 {viewportLabels.totalLength}</span>
-                        </div>
                         <div
                             className="absolute border-2 border-[#4D94FF] bg-[#4D94FF]/8 shadow-[0_0_0_1px_rgba(77,148,255,0.2),0_0_24px_rgba(77,148,255,0.15)] cursor-move"
                             style={{
@@ -377,18 +364,6 @@ export function TomographicScoutViewport({
                                 </div>
                             </div>
 
-                            <div className="absolute -bottom-12 left-0 right-0 flex h-10 items-center justify-center">
-                                <div className="relative h-full w-full">
-                                    <div className="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-[#93C5FD]/70" />
-                                    <div className="absolute left-0 top-1/2 h-3 w-px -translate-y-1/2 bg-[#93C5FD]" />
-                                    <div className="absolute left-1/2 top-1/2 h-2 w-px -translate-x-1/2 -translate-y-1/2 bg-[#93C5FD]/80" />
-                                    <div className="absolute right-0 top-1/2 h-3 w-px -translate-y-1/2 bg-[#93C5FD]" />
-                                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded border border-[#93C5FD]/40 bg-[#08111f]/90 px-2 py-1 text-[10px] font-black text-[#DBEAFE] shadow-lg">
-                                        FOV {measurementLabels.scoutFov}
-                                    </div>
-                                </div>
-                            </div>
-
                             <div className="absolute -top-3 left-1/2 h-6 w-12 -translate-x-1/2 cursor-ns-resize" onMouseDown={startDrag("top")} />
                             <div className="absolute -bottom-3 left-1/2 h-6 w-12 -translate-x-1/2 cursor-ns-resize" onMouseDown={startDrag("bottom")} />
                             <div className="absolute left-0 top-1/2 h-12 w-6 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize" onMouseDown={startDrag("left")} />
@@ -397,10 +372,6 @@ export function TomographicScoutViewport({
                             <div className="absolute -right-3 -top-3 flex h-6 w-6 items-center justify-center rounded-full border border-[#93C5FD] bg-[#0F172A] text-[#93C5FD] shadow-lg">
                                 <Move size={12} />
                             </div>
-                        </div>
-
-                        <div className="absolute bottom-5 left-5 rounded border border-white/10 bg-[#08111f]/88 px-3 py-2 text-[10px] font-bold text-white/70 shadow-xl">
-                            定位像宽度 {viewportLabels.totalWidth}
                         </div>
 
                         <div className="absolute bottom-5 right-5 grid grid-cols-2 gap-2 rounded border border-white/10 bg-[#08111f]/88 p-3 text-white shadow-xl">
