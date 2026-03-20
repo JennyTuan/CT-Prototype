@@ -627,6 +627,12 @@ const ScoutScanScreen = ({
     const [metrics, setMetrics] = useState({ bpm: "14.8", peakErr: "1.7", freqErr: "1.9" });
     const timerRef = useRef<number | null>(null);
     const tRef = useRef(0); // Persistent time counter to prevent resets on re-render
+    const latestSignalValue = filteredWaveData[filteredWaveData.length - 1] ?? 0;
+    const normalizedSignal = clamp01(latestSignalValue / 1100);
+    const breathingBedIndex = Math.min(
+        BREATHING_BED_POSITION_COUNT - 1,
+        Math.max(0, Math.floor(normalizedSignal * BREATHING_BED_POSITION_COUNT))
+    );
 
     useEffect(() => {
         if (bottomPanelMode !== 'breathing' || !isBreathingSignalEnabled) return;
@@ -1149,8 +1155,15 @@ const ScoutScanScreen = ({
                                 </div>
                             </div>
 
-                            <div className="h-[168px] shrink-0 rounded-md border border-[#B0C4DE]/50 bg-[linear-gradient(180deg,#FFFFFF_0%,#F6FAFE_100%)] shadow-inner p-3 relative overflow-hidden">
+                            <div className="h-[190px] shrink-0 rounded-md border border-[#B0C4DE]/50 bg-[linear-gradient(180deg,#FFFFFF_0%,#F6FAFE_100%)] shadow-inner p-3 relative overflow-hidden">
                                 <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-[#EAF3FF]/70 to-transparent" />
+                                <div className="absolute inset-x-4 top-2 flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5 rounded border border-[#D6E5F7] bg-white/80 px-2 py-1">
+                                        <Activity size={12} className="text-[#4D94FF]" />
+                                        <span className="text-[10px] font-bold tracking-wide text-[#4E657B]">呼吸波形监测</span>
+                                    </div>
+                                    <div className="text-[10px] font-mono text-[#7890A7]">采样窗口: 20s</div>
+                                </div>
                                 <div className="absolute inset-x-8 top-7 bottom-7 pointer-events-none">
                                     <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(77,148,255,0.1)_1px,transparent_1px)] bg-[size:64px_100%] opacity-60" />
                                 </div>
@@ -1235,7 +1248,7 @@ const ScoutScanScreen = ({
                                     </svg>
                                 </div>
 
-                                <div className="absolute right-4 top-4 rounded border border-[#B0C4DE]/50 bg-white p-2 shadow-xl z-10 scale-90">
+                                <div className="absolute right-4 top-8 rounded border border-[#B0C4DE]/50 bg-white p-2 shadow-xl z-10 scale-90">
                                     <div className="text-[10px] font-bold text-[#546E7A]">呼吸频率</div>
                                     <div className="text-[10px] text-[#90A4AE]">{metrics.bpm} BPM</div>
                                     <div className="mt-1 text-[10px] font-bold text-[#546E7A]">频率误差</div>
@@ -1246,15 +1259,26 @@ const ScoutScanScreen = ({
                                     RESP SIGNAL
                                 </div>
 
-                                <div className="pointer-events-none absolute inset-x-10 bottom-0 flex items-end gap-2">
-                                    
-                                    <div className="flex min-w-0 flex-1 items-center gap-1 rounded border border-[#B0C4DE]/40 bg-[#F8FAFC]/90 px-2 py-1 shadow-sm">
+                                <div className="pointer-events-none absolute inset-x-10 bottom-1 flex items-end gap-2">
+                                    <div className="flex min-w-0 flex-1 items-center gap-2 rounded border border-[#B0C4DE]/40 bg-[#F8FAFC]/90 px-2 py-1.5 shadow-sm">
+                                        <span className="shrink-0 rounded bg-[#EAF2FB] px-1.5 py-0.5 text-[8px] font-black tracking-wide text-[#5F7892]">床位</span>
                                         {Array.from({ length: BREATHING_BED_POSITION_COUNT }, (_, index) => (
                                             <div key={`bed-position-${index}`} className="flex min-w-0 flex-1 flex-col items-center gap-0.5">
-                                                <div className="h-2.5 w-full rounded-sm border border-[#9DB7D3] bg-gradient-to-b from-[#EAF2FB] to-[#D7E6F7]" />
-                                                <span className="text-[8px] leading-none font-mono text-[#7A8DA1]">{index + 1}</span>
+                                                <div
+                                                    className={`h-3 w-full rounded-sm border transition-colors ${
+                                                        index < breathingBedIndex
+                                                            ? "border-[#5A9CFF] bg-gradient-to-b from-[#9DC4FF] to-[#5A9CFF]"
+                                                            : index === breathingBedIndex
+                                                                ? "border-[#2F80FF] bg-gradient-to-b from-[#D9E9FF] to-[#87B4FF]"
+                                                                : "border-[#9DB7D3] bg-gradient-to-b from-[#EAF2FB] to-[#D7E6F7]"
+                                                    }`}
+                                                />
+                                                <span className={`text-[8px] leading-none font-mono ${index === breathingBedIndex ? "text-[#2F80FF]" : "text-[#7A8DA1]"}`}>{index + 1}</span>
                                             </div>
                                         ))}
+                                    </div>
+                                    <div className="rounded border border-[#D6E5F7] bg-white/95 px-2 py-1 text-[9px] font-mono text-[#5F7892] shadow-sm">
+                                        当前: #{breathingBedIndex + 1}
                                     </div>
                                 </div>
                             </div>
