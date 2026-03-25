@@ -28,6 +28,7 @@ import BatteryManagementScreen from "./screens/BatteryManagementScreen";
 import ComponentLibraryScreen from "./screens/ComponentLibraryScreen";
 import DiskManagementScreen from "./screens/DiskManagementScreen";
 import PerformanceEvaluationScreen from "./screens/PerformanceEvaluationScreen";
+import ManualScanScreen from "./screens/ManualScanScreen";
 import CTSimulatorUIRefactor from "./screens/CTSimulatorUIRefactor";
 import CTSimulatorUIRefactorLight from "./screens/CTSimulatorUIRefactorLight";
 import CTSimulatorUIRefactorLight2 from "./screens/CTSimulatorUIRefactorLight2";
@@ -93,6 +94,7 @@ export default function Gallery() {
                     { key: "battery-management", name: "电池管理", component: <BatteryManagementScreen /> },
                     { key: "disk-management", name: "磁盘管理", component: <DiskManagementScreen /> },
                     { key: "performance-evaluation", name: "性能评估", component: <PerformanceEvaluationScreen /> },
+                    { key: "manual-scan", name: "手动扫描", component: <ManualScanScreen /> },
                     { key: "component-library", name: "组件库", component: <ComponentLibraryScreen /> },
                 ],
             },
