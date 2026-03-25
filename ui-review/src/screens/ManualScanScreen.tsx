@@ -48,9 +48,9 @@ const reconFields = [
 ];
 
 const statusCards = [
-    { label: '联锁状态', value: '已通过', tone: 'text-[#1D4ED8] bg-[#EAF2FF]' },
-    { label: '曝光使能', value: '待命', tone: 'text-[#0F766E] bg-[#ECFDF5]' },
-    { label: '床位状态', value: '未锁定', tone: 'text-[#9A3412] bg-[#FFF7ED]' },
+    { label: '联锁状态', value: '已通过', tone: 'text-[#0047FF]' },
+    { label: '曝光使能', value: '待命', tone: 'text-[#006B4D]' },
+    { label: '床位状态', value: '未锁定', tone: 'text-[#001A43]' },
 ];
 
 export default function ManualScanScreen() {
@@ -70,11 +70,11 @@ export default function ManualScanScreen() {
     ];
 
     return (
-        <div className="flex flex-col w-[1024px] h-[768px] bg-[#EEF2F9] overflow-hidden rounded-md border border-[#B0C4DE] shadow-2xl relative font-sans select-none">
-            <header className="flex items-center justify-between px-4 h-[80px] bg-[#E8EAF1] border-b border-[#B0C4DE] shrink-0 z-10">
+        <div className="flex flex-col w-[1024px] h-[768px] bg-[#ECEFF5] overflow-hidden rounded-md border border-[#C9D4E5] shadow-2xl relative font-sans select-none">
+            <header className="flex items-center justify-between px-4 h-[80px] bg-[#E7ECF3] border-b border-[#C9D4E5] shrink-0 z-10">
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-3 py-1.5 px-4 bg-[#DCE6F2] border border-[#B0C4DE] rounded-sm min-w-[210px]">
-                        <div className="w-10 h-10 rounded-sm bg-[#4A6982] flex items-center justify-center text-white opacity-90">
+                    <div className="flex items-center gap-3 py-1.5 px-4 bg-[#EAF0F8] border border-[#C9D4E5] rounded-sm min-w-[210px]">
+                        <div className="w-10 h-10 rounded-sm bg-[#597A95] flex items-center justify-center text-white opacity-90">
                             <User size={24} />
                         </div>
                         <div className="flex flex-col">
@@ -90,13 +90,16 @@ export default function ManualScanScreen() {
                 </div>
 
                 <div className="text-center">
-                    <div className="text-[28px] font-bold tracking-tight text-[#37474F] leading-none">14:43</div>
-                    <div className="text-[12px] text-[#546E7A] font-medium mt-1">3月5日 周三</div>
+                    <div className="text-[28px] font-bold tracking-tight text-[#334155] leading-none">14:43</div>
+                    <div className="text-[12px] text-[#64748B] font-medium mt-1">3月5日 周三</div>
                 </div>
 
                 <div className="flex items-center gap-6 pr-2">
                     <div className="p-1 text-[#D32F2F] cursor-pointer hover:opacity-70"><Plus size={32} strokeWidth={1.5} /></div>
-                    <div className="p-1 text-[#546E7A] cursor-pointer hover:opacity-70"><Layout size={24} /></div>
+                    <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
+                        <Layout size={24} />
+                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[9px] flex items-center justify-center rounded-full font-bold border border-white">10</span>
+                    </div>
                     <div className="p-1 text-[#546E7A] cursor-pointer hover:opacity-70"><Lightbulb size={24} /></div>
                     <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
                         <Settings size={24} />
@@ -105,8 +108,8 @@ export default function ManualScanScreen() {
                 </div>
             </header>
 
-            <main className="flex-1 overflow-hidden p-2 flex gap-2 bg-[#EEF2F9]">
-                <aside className={`${isCollapsed ? 'w-[80px]' : 'w-[220px]'} bg-white border border-[#B0C4DE] rounded-md shadow-sm flex flex-col p-4 shrink-0 overflow-hidden transition-all duration-300 ease-in-out`}>
+            <main className="flex-1 overflow-hidden p-2 flex gap-2 bg-[#ECEFF5]">
+                <aside className={`${isCollapsed ? 'w-[80px]' : 'w-[220px]'} bg-[#F4F6FA] border border-[#C9D4E5] rounded-md shadow-sm flex flex-col p-4 shrink-0 overflow-hidden transition-all duration-300 ease-in-out`}>
                     <div className="flex items-center justify-between mb-6 h-10">
                         {!isCollapsed && (
                             <div>
@@ -116,7 +119,7 @@ export default function ManualScanScreen() {
                         )}
                         <div
                             onClick={() => setIsCollapsed(!isCollapsed)}
-                            className={`w-9 h-9 rounded-md bg-white border border-[#B0C4DE] flex items-center justify-center text-[#546E7A] hover:bg-gray-50 cursor-pointer transition-all active:scale-95 shadow-sm ${isCollapsed ? 'mx-auto' : ''}`}
+                            className={`w-9 h-9 rounded-md bg-[#F8FAFD] border border-[#C9D4E5] flex items-center justify-center text-[#546E7A] hover:bg-gray-50 cursor-pointer transition-all active:scale-95 shadow-sm ${isCollapsed ? 'mx-auto' : ''}`}
                         >
                             <Menu size={18} />
                         </div>
@@ -127,14 +130,14 @@ export default function ManualScanScreen() {
                             <input
                                 type="text"
                                 placeholder="关键字搜索..."
-                                className="w-full h-[36px] pl-10 pr-4 bg-white border border-[#B0C4DE] rounded-md text-[13px] focus:outline-none focus:border-[#4D94FF] focus:ring-1 focus:ring-[#4D94FF]/20"
+                                className="w-full h-[36px] pl-10 pr-4 bg-white border border-[#C9D4E5] rounded-md text-[13px] focus:outline-none focus:border-[#4D94FF] focus:ring-1 focus:ring-[#4D94FF]/20"
                             />
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#90A4AE]" size={16} />
                         </div>
                     )}
 
                     <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} p-3 bg-[#EEF2F9] text-[#4D94FF] rounded-md mb-2 shadow-sm transition-all border border-[#B0C4DE]/30`}>
+                        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} p-3 bg-[#E4ECF8] text-[#4D94FF] rounded-md mb-2 shadow-sm transition-all border border-[#C9D4E5]`}>
                             <div className="flex items-center gap-3">
                                 <div className="p-1.5 bg-[#4D94FF] text-white rounded-md">
                                     <LayoutGrid size={20} />
@@ -147,7 +150,7 @@ export default function ManualScanScreen() {
                         {sidebarItems.map((item, idx) => (
                             <div
                                 key={idx}
-                                className={`flex items-center ${isCollapsed ? 'justify-center px-0' : 'gap-3 px-4'} py-2.5 rounded-md cursor-pointer transition-all ${item.active ? 'bg-[#E3F2FD] text-[#4D94FF] border-l-4 border-[#4D94FF]' : 'text-[#546E7A] hover:bg-gray-50'}`}
+                                className={`flex items-center ${isCollapsed ? 'justify-center px-0' : 'gap-3 px-4'} py-2.5 rounded-md cursor-pointer transition-all ${item.active ? 'bg-[#DCE9F8] text-[#2F73FF] border border-[#2F73FF] rounded-2xl' : 'text-[#546E7A] hover:bg-gray-50'}`}
                             >
                                 <div className={`${item.active ? 'text-[#4D94FF]' : 'text-[#90A4AE]'}`}>
                                     {item.icon}
@@ -158,9 +161,9 @@ export default function ManualScanScreen() {
                     </div>
                 </aside>
 
-                <section className="flex-1 bg-white border border-[#B0C4DE] rounded-md shadow-sm p-3 flex flex-col relative overflow-hidden">
+                <section className="flex-1 bg-[#F6F8FC] border border-[#C9D4E5] rounded-md shadow-sm p-3 flex flex-col relative overflow-hidden">
                     <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-1 rounded-2xl border border-[#D6E2F2] bg-[linear-gradient(180deg,#F8FBFF_0%,#EDF3FA_100%)] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_14px_rgba(148,163,184,0.12)]">
+                        <div className="flex items-center gap-1 rounded-2xl border border-[#D2DEEE] bg-[linear-gradient(180deg,#F8FBFF_0%,#EEF3FB_100%)] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_14px_rgba(148,163,184,0.12)]">
                             {scanModes.map((mode) => {
                                 const active = activeMode === mode.id;
                                 return (
@@ -184,7 +187,7 @@ export default function ManualScanScreen() {
 
                         <div className="flex items-center gap-3">
                             {statusCards.map((card) => (
-                                <div key={card.label} className={`rounded-full px-3 py-1.5 text-[11px] font-black ${card.tone}`}>
+                                <div key={card.label} className={`px-1 text-[17px] font-bold ${card.tone}`}>
                                     {card.label} · {card.value}
                                 </div>
                             ))}
@@ -192,13 +195,13 @@ export default function ManualScanScreen() {
                     </div>
 
                     <div className="flex-1 flex gap-3 overflow-hidden">
-                        <div className="flex-1 bg-[#050A19] rounded-3xl relative overflow-hidden border border-[#1A2642] shadow-2xl">
+                        <div className="flex-1 bg-[#030B22] rounded-3xl relative overflow-hidden border border-[#1A2642] shadow-2xl">
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.16)_0%,rgba(5,10,25,0)_45%)]" />
                             <div className="absolute inset-0 opacity-35" style={{ backgroundImage: 'linear-gradient(rgba(77,148,255,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(77,148,255,0.18) 1px, transparent 1px)', backgroundSize: '36px 36px' }} />
 
                             <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
                                 <div>
-                                    <div className="text-[#93C5FD] text-[11px] font-black tracking-[0.22em] uppercase">Live Preview</div>
+                                    <div className="text-[#93C5FD] text-[11px] font-black tracking-[0.22em] uppercase">LIVE PREVIEW</div>
                                     <div className="text-white text-[16px] font-bold mt-1">手动扫描监视区</div>
                                 </div>
                                 <div className="rounded-full border border-[#4D94FF]/30 bg-[#081122]/80 px-3 py-1 text-[11px] font-bold text-[#BFDBFE]">
@@ -209,7 +212,7 @@ export default function ManualScanScreen() {
                             <div className="absolute inset-0 flex items-center justify-center">
                                 <div className="relative">
                                     <div className="w-[220px] h-[220px] rounded-full border border-[#4D94FF]/35" />
-                                    <div className="absolute inset-[34px] rounded-full border border-dashed border-[#60A5FA]/70" />
+                                    <div className="absolute inset-[34px] rounded-full border border-[#60A5FA]/70" />
                                     <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t border-[#4D94FF]/50" />
                                     <div className="absolute left-1/2 inset-y-0 -translate-x-1/2 border-l border-[#4D94FF]/35" />
                                     <div className="absolute left-1/2 top-1/2 h-16 w-16 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-[#93C5FD]/60 bg-[#081122]/85 shadow-[0_0_30px_rgba(96,165,250,0.18)]" />
@@ -240,7 +243,7 @@ export default function ManualScanScreen() {
                         </div>
 
                         <div className="w-[300px] flex flex-col gap-3 h-full overflow-hidden">
-                            <div className="flex items-center gap-1 rounded-2xl border border-[#D6E2F2] bg-[linear-gradient(180deg,#F8FBFF_0%,#EDF3FA_100%)] p-1 shadow-sm">
+                            <div className="flex items-center gap-1 rounded-2xl border border-[#D2DEEE] bg-[linear-gradient(180deg,#F8FBFF_0%,#EDF3FA_100%)] p-1 shadow-sm">
                                 <button
                                     onClick={() => setActivePanel('acq')}
                                     className={`flex-1 h-[38px] rounded-xl text-[12px] font-black transition-all ${activePanel === 'acq' ? 'bg-white text-[#1D4ED8] shadow-sm' : 'text-[#64748B]'}`}
@@ -255,7 +258,7 @@ export default function ManualScanScreen() {
                                 </button>
                             </div>
 
-                            <div className="flex flex-col flex-1 bg-[#F8FAFC] border border-[#B0C4DE]/50 rounded-3xl p-3 shadow-sm overflow-hidden">
+                            <div className="flex flex-col flex-1 bg-[#F2F5FA] border border-[#C9D4E5] rounded-3xl p-3 shadow-sm overflow-hidden">
                                 <div className="flex items-start justify-between gap-3 mb-3 shrink-0">
                                     <div>
                                         <div className="font-black text-[#263238] text-[15px]">
@@ -275,7 +278,7 @@ export default function ManualScanScreen() {
                                 <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-1">
                                     {activePanel === 'acq' ? (
                                         acquisitionFields.map((field) => (
-                                            <div key={field.label} className="bg-white border border-[#D7E3F4] rounded-2xl px-4 py-3 shadow-sm">
+                                            <div key={field.label} className="bg-[#F9FBFE] border border-[#D7E3F4] rounded-2xl px-4 py-3 shadow-sm">
                                                 <div className="flex items-center justify-between">
                                                     <div className="text-[11px] font-black text-[#90A4AE] uppercase tracking-wider">{field.label}</div>
                                                     <div className="text-[11px] font-bold text-[#B0BEC5]">{field.unit}</div>
@@ -285,7 +288,7 @@ export default function ManualScanScreen() {
                                         ))
                                     ) : (
                                         reconFields.map((field) => (
-                                            <div key={field.label} className="bg-white border border-[#D7E3F4] rounded-2xl px-4 py-3 shadow-sm">
+                                            <div key={field.label} className="bg-[#F9FBFE] border border-[#D7E3F4] rounded-2xl px-4 py-3 shadow-sm">
                                                 <div className="text-[11px] font-black text-[#90A4AE] uppercase tracking-wider">{field.label}</div>
                                                 <div className="mt-2 text-[18px] font-black text-[#263238] leading-none">{field.value}</div>
                                             </div>
@@ -294,7 +297,7 @@ export default function ManualScanScreen() {
                                 </div>
                             </div>
 
-                            <div className="bg-[#F8FAFC] border border-[#B0C4DE]/50 rounded-3xl p-3 shadow-sm">
+                            <div className="bg-[#F2F5FA] border border-[#C9D4E5] rounded-3xl p-3 shadow-sm">
                                 <div className="text-[11px] font-black text-[#90A4AE] uppercase tracking-wider mb-2">执行控制</div>
                                 <div className="grid grid-cols-2 gap-2">
                                     <button className="h-11 rounded-2xl bg-[#2F54EB] text-white font-black text-[13px] hover:bg-blue-700 transition-all active:scale-95 shadow-md flex items-center justify-center gap-2">
@@ -312,7 +315,7 @@ export default function ManualScanScreen() {
                 </section>
             </main>
 
-            <footer className="h-[80px] bg-[#E8EAF1] border-t border-[#B0C4DE] flex items-center px-8 shrink-0">
+            <footer className="h-[80px] bg-[#E7ECF3] border-t border-[#C9D4E5] flex items-center px-8 shrink-0">
                 <button className="h-[52px] px-10 bg-white border-2 border-[#B0C4DE] rounded-md text-[14px] font-bold text-[#37474F] hover:bg-gray-50 shadow-sm transition-all active:scale-95">
                     首页
                 </button>
