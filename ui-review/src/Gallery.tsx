@@ -6,6 +6,7 @@ import ScoutScanScreen from "./screens/ScoutScanScreen";
 import BreathingAcquisitionScreen from "./screens/BreathingAcquisitionScreen";
 import BreathingTrainingScreen from "./screens/BreathingTrainingScreen";
 import FourDBreathingPreparationScreen from "./screens/FourDBreathingPreparationScreen";
+import FreeBreathingModeConfirmScreen from "./screens/FreeBreathingModeConfirmScreen";
 import ProtocolSetupScreen from "./screens/ProtocolSetupScreen";
 import WT32ProtocolDetailScreen from "./screens/WT32ProtocolDetailScreen";
 import WT32ProtocolScoutDetailScreen from "./screens/WT32NewProtocolScoutDetailScreen";
@@ -79,10 +80,11 @@ export default function Gallery() {
                     { key: "scout_execute_scan", name: "执行扫描-定位像", component: <ScoutExecuteScanScreen /> },
                     { key: "sequence_scan_confirm", name: "参数确认-序列扫描", component: <SequenceScanConfirmScreen /> },
                     { key: "helical_scan_confirm", name: "参数确认-螺旋扫描", component: <HelicalScanConfirmScreen /> },
-                    { key: "view", name: "图像浏览", component: <ViewScreen /> },
                     { key: "4d-scan", name: "呼吸采集", component: <BreathingAcquisitionScreen /> },
-                    { key: "breathing-training", name: "呼吸训练", component: <BreathingTrainingScreen /> },
-                    { key: "4d-breathing-prep", name: "4D-呼吸准备界面", component: <FourDBreathingPreparationScreen /> },
+                    { key: "breathing-training", name: "参数确认-自由呼吸模式V1", component: <BreathingTrainingScreen /> },
+                    { key: "4d-breathing-prep", name: "呼吸训练-自由呼吸模式", component: <FourDBreathingPreparationScreen /> },
+                    { key: "free-breathing-mode-confirm", name: "参数确认-自由呼吸模式", component: <FreeBreathingModeConfirmScreen /> },
+                    { key: "view", name: "图像浏览", component: <ViewScreen /> },
                     { key: "mock_scan", name: "模拟按键", component: <MockScanScreen /> },
                     { key: "tube-warmup", name: "球管预热", component: <TubeWarmupScreen /> },
                     { key: "air-calibration", name: "空气校正", component: <AirCalibrationScreen /> },

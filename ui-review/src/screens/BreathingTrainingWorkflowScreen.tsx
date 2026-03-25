@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useRef } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
 import * as dicomParser from "dicom-parser";
 import {
     User,
@@ -23,6 +24,7 @@ import {
     Network,
     Siren
 } from "lucide-react";
+import { ensureBusinessSnapshotImported, loadProtocolCasesFromDb, type RawProtocolCase } from "../lib/protocolDb";
 
 interface Sequence {
     id: string;
@@ -43,20 +45,39 @@ const BREATHING_SCOUT_SERIES = {
     fallbackWindowLevel: 45,
 };
 
-const BREATHING_HELICAL_PARAM_PREVIEW = {
+const DEFAULT_TOMOGRAPHIC_TRAINING_PARAMS = {
     bedMode: "OUT",
     position: "HFS",
-    scanLength: "165.0",
-    mA: "215",
+    scanLength: "220.0",
+    mA: "180",
     kV: "120",
-    rotationTime: "1.0",
-    collimation: "32×0.6",
-    pitch: "0.500",
+    rotationTime: "0.5",
+    scanIncrement: "19.2",
+    cycleCount: "10",
     scoutFov: "500",
     angle: "0",
 };
 
 const BREATHING_BED_POSITION_COUNT = 10;
+const BREATHING_SCANNED_BED_COUNT = 3;
+const BREATHING_CROP_BOX_DEFAULT: BreathingCropBox = {
+    x: 0.2,
+    y: 0.18,
+    width: 0.56,
+    height: 0.48,
+};
+type BreathingTomographicDisplayParams = {
+    bedMode: string;
+    position: string;
+    scanLength: string;
+    mA: string;
+    kV: string;
+    rotationTime: string;
+    scanIncrement: string;
+    cycleCount: string;
+    scoutFov: string;
+    angle: string;
+};
 
 type BreathingProjectionMeta = {
     width: number;
@@ -98,6 +119,42 @@ function clamp01(value: number) {
     return Math.min(1, Math.max(0, value));
 }
 
+const toDisplayValue = (value: string | number | boolean | undefined, fractionDigits?: number): string => {
+    if (typeof value === "number") {
+        return typeof fractionDigits === "number" ? value.toFixed(fractionDigits) : String(value);
+    }
+    if (typeof value === "string" && value.trim().length > 0) return value;
+    if (typeof value === "boolean") return value ? "Yes" : "No";
+    return "--";
+};
+
+const getTomographicTrainingDisplayParams = (protocolCases: RawProtocolCase[] | undefined): BreathingTomographicDisplayParams => {
+    if (!protocolCases || protocolCases.length === 0) return DEFAULT_TOMOGRAPHIC_TRAINING_PARAMS;
+
+    const protocolCase = protocolCases.find((item) =>
+        item.sequences.some((sequence) => sequence.sequenceType === "scan" && sequence.mode === "鏂眰鎵弿")
+    );
+    if (!protocolCase) return DEFAULT_TOMOGRAPHIC_TRAINING_PARAMS;
+
+    const scanSequence = protocolCase.sequences.find(
+        (sequence) => sequence.sequenceType === "scan" && sequence.mode === "鏂眰鎵弿"
+    );
+    if (!scanSequence) return DEFAULT_TOMOGRAPHIC_TRAINING_PARAMS;
+
+    return {
+        bedMode: toDisplayValue(scanSequence.scanParams.scanningDirection),
+        position: protocolCase.protocol.supportedPositions[0] ?? DEFAULT_TOMOGRAPHIC_TRAINING_PARAMS.position,
+        scanLength: toDisplayValue(scanSequence.scanParams.scanLength, 1),
+        mA: toDisplayValue(scanSequence.scanParams.mA),
+        kV: toDisplayValue(scanSequence.scanParams.kV),
+        rotationTime: toDisplayValue(scanSequence.scanParams.rotationTime),
+        scanIncrement: toDisplayValue(scanSequence.scanParams.scanIncrement, 1),
+        cycleCount: toDisplayValue(scanSequence.scanParams.cycleCount),
+        scoutFov: toDisplayValue(scanSequence.scanParams.scoutFOV),
+        angle: toDisplayValue(scanSequence.scanParams.angle),
+    };
+};
+
 const BreathingHelicalParamCard = ({ label, value }: { label: string; value: string }) => (
     <div className="px-1.5 py-1 bg-white border border-[#B0C4DE]/40 rounded-md flex flex-col items-center justify-center shadow-sm">
         <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-tighter">{label}</span>
@@ -105,7 +162,13 @@ const BreathingHelicalParamCard = ({ label, value }: { label: string; value: str
     </div>
 );
 
-function BreathingScoutViewport() {
+function BreathingScoutViewport({
+    cropBox,
+    onCropBoxChange,
+}: {
+    cropBox: BreathingCropBox;
+    onCropBoxChange: (next: BreathingCropBox) => void;
+}) {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const viewportRef = useRef<HTMLDivElement | null>(null);
     const projectionRef = useRef<Float32Array | null>(null);
@@ -123,13 +186,6 @@ function BreathingScoutViewport() {
     const [windowWidth, setWindowWidth] = useState(BREATHING_SCOUT_SERIES.fallbackWindowWidth);
     const [windowLevel, setWindowLevel] = useState(BREATHING_SCOUT_SERIES.fallbackWindowLevel);
     const [isAdjustingWindow, setIsAdjustingWindow] = useState(false);
-    const [cropBox, setCropBox] = useState<BreathingCropBox>({
-        x: 0.2,
-        y: 0.18,
-        width: 0.56,
-        height: 0.48,
-    });
-
     useEffect(() => {
         let cancelled = false;
 
@@ -358,7 +414,7 @@ function BreathingScoutViewport() {
                         break;
                 }
 
-                setCropBox(next);
+                onCropBoxChange(next);
                 return;
             }
 
@@ -387,7 +443,7 @@ function BreathingScoutViewport() {
             window.removeEventListener("mousemove", handleMouseMove);
             window.removeEventListener("mouseup", handleMouseUp);
         };
-    }, [isAdjustingWindow]);
+    }, [cropBox, isAdjustingWindow, onCropBoxChange]);
 
     const handleViewportMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
         if (loadState !== "ready") return;
@@ -577,14 +633,16 @@ interface ScoutScanScreenProps {
     breathingWorkflowVariant?: "training" | "acquisition";
 }
 
-const ScoutScanScreen = ({
-    firstStepLabel = "激光灯定位",
+const BreathingTrainingWorkflowScreen = ({
+    firstStepLabel = "参数确认-自由呼吸模式V1",
     bottomPanelMode = "positioning",
     viewportBgClassName = "bg-[#1A222B]",
     breathingWorkflowVariant = "training",
 }: ScoutScanScreenProps) => {
     const isBreathingTraining = bottomPanelMode === "breathing" && breathingWorkflowVariant === "training";
     const isBreathingAcquisition = bottomPanelMode === "breathing" && breathingWorkflowVariant === "acquisition";
+    const [breathingCropBox, setBreathingCropBox] = useState<BreathingCropBox>(BREATHING_CROP_BOX_DEFAULT);
+    const [tomographicTrainingBaseParams, setTomographicTrainingBaseParams] = useState<BreathingTomographicDisplayParams>(DEFAULT_TOMOGRAPHIC_TRAINING_PARAMS);
     const [startPos, setStartPos] = useState("472.95");
     const [endPos, setEndPos] = useState("595.17");
     const isBreathingSignalEnabled = true;
@@ -627,12 +685,45 @@ const ScoutScanScreen = ({
     const [metrics, setMetrics] = useState({ bpm: "14.8", peakErr: "1.7", freqErr: "1.9" });
     const timerRef = useRef<number | null>(null);
     const tRef = useRef(0); // Persistent time counter to prevent resets on re-render
-    const latestSignalValue = filteredWaveData[filteredWaveData.length - 1] ?? 0;
-    const normalizedSignal = clamp01(latestSignalValue / 1100);
-    const breathingBedIndex = Math.min(
-        BREATHING_BED_POSITION_COUNT - 1,
-        Math.max(0, Math.floor(normalizedSignal * BREATHING_BED_POSITION_COUNT))
-    );
+    const linkedScanLength = (
+        (breathingCropBox.height / BREATHING_CROP_BOX_DEFAULT.height) * Number(tomographicTrainingBaseParams.scanLength || DEFAULT_TOMOGRAPHIC_TRAINING_PARAMS.scanLength)
+    ).toFixed(1);
+    const linkedFov = Math.round(
+        (breathingCropBox.width / BREATHING_CROP_BOX_DEFAULT.width) * Number(tomographicTrainingBaseParams.scoutFov || DEFAULT_TOMOGRAPHIC_TRAINING_PARAMS.scoutFov)
+    ).toString();
+    const resolvedTomographicTrainingParams: BreathingTomographicDisplayParams = {
+        ...tomographicTrainingBaseParams,
+        scanLength: linkedScanLength,
+        scoutFov: linkedFov,
+    };
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const importSnapshot = async () => {
+            try {
+                const response = await fetch("/db_business_4tables_for_ai.json");
+                if (!response.ok || !isMounted) return;
+                const snapshot = await response.json();
+                if (!isMounted) return;
+                await ensureBusinessSnapshotImported(snapshot);
+            } catch (error) {
+                console.error("Failed to import protocol snapshot for breathing training screen.", error);
+            }
+        };
+
+        void importSnapshot();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    const dbProtocolCases = useLiveQuery(() => loadProtocolCasesFromDb(), [], []);
+
+    useEffect(() => {
+        setTomographicTrainingBaseParams(getTomographicTrainingDisplayParams(dbProtocolCases));
+    }, [dbProtocolCases]);
 
     useEffect(() => {
         if (bottomPanelMode !== 'breathing' || !isBreathingSignalEnabled) return;
@@ -701,11 +792,11 @@ const ScoutScanScreen = ({
             sequences: isBreathingAcquisition
                 ? [
                     { id: "s1", name: "Scout", steps: [firstStepLabel, "激光灯定位", "参数确认", "执行扫描"] },
-                    { id: "s2", name: "Helical Scan", steps: ["呼吸训练", "参数确认", "执行扫描"] }
+                    { id: "s2", name: "Helical Scan", steps: ["参数确认", "执行扫描"] }
                 ]
                 : [
                     { id: "s1", name: "Scout", steps: [firstStepLabel, "参数确认", "执行扫描"] },
-                    { id: "s2", name: "Helical Scan", steps: ["呼吸训练", "参数确认", "执行扫描"] }
+                    { id: "s2", name: "Helical Scan", steps: ["参数确认", "执行扫描"] }
                 ]
         }
     ]);
@@ -731,11 +822,11 @@ const ScoutScanScreen = ({
                     sequences: isBreathingAcquisition
                         ? [
                             { id: "s1", name: "Scout", steps: [firstStepLabel, "激光灯定位", "参数确认", "执行扫描"] },
-                            { id: "s2", name: "Helical Scan", steps: ["呼吸训练", "参数确认", "执行扫描"] }
+                            { id: "s2", name: "Helical Scan", steps: ["参数确认", "执行扫描"] }
                         ]
                         : [
                             { id: "s1", name: "Scout", steps: [firstStepLabel, "参数确认", "执行扫描"] },
-                            { id: "s2", name: "Helical Scan", steps: ["呼吸训练", "参数确认", "执行扫描"] },
+                            { id: "s2", name: "Helical Scan", steps: ["参数确认", "执行扫描"] },
                         ],
                 },
             ]);
@@ -993,17 +1084,17 @@ const ScoutScanScreen = ({
                     {isBreathingTraining ? (
                         <div className="border-t border-[#EEF2F9] bg-[#F8FAFC] px-3 pt-3 pb-2 flex-1 flex flex-col gap-2 overflow-hidden">
                             <button className="h-[28px] w-full rounded-md text-[10px] font-bold flex items-center justify-center border border-[#B0C4DE] bg-white text-[#4D94FF] hover:bg-blue-50 active:scale-95 shadow-sm transition-all">
-                                呼吸训练
+                                呼吸参数
                             </button>
                             <div className="grid grid-cols-2 gap-1.5">
-                                <BreathingHelicalParamCard label="进出床" value={BREATHING_HELICAL_PARAM_PREVIEW.bedMode} />
-                                <BreathingHelicalParamCard label="体位" value={BREATHING_HELICAL_PARAM_PREVIEW.position} />
-                                <BreathingHelicalParamCard label="扫描长度" value={BREATHING_HELICAL_PARAM_PREVIEW.scanLength} />
-                                <BreathingHelicalParamCard label="mA" value={BREATHING_HELICAL_PARAM_PREVIEW.mA} />
-                                <BreathingHelicalParamCard label="kV" value={BREATHING_HELICAL_PARAM_PREVIEW.kV} />
-                                <BreathingHelicalParamCard label="旋转时间" value={BREATHING_HELICAL_PARAM_PREVIEW.rotationTime} />
-                                <BreathingHelicalParamCard label="准直器" value={BREATHING_HELICAL_PARAM_PREVIEW.collimation} />
-                                <BreathingHelicalParamCard label="Pitch" value={BREATHING_HELICAL_PARAM_PREVIEW.pitch} />
+                                <BreathingHelicalParamCard label="进出床" value={resolvedTomographicTrainingParams.bedMode} />
+                                <BreathingHelicalParamCard label="体位" value={resolvedTomographicTrainingParams.position} />
+                                <BreathingHelicalParamCard label="扫描长度" value={resolvedTomographicTrainingParams.scanLength} />
+                                <BreathingHelicalParamCard label="mA" value={resolvedTomographicTrainingParams.mA} />
+                                <BreathingHelicalParamCard label="kV" value={resolvedTomographicTrainingParams.kV} />
+                                <BreathingHelicalParamCard label="旋转时间" value={resolvedTomographicTrainingParams.rotationTime} />
+                                <BreathingHelicalParamCard label="FOV" value={resolvedTomographicTrainingParams.scoutFov} />
+                                <BreathingHelicalParamCard label="床倾角" value={resolvedTomographicTrainingParams.angle} />
                             </div>
                             <div className="mt-auto pt-0.5">
                                 <button className="h-[28px] w-full rounded-md text-[10px] font-bold flex items-center justify-center gap-1 border border-[#B0C4DE] bg-white text-[#4D94FF] hover:bg-blue-50 active:scale-95 shadow-sm transition-all">
@@ -1141,12 +1232,12 @@ const ScoutScanScreen = ({
                 {/* Right Viewport Area */}
                 <section className={`flex-1 ${bottomPanelMode === 'breathing' ? 'bg-transparent border-0 shadow-none' : `${viewportBgClassName} rounded-lg border border-[#B0C4DE] shadow-sm`} flex flex-col overflow-hidden relative`}>
                     {isBreathingTraining ? (
-                        <div className="flex-1 flex flex-col gap-2 bg-transparent">
+                        <div className="flex-1 flex flex-col gap-1 bg-transparent">
                             <div className="min-h-0 flex-[1.2] overflow-hidden rounded-md border border-[#B0C4DE]/30 bg-[#16202B]">
                                 <div className="grid h-full grid-cols-2 gap-[2px] bg-[#16202B]">
                                     <div className="relative overflow-hidden bg-black">
                                         
-                                        <BreathingScoutViewport />
+                                        <BreathingScoutViewport cropBox={breathingCropBox} onCropBoxChange={setBreathingCropBox} />
                                     </div>
                                     <div className="relative overflow-hidden bg-black">
                                        
@@ -1260,19 +1351,17 @@ const ScoutScanScreen = ({
                                             <div key={`bed-position-${index}`} className="flex min-w-0 flex-1 flex-col items-center gap-0.5">
                                                 <div
                                                     className={`h-3 w-full rounded-sm border transition-colors ${
-                                                        index < breathingBedIndex
+                                                        index < BREATHING_SCANNED_BED_COUNT
                                                             ? "border-[#5A9CFF] bg-gradient-to-b from-[#9DC4FF] to-[#5A9CFF]"
-                                                            : index === breathingBedIndex
-                                                                ? "border-[#2F80FF] bg-gradient-to-b from-[#D9E9FF] to-[#87B4FF]"
-                                                                : "border-[#9DB7D3] bg-gradient-to-b from-[#EAF2FB] to-[#D7E6F7]"
+                                                            : "border-[#9DB7D3] bg-gradient-to-b from-[#EAF2FB] to-[#D7E6F7]"
                                                     }`}
                                                 />
-                                                <span className={`text-[8px] leading-none font-mono ${index === breathingBedIndex ? "text-[#2F80FF]" : "text-[#7A8DA1]"}`}>{index + 1}</span>
+                                                <span className={`text-[8px] leading-none font-mono ${index < BREATHING_SCANNED_BED_COUNT ? "text-[#2F80FF]" : "text-[#7A8DA1]"}`}>{index + 1}</span>
                                             </div>
                                         ))}
                                     </div>
                                     <div className="px-1 py-0.5 text-[9px] font-mono text-[#5F7892]">
-                                        当前: #{breathingBedIndex + 1}
+                                        已扫描: {BREATHING_SCANNED_BED_COUNT}/{BREATHING_BED_POSITION_COUNT}
                                     </div>
                                 </div>
                             </div>
@@ -1590,4 +1679,4 @@ const SliderField = ({ label, value, min, max, step, onChange }: {
     );
 };
 
-export default ScoutScanScreen;
+export default BreathingTrainingWorkflowScreen;

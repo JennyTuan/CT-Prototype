@@ -577,7 +577,7 @@ interface ScoutScanScreenProps {
     breathingWorkflowVariant?: "training" | "acquisition";
 }
 
-const ScoutScanScreen = ({
+const FourDBreathingPreparationWorkflowScreen = ({
     firstStepLabel = "激光灯定位",
     bottomPanelMode = "positioning",
     viewportBgClassName = "bg-[#1A222B]",
@@ -717,7 +717,7 @@ const ScoutScanScreen = ({
     const [selectedPosition, setSelectedPosition] = useState<"start" | "end" | null>(null);
     const [activeStepIdx, setActiveStepIdx] = useState(0); // Add state for active step tracking
     const [expandedSeqId, setExpandedSeqId] = useState<string | null>(
-        bottomPanelMode === "breathing" && breathingWorkflowVariant === "training" ? "s2" : "s1"
+        bottomPanelMode === "breathing" ? "s2" : "s1"
     );
 
     useEffect(() => {
@@ -739,7 +739,7 @@ const ScoutScanScreen = ({
                         ],
                 },
             ]);
-            setExpandedSeqId(isBreathingTraining ? "s2" : "s1");
+            setExpandedSeqId("s2");
             setActiveStepIdx(0);
         }, 0);
 
@@ -905,13 +905,11 @@ const ScoutScanScreen = ({
                                                     ? seq.name === 'Scout'
                                                     : seq.name === 'Scout';
                                                 const isExpanded = expandedSeqId === seq.id;
-                                                const isBreathingScoutSequence = bottomPanelMode === 'breathing' && seq.name === 'Scout';
                                                 const isBreathingHelicalSequence = bottomPanelMode === 'breathing' && seq.name === 'Helical Scan';
                                                 const resolvedActiveSequence = bottomPanelMode === 'breathing'
-                                                    ? (breathingWorkflowVariant === 'training' ? isBreathingHelicalSequence : isBreathingScoutSequence)
+                                                    ? isBreathingHelicalSequence
                                                     : seq.name === 'Scout';
                                                 const isCompletedSequence = bottomPanelMode === 'breathing'
-                                                    && breathingWorkflowVariant === 'training'
                                                     && seq.name === 'Scout';
                                                 const isUnifiedActiveSequence = bottomPanelMode === 'breathing' ? resolvedActiveSequence : seq.name === 'Scout' || isActiveSequence;
                                                 const shouldShowSteps = !!seq.steps?.length && isExpanded;
@@ -1451,7 +1449,7 @@ const ScoutScanScreen = ({
                             : (bottomPanelMode === 'breathing' ? 'bg-[#7EAAFF] text-white hover:bg-[#6FA0FF]' : 'bg-[#4D94FF] text-white hover:bg-blue-600')
                             }`}
                     >
-                        {bottomPanelMode === 'breathing' ? '断层扫描' : '下一步'} <ChevronRight size={20} />
+                        {bottomPanelMode === 'breathing' ? '下一步' : '下一步'} <ChevronRight size={20} />
                     </button>
                 </div>
             </footer>
@@ -1590,4 +1588,4 @@ const SliderField = ({ label, value, min, max, step, onChange }: {
     );
 };
 
-export default ScoutScanScreen;
+export default FourDBreathingPreparationWorkflowScreen;

@@ -577,7 +577,7 @@ interface ScoutScanScreenProps {
     breathingWorkflowVariant?: "training" | "acquisition";
 }
 
-const ScoutScanScreen = ({
+const BreathingAcquisitionWorkflowScreen = ({
     firstStepLabel = "激光灯定位",
     bottomPanelMode = "positioning",
     viewportBgClassName = "bg-[#1A222B]",
@@ -1451,7 +1451,7 @@ const ScoutScanScreen = ({
                             : (bottomPanelMode === 'breathing' ? 'bg-[#7EAAFF] text-white hover:bg-[#6FA0FF]' : 'bg-[#4D94FF] text-white hover:bg-blue-600')
                             }`}
                     >
-                        {bottomPanelMode === 'breathing' ? '断层扫描' : '下一步'} <ChevronRight size={20} />
+                        {bottomPanelMode === 'breathing' ? '定位像' : '下一步'} <ChevronRight size={20} />
                     </button>
                 </div>
             </footer>
@@ -1590,4 +1590,4 @@ const SliderField = ({ label, value, min, max, step, onChange }: {
     );
 };
 
-export default ScoutScanScreen;
+export default BreathingAcquisitionWorkflowScreen;
