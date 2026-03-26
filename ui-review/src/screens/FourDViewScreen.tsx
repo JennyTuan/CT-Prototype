@@ -79,9 +79,9 @@ export default function FourDViewScreen() {
                 </div>
             </header>
 
-            <div className="flex-1 min-h-0 p-3 flex gap-3">
-                <aside className="w-[140px] bg-white border border-[#B0C4DE] rounded-md shadow-sm flex flex-col overflow-hidden">
-                    <div className="p-3 border-b border-[#EEF2F9] flex flex-col items-center gap-2 shrink-0">
+            <div className="flex-1 min-h-0 p-3 flex gap-0 border border-[#B0C4DE] rounded-md overflow-hidden bg-[#F7FAFF]">
+                <aside className="w-[140px] bg-transparent border-r border-[#B0C4DE] flex flex-col overflow-hidden">
+                    <div className="p-3 border-b border-[#BFD0E6] flex flex-col items-center gap-2 shrink-0">
                         <button
                             onClick={() => setIsPlaying((v) => !v)}
                             className={`w-10 h-10 rounded-md flex items-center justify-center transition-colors ${
@@ -93,7 +93,7 @@ export default function FourDViewScreen() {
                         <span className="text-[9px] font-black text-[#90A4AE] uppercase tracking-widest">4D Playback</span>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                    <div className="flex-1 overflow-y-auto py-2">
                         {PHASES.map((phase, idx) => (
                             <button
                                 key={phase.id}
@@ -101,10 +101,10 @@ export default function FourDViewScreen() {
                                     setCurrentPhaseIdx(idx);
                                     setIsPlaying(false);
                                 }}
-                                className={`w-full px-1 py-2 rounded-md border transition-colors flex flex-col items-center ${
+                                className={`w-full px-2 py-2 border-l-[3px] border-transparent transition-colors flex flex-col items-center ${
                                     currentPhaseIdx === idx
-                                        ? 'bg-[#E3F2FD] border-[#4D94FF] text-[#1E88E5]'
-                                        : 'bg-[#F8FAFC] border-[#EEF2F9] text-[#78909C] hover:bg-white'
+                                        ? 'bg-[#EAF3FF] border-l-[#4D94FF] text-[#1E88E5]'
+                                        : 'text-[#78909C] hover:bg-[#F3F7FD] border-b border-[#E3ECF8]'
                                 }`}
                             >
                                 <span className="text-[11px] font-black">{phase.label}</span>
@@ -114,8 +114,8 @@ export default function FourDViewScreen() {
                     </div>
                 </aside>
 
-                <main className="flex-1 min-w-0 bg-white border border-[#B0C4DE] rounded-md shadow-sm overflow-hidden flex flex-col">
-                    <div className="h-[44px] px-4 border-b border-[#EEF2F9] bg-[#F8FAFC] flex items-center justify-between shrink-0">
+                <main className="flex-1 min-w-0 bg-transparent border-r border-[#B0C4DE] overflow-hidden flex flex-col">
+                    <div className="h-[44px] px-4 border-b border-[#BFD0E6] bg-[#F3F7FD] flex items-center justify-between shrink-0">
                         <div>
                             <div className="text-[11px] font-black text-[#37474F] uppercase tracking-[0.12em]">4D MPR Viewer</div>
                             <div className="text-[10px] text-[#78909C]">Using local DICOM slice as phase demo</div>
@@ -135,8 +135,8 @@ export default function FourDViewScreen() {
                     </div>
                 </main>
 
-                <aside className="w-[280px] bg-white border border-[#B0C4DE] rounded-md shadow-sm flex flex-col overflow-hidden">
-                    <div className="h-[44px] px-4 bg-[#F8FAFC] border-b border-[#EEF2F9] flex flex-col justify-center shrink-0">
+                <aside className="w-[280px] bg-transparent flex flex-col overflow-hidden">
+                    <div className="h-[44px] px-4 bg-[#F3F7FD] border-b border-[#BFD0E6] flex flex-col justify-center shrink-0">
                         <span className="text-[11px] font-black text-[#37474F] uppercase tracking-wider">Observation Settings</span>
                         <span className="text-[10px] text-[#90A4AE]">Keep only core controls for reading</span>
                     </div>
@@ -145,7 +145,7 @@ export default function FourDViewScreen() {
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
                                 <span className="text-[10px] font-black text-[#546E7A] uppercase tracking-wider">4D Phase Strip</span>
-                                <span className="text-[10px] font-black text-[#1E88E5] bg-[#E3F2FD] px-2 py-1 rounded">{currentPhase.label}</span>
+                                <span className="text-[10px] font-black text-[#1E88E5]">{currentPhase.label}</span>
                             </div>
                             <input
                                 type="range"
@@ -178,7 +178,7 @@ export default function FourDViewScreen() {
                         <div className="grid grid-cols-2 gap-3 pt-1">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-[#90A4AE] uppercase tracking-wide">Window Width</label>
-                                <div className="h-[40px] bg-[#F8FAFC] border border-[#B0C4DE] rounded-md px-3 flex items-center justify-between">
+                                <div className="h-[40px] border-b border-[#B0C4DE] px-1 flex items-center justify-between">
                                     <span className="text-[14px] font-black text-[#37474F]">{ww}</span>
                                     <div className="flex flex-col">
                                         <button onClick={() => setWw((v) => v + 10)} className="text-[#90A4AE] hover:text-[#4D94FF]"><ChevronLeft size={10} className="rotate-90" /></button>
@@ -189,7 +189,7 @@ export default function FourDViewScreen() {
 
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-[#90A4AE] uppercase tracking-wide">Window Level</label>
-                                <div className="h-[40px] bg-[#F8FAFC] border border-[#B0C4DE] rounded-md px-3 flex items-center justify-between">
+                                <div className="h-[40px] border-b border-[#B0C4DE] px-1 flex items-center justify-between">
                                     <span className="text-[14px] font-black text-[#37474F]">{wl}</span>
                                     <div className="flex flex-col">
                                         <button onClick={() => setWl((v) => v + 5)} className="text-[#90A4AE] hover:text-[#4D94FF]"><ChevronLeft size={10} className="rotate-90" /></button>
