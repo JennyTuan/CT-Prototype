@@ -137,8 +137,8 @@ export default function Gallery() {
         [categories]
     );
     const active = allScreens.find((screen) => screen.key === activeKey) ?? allScreens[0];
-    const wt32Keys = useMemo(() => categories.find((category) => category.id === "wt32")?.screens.map((screen) => screen.key) ?? [], [categories]);
-    const isWt32Active = wt32Keys.includes(activeKey ?? "");
+    const useWt32Preview = activeKey === "4d-view";
+    const useWt32Stage = activeKey === "4d-view";
 
     const previewRef = useRef<HTMLDivElement>(null);
 
@@ -288,9 +288,9 @@ export default function Gallery() {
                 <div className="flex-1 overflow-auto p-8 flex justify-center items-start">
                     <div
                         ref={previewRef}
-                        className={`rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-[#E2E8F0] overflow-hidden ${isWt32Active ? "wt32-preview" : ""}`}
+                        className={`rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-[#E2E8F0] overflow-hidden ${useWt32Preview ? "wt32-preview" : ""}`}
                     >
-                        {isWt32Active ? <div className="wt32-stage">{active?.component}</div> : active?.component}
+                        {useWt32Stage ? <div className="wt32-stage">{active?.component}</div> : active?.component}
                     </div>
                 </div>
             </main>

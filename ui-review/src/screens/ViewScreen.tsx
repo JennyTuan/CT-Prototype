@@ -318,6 +318,13 @@ const ViewScreen = () => {
         () => LAYOUT_SPECS[selectedLayout] ?? LAYOUT_SPECS["三维四窗"],
         [selectedLayout]
     );
+    const viewerWorkspaceClassName = useMemo(
+        () =>
+            imageMode === "3D"
+                ? currentLayoutSpec.containerClassName.replace(" rounded-lg border border-[#B0C4DE]", "")
+                : "flex-1 min-w-0 flex",
+        [currentLayoutSpec, imageMode]
+    );
 
     const studyTree = useMemo<Study[]>(
         () => [
@@ -1495,11 +1502,11 @@ const ViewScreen = () => {
                     </div>
                 </aside>
 
-                <div className="flex-1 flex min-w-0">
-                    <div className={imageMode === "3D" ? currentLayoutSpec.containerClassName : "flex-1 min-w-0 flex"}>
+                <div className="flex-1 flex min-w-0 rounded-lg border border-[#B0C4DE] bg-[#0F172A] shadow-sm overflow-hidden">
+                    <div className={viewerWorkspaceClassName}>
                         <section
                             ref={viewportRef}
-                            className={`${imageMode === "3D" ? currentLayoutSpec.panels.axial : "flex-1 min-w-0 m-[2px] rounded-lg border border-[#B0C4DE] shadow-sm bg-black overflow-hidden relative"} ${toolMode === "measure" ? "cursor-crosshair" : toolMode === "annotate" ? "cursor-cell" : toolMode === "pan" ? "cursor-grab" : "cursor-default"}`}
+                            className={`${imageMode === "3D" ? currentLayoutSpec.panels.axial : "flex-1 min-w-0 bg-black overflow-hidden relative"} ${toolMode === "measure" ? "cursor-crosshair" : toolMode === "annotate" ? "cursor-cell" : toolMode === "pan" ? "cursor-grab" : "cursor-default"}`}
                             onWheel={(e) => {
                                 e.preventDefault();
                                 if (e.ctrlKey) {
@@ -1713,11 +1720,8 @@ const ViewScreen = () => {
                             </>
                         )}
                     </div>
-                    <aside className="w-[72px] bg-[#111827] rounded-r-lg border border-l-0 border-[#B0C4DE] shadow-sm overflow-hidden shrink-0 flex flex-col">
-                        <div className="h-[44px] bg-[#0F172A] border-b border-white/10 flex items-center justify-center">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-[#CBD5E1]">Tools</span>
-                        </div>
-                        <div className="flex-1 flex flex-col gap-1 p-2" onPointerDown={(e) => e.stopPropagation()}>
+                    <aside className="w-[72px] bg-[#111827] border-l border-white/10 overflow-hidden shrink-0 flex flex-col">
+                        <div className="flex-1 flex flex-col gap-1 p-2 pt-3" onPointerDown={(e) => e.stopPropagation()}>
                             {(["pan", "wl", "measure", "annotate"] as const).map((mode, i) => {
                                 const icons = [
                                     <Hand size={20} strokeWidth={1.5} key="hand" />,
