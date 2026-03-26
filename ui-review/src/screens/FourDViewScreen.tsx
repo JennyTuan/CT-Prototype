@@ -128,8 +128,8 @@ export default function FourDViewScreen() {
     const phaseCount = useMemo(() => `${phaseIdx + 1}`, [phaseIdx]);
 
     return (
-        <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_top,_#f8fbff_0%,_#edf2f8_45%,_#e4ebf4_100%)] p-6 text-[#1A2438]">
-            <div className="flex h-[768px] w-[1120px] flex-col overflow-hidden rounded-[26px] border border-[#dbe4ef] bg-[#f7f9fc] shadow-[0_30px_80px_rgba(31,45,61,0.16)]">
+        <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_top,_#f8fbff_0%,_#edf2f8_45%,_#e4ebf4_100%)] p-3 text-[#1A2438]">
+            <div className="flex h-full w-full flex-col overflow-hidden rounded-[22px] border border-[#dbe4ef] bg-[#f7f9fc] shadow-[0_20px_45px_rgba(31,45,61,0.14)]">
             <header className="relative flex h-[58px] shrink-0 items-center gap-3 border-b border-[#D8E2EE] bg-white/95 px-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
                 <div className="flex items-center gap-2.5">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#E8F0FB] text-[#1A6EE0]"><User size={18} /></div>
@@ -150,8 +150,8 @@ export default function FourDViewScreen() {
                 </div>
             </header>
 
-            <div className="flex flex-1 overflow-hidden p-3">
-                <aside className="flex w-[238px] shrink-0 flex-col overflow-hidden rounded-[18px] border border-[#dbe4ef] bg-white shadow-[0_10px_26px_rgba(31,45,61,0.06)]">
+            <div className="flex flex-1 overflow-hidden p-2.5">
+                <aside className="flex w-[224px] shrink-0 flex-col overflow-hidden rounded-[16px] border border-[#dbe4ef] bg-white shadow-[0_10px_26px_rgba(31,45,61,0.06)]">
                     <div className="flex h-10 shrink-0 items-center gap-0.5 border-b border-[#D8E2EE] bg-[#F6F9FC] px-2.5">
                         <button className="flex h-[26px] w-[26px] items-center justify-center rounded-[5px] text-[#5A6A80] hover:bg-[#D8E2EE]"><Folder size={12} /></button>
                         <button className="flex h-[26px] w-[26px] items-center justify-center rounded-[5px] text-[#5A6A80] hover:bg-[#D8E2EE]"><LayoutTemplate size={12} /></button>
@@ -228,9 +228,9 @@ export default function FourDViewScreen() {
                     </div>
                 </aside>
 
-                <main className="ml-3 flex min-w-0 flex-1 flex-col overflow-hidden">
-                    <div className="flex min-h-0 flex-1 overflow-hidden gap-3">
-                        <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-[18px] border border-[#101a24] bg-[#050b11] shadow-[0_16px_40px_rgba(5,11,17,0.28)]">
+                <main className="ml-2.5 flex min-w-0 flex-1 flex-col overflow-hidden">
+                    <div className="flex min-h-0 flex-1 overflow-hidden gap-2.5">
+                        <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-[16px] border border-[#101a24] bg-[#050b11] shadow-[0_14px_32px_rgba(5,11,17,0.24)]">
                             <div className={`grid min-h-0 flex-1 ${layoutGrid} bg-black`}>
                                 <div className="relative min-h-0 overflow-hidden bg-black">
                                     <DicomViewer dicomUrl={viewerUrl} activeTool={tool} windowCenter={wl} windowWidth={ww} />
@@ -274,7 +274,7 @@ export default function FourDViewScreen() {
                             </div>}
                         </section>
 
-                        <aside className="flex w-[54px] shrink-0 flex-col items-center gap-1 rounded-[18px] bg-[#223242] px-0 py-3 shadow-[0_12px_28px_rgba(23,34,46,0.22)]">
+                        <aside className="flex w-[50px] shrink-0 flex-col items-center gap-1 rounded-[16px] bg-[#223242] px-0 py-2.5 shadow-[0_12px_28px_rgba(23,34,46,0.22)]">
                             <div className="mb-2 text-[8px] uppercase tracking-[0.1em] text-white/35 [writing-mode:vertical-rl] [text-orientation:mixed] rotate-180">TOOLS</div>
                             {tools.map((item, idx) => {
                                 const Icon = item.icon;
