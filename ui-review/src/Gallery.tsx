@@ -310,7 +310,7 @@ export default function Gallery() {
                     background: #CBD5E1;
                 }
                 .wt32-preview {
-                    width: 1024px !important;
+                    width: 1366px !important;
                     height: 768px !important;
                     position: relative;
                 }
