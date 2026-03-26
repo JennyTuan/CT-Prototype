@@ -137,8 +137,8 @@ export default function Gallery() {
         [categories]
     );
     const active = allScreens.find((screen) => screen.key === activeKey) ?? allScreens[0];
-    const useWt32Preview = activeKey === "4d-view";
-    const useWt32Stage = activeKey === "4d-view";
+    const useWt32Preview = false;
+    const useWt32Stage = false;
 
     const previewRef = useRef<HTMLDivElement>(null);
 
