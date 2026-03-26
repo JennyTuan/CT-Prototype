@@ -128,8 +128,7 @@ export default function FourDViewScreen() {
     const phaseCount = useMemo(() => `${phaseIdx + 1}`, [phaseIdx]);
 
     return (
-        <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_top,_#f8fbff_0%,_#edf2f8_45%,_#e4ebf4_100%)] p-3 text-[#1A2438]">
-            <div className="flex h-full w-full flex-col overflow-hidden rounded-[22px] border border-[#dbe4ef] bg-[#f7f9fc] shadow-[0_20px_45px_rgba(31,45,61,0.14)]">
+        <div className="flex h-full w-full flex-col overflow-hidden bg-[#EEF2F9] text-[#1A2438]">
             <header className="relative flex h-[58px] shrink-0 items-center gap-3 border-b border-[#D8E2EE] bg-white/95 px-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
                 <div className="flex items-center gap-2.5">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#E8F0FB] text-[#1A6EE0]"><User size={18} /></div>
@@ -150,7 +149,7 @@ export default function FourDViewScreen() {
                 </div>
             </header>
 
-            <div className="flex flex-1 overflow-hidden p-2.5">
+            <div className="flex flex-1 overflow-hidden p-2">
                 <aside className="flex w-[224px] shrink-0 flex-col overflow-hidden rounded-[16px] border border-[#dbe4ef] bg-white shadow-[0_10px_26px_rgba(31,45,61,0.06)]">
                     <div className="flex h-10 shrink-0 items-center gap-0.5 border-b border-[#D8E2EE] bg-[#F6F9FC] px-2.5">
                         <button className="flex h-[26px] w-[26px] items-center justify-center rounded-[5px] text-[#5A6A80] hover:bg-[#D8E2EE]"><Folder size={12} /></button>
@@ -300,7 +299,6 @@ export default function FourDViewScreen() {
                 <button className="ml-auto flex h-9 items-center gap-1 rounded-lg border border-[#C2D0E2] px-3.5 text-[12px] text-[#5A6A80] hover:border-[#1A6EE0] hover:text-[#1A6EE0]"><ChevronLeft size={14} />上一步</button>
                 <button className="flex h-9 items-center gap-1 rounded-lg bg-[#1A6EE0] px-5 text-[12px] text-white shadow-[0_10px_20px_rgba(26,110,224,0.28)] hover:bg-[#1558c0]">结束检查<ChevronRight size={14} /></button>
             </footer>
-            </div>
         </div>
     );
 }
