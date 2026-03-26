@@ -185,7 +185,7 @@ export default function ManualScanScreen() {
                 <section className="flex-1 flex flex-col relative overflow-hidden">
                     <div className="flex-1 flex gap-3 overflow-hidden h-full">
                         {/* Dark Monitor Area */}
-                        <div className="flex-1 bg-[#050A19] rounded-3xl relative overflow-hidden border border-[#1A2642] shadow-2xl">
+                        <div className="flex-1 bg-[#050A19] rounded-md relative overflow-hidden border border-[#1A2642] shadow-2xl">
 
                             {/* DICOM Viewer fills the monitor */}
                             <DicomViewer
@@ -230,31 +230,31 @@ export default function ManualScanScreen() {
                         </div>
 
                         {/* Right Info Panel */}
-                        <div className="w-[260px] flex flex-col gap-3 h-full overflow-hidden">
+                        <div className="w-[260px] h-full overflow-hidden rounded-md border border-[#B0C4DE]/50 bg-[#F8FAFC] shadow-sm flex flex-col">
                             {/* Parameters Card */}
-                            <div className="flex flex-col flex-1 bg-[#F8FAFC] border border-[#B0C4DE]/50 rounded-3xl p-3 shadow-sm overflow-hidden">
-                                <div className="flex items-center rounded-2xl bg-white border border-[#B0C4DE]/30 p-1 shrink-0 mb-3 shadow-sm">
+                            <div className="flex flex-1 flex-col overflow-hidden p-3 pb-3">
+                                <div className="mb-3 flex items-center rounded-xl bg-[#EEF2F9] p-1 shrink-0">
                                     <button
                                         onClick={() => setActivePanel('acq')}
-                                        className={`flex-1 flex items-center justify-center gap-2 h-[38px] rounded-xl text-[12px] font-black transition-all ${activePanel === 'acq' ? 'bg-[#E3F2FD] text-[#1E88E5] shadow-sm' : 'text-[#64748B]'}`}
+                                        className={`flex-1 flex items-center justify-center gap-2 h-[36px] rounded-lg text-[12px] font-black transition-all ${activePanel === 'acq' ? 'bg-white text-[#1E88E5] shadow-sm' : 'text-[#64748B]'}`}
                                     >
                                         <ScanLine size={14} />
                                         采集参数
                                     </button>
                                     <button
                                         onClick={() => setActivePanel('recon')}
-                                        className={`flex-1 flex items-center justify-center gap-2 h-[38px] rounded-xl text-[12px] font-black transition-all ${activePanel === 'recon' ? 'bg-[#E3F2FD] text-[#1E88E5] shadow-sm' : 'text-[#64748B]'}`}
+                                        className={`flex-1 flex items-center justify-center gap-2 h-[36px] rounded-lg text-[12px] font-black transition-all ${activePanel === 'recon' ? 'bg-white text-[#1E88E5] shadow-sm' : 'text-[#64748B]'}`}
                                     >
                                         <RotateCcw size={14} />
                                         重建参数
                                     </button>
                                 </div>
 
-                                <div className="flex-1 bg-white rounded-2xl border border-[#D7E3F4] shadow-inner p-3 overflow-y-auto flex flex-col gap-4 custom-scrollbar">
+                                <div className="flex-1 overflow-y-auto px-1 pb-1 custom-scrollbar">
                                     {/* Scan Mode Sub-tabs within right panel */}
-                                    <div className="space-y-2 pb-2 border-b border-[#F1F5F9]">
+                                    <div className="space-y-2 pb-3 border-b border-[#E2E8F0]">
                                         <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">扫描模式</div>
-                                        <div className="flex items-center gap-2 p-1 bg-slate-50/50 rounded-xl border border-slate-100">
+                                        <div className="flex items-center gap-2 p-1 bg-white/70 rounded-lg">
                                             {scanModes.map((mode) => {
                                                 const active = activeMode === mode.id;
                                                 return (
@@ -275,13 +275,13 @@ export default function ManualScanScreen() {
                                     </div>
 
                                     {activePanel === 'acq' ? (
-                                        <div className="grid grid-cols-2 gap-x-3 gap-y-3 pt-1">
-                                            {acquisitionFields.map((field) => (
+                                        <div className="grid grid-cols-2 gap-x-3 gap-y-3 pt-3">
+                                            {acquisitionFields.slice(0, 4).map((field) => (
                                                 <div key={field.label} className="flex flex-col gap-1">
                                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{field.label}</label>
                                                     {field.type === 'select' ? (
                                                         <div className="relative">
-                                                            <select className="w-full h-[32px] px-2 bg-slate-50/50 border border-slate-200 rounded-lg text-[12px] font-bold appearance-none outline-none focus:border-[#4D94FF] focus:bg-white transition-all">
+                                                            <select className="w-full h-[32px] px-2 bg-white border border-slate-200 rounded-lg text-[12px] font-bold appearance-none outline-none focus:border-[#4D94FF] transition-all">
                                                                 <option>{field.value}</option>
                                                             </select>
                                                             <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -290,20 +290,90 @@ export default function ManualScanScreen() {
                                                         <input
                                                             type="text"
                                                             defaultValue={field.value}
-                                                            className="w-full h-[32px] px-2 bg-slate-50/50 border border-slate-200 rounded-lg text-[12px] font-bold outline-none focus:border-[#4D94FF] focus:bg-white transition-all"
+                                                            className="w-full h-[32px] px-2 bg-white border border-slate-200 rounded-lg text-[12px] font-bold outline-none focus:border-[#4D94FF] transition-all"
                                                         />
                                                     )}
                                                 </div>
                                             ))}
+
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">螺距 (Pitch)</label>
+                                                <input
+                                                    type="text"
+                                                    defaultValue="1"
+                                                    className="w-full h-[32px] px-2 bg-white border border-slate-200 rounded-lg text-[12px] font-bold outline-none focus:border-[#4D94FF] transition-all"
+                                                />
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">体位</label>
+                                                <div className="relative">
+                                                    <select className="w-full h-[32px] px-2 bg-white border border-slate-200 rounded-lg text-[12px] font-bold appearance-none outline-none focus:border-[#4D94FF] transition-all">
+                                                        <option>HFS</option>
+                                                        <option>FFS</option>
+                                                        <option>HFP</option>
+                                                        <option>FFP</option>
+                                                    </select>
+                                                    <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                                </div>
+                                            </div>
+
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">开始位置 (Start)</label>
+                                                <input
+                                                    type="text"
+                                                    defaultValue="--.-"
+                                                    className="w-full h-[32px] px-2 bg-white border border-slate-200 rounded-lg text-[12px] font-bold outline-none focus:border-[#4D94FF] transition-all"
+                                                />
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">结束位置 (End)</label>
+                                                <input
+                                                    type="text"
+                                                    defaultValue="--.-"
+                                                    className="w-full h-[32px] px-2 bg-white border border-slate-200 rounded-lg text-[12px] font-bold outline-none focus:border-[#4D94FF] transition-all"
+                                                />
+                                            </div>
+
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">扫描方向</label>
+                                                <div className="relative">
+                                                    <select className="w-full h-[32px] px-2 bg-white border border-slate-200 rounded-lg text-[12px] font-bold appearance-none outline-none focus:border-[#4D94FF] transition-all">
+                                                        <option>IN</option>
+                                                        <option>OUT</option>
+                                                    </select>
+                                                    <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">部位</label>
+                                                <div className="relative">
+                                                    <select className="w-full h-[32px] px-2 bg-white border border-slate-200 rounded-lg text-[12px] font-bold appearance-none outline-none focus:border-[#4D94FF] transition-all">
+                                                        <option>Body</option>
+                                                        <option>Head</option>
+                                                        <option>Chest</option>
+                                                        <option>Abdomen</option>
+                                                    </select>
+                                                    <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                                </div>
+                                            </div>
+
+                                            <div className="col-span-2 flex flex-col gap-1">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">扫描名称</label>
+                                                <input
+                                                    type="text"
+                                                    defaultValue="待定"
+                                                    className="w-full h-[32px] px-2 bg-white border border-slate-200 rounded-lg text-[12px] font-bold outline-none focus:border-[#4D94FF] transition-all"
+                                                />
+                                            </div>
                                         </div>
                                     ) : (
-                                        <div className="grid grid-cols-2 gap-x-3 gap-y-3 pt-1">
+                                        <div className="grid grid-cols-2 gap-x-3 gap-y-3 pt-3">
                                             {reconFields.map((field) => (
                                                 <div key={field.label} className={`flex flex-col gap-1 ${field.fullWidth ? 'col-span-2' : ''}`}>
                                                     <label className="text-[10px] font-black text-slate-400 font-sans uppercase tracking-[0.05em] px-0.5">{field.label}</label>
                                                     {field.type === 'select' ? (
                                                         <div className="relative">
-                                                            <select className="w-full h-[36px] px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold appearance-none outline-none focus:border-[#4D94FF] focus:bg-white transition-all shadow-sm">
+                                                            <select className="w-full h-[36px] px-3 bg-white border border-slate-200 rounded-xl text-[12px] font-bold appearance-none outline-none focus:border-[#4D94FF] transition-all">
                                                                 {field.options?.map((opt: string) => (
                                                                     <option key={opt}>{opt}</option>
                                                                 ))}
@@ -314,7 +384,7 @@ export default function ManualScanScreen() {
                                                         <input
                                                             type="text"
                                                             defaultValue={field.value}
-                                                            className="w-full h-[36px] px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold outline-none focus:border-[#4D94FF] focus:bg-white transition-all shadow-sm"
+                                                            className="w-full h-[36px] px-3 bg-white border border-slate-200 rounded-xl text-[12px] font-bold outline-none focus:border-[#4D94FF] transition-all"
                                                         />
                                                     )}
                                                 </div>
@@ -324,13 +394,12 @@ export default function ManualScanScreen() {
                                 </div>
                             </div>
 
-                            {/* Action Buttons */}
-                            <div className="flex flex-col gap-2 shrink-0">
-                                <button className="h-[52px] rounded-full bg-[#4D94FF] text-white font-black text-[15px] hover:bg-blue-600 transition-all active:scale-95 shadow-md flex items-center justify-center gap-2 uppercase tracking-widest">
-                                    <Play size={18} fill="currentColor" />
+                            <div className="mt-3 mb-3 flex justify-center gap-2 px-2 shrink-0">
+                                <button className="h-[36px] min-w-[92px] px-3.5 rounded-lg bg-[#4D94FF] text-white font-black text-[12px] hover:bg-blue-600 transition-all active:scale-95 shadow-sm flex items-center justify-center gap-2 uppercase tracking-[0.04em]">
+                                    <Play size={14} fill="currentColor" />
                                     扫描
                                 </button>
-                                <button className="h-[48px] rounded-full bg-white border border-[#B0C4DE] text-[#546E7A] font-bold text-[13px] hover:bg-slate-50 transition-all active:scale-95 flex items-center justify-center gap-2">
+                                <button className="h-[36px] min-w-[92px] px-3.5 rounded-lg bg-white border border-[#B0C4DE] text-[#546E7A] font-bold text-[11px] hover:bg-slate-50 transition-all active:scale-95 flex items-center justify-center gap-2">
                                     <RotateCcw size={16} />
                                     重置
                                 </button>
