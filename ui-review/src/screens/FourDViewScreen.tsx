@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react';
 import {
-    Activity,
     ChevronLeft,
     Clock,
+    Flame,
     LayoutGrid,
     Maximize2,
+    Network,
     Pause,
     Play,
     RotateCcw,
     Settings,
     SlidersHorizontal,
+    Siren,
+    Sun,
     User,
 } from 'lucide-react';
 
@@ -45,35 +48,47 @@ export default function FourDViewScreen() {
 
     return (
         <div className="flex flex-col h-full bg-[#EEF2F9] text-[#37474F] font-sans overflow-hidden">
-            <header className="h-[64px] bg-white border-b border-[#B0C4DE] flex items-center justify-between px-5 shrink-0 shadow-sm">
-                <div className="flex items-center gap-5">
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-[#EEF2F9] flex items-center justify-center text-[#4D94FF]">
-                            <User size={18} />
+            <header className="flex items-center justify-between px-4 h-[80px] bg-[#E8EAF1] border-b border-[#B0C4DE] shrink-0 z-10">
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 py-1.5 px-4 bg-[#DCE6F2] border border-[#B0C4DE] rounded-sm min-w-[210px]">
+                        <div className="w-10 h-10 rounded-sm bg-[#4A6982] flex items-center justify-center text-white opacity-90">
+                            <User size={24} />
                         </div>
-                        <div className="leading-tight">
-                            <div className="text-[13px] font-black">Roky Zhang</div>
-                            <div className="text-[10px] text-[#90A4AE]">ID: 67890 · Male · 45Y</div>
+                        <div className="flex flex-col">
+                            <span className="text-[16px] font-bold text-[#37474F]">Roky Zhang</span>
+                            <span className="text-[12px] text-[#546E7A] font-medium leading-none mt-0.5">ID: 67890</span>
                         </div>
                     </div>
-
-                    <div className="h-8 w-px bg-[#D6E2F0]" />
-
-                    <div className="leading-tight">
-                        <div className="text-[12px] font-black uppercase tracking-wide">4D CT Thorax Analysis</div>
-                        <div className="text-[10px] font-bold text-[#4CAF50] uppercase">Series: 4D_Gated_Lung</div>
+                    <div className="flex flex-col gap-0.5 text-[#546E7A] opacity-60">
+                        <div className="text-[9px] font-bold italic">⊥ 0</div>
+                        <div className="text-[9px] font-bold">∠ 0</div>
+                        <div className="flex items-center gap-1 text-[11px] font-bold">
+                            <Flame size={14} />
+                            <span>0%</span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <div className="h-8 px-3 rounded-md border border-[#CDEAD4] bg-[#EAF7EE] text-[#2E7D32] flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide">
-                        <Activity size={13} />
-                        Steady Signal
+                <div className="text-center">
+                    <div className="text-[28px] font-bold tracking-tight text-[#37474F] leading-none">13:52</div>
+                    <div className="text-[12px] text-[#546E7A] font-medium mt-1 uppercase opacity-80">2月26日 周四</div>
+                </div>
+
+                <div className="flex items-center gap-5 pr-2">
+                    <div className="p-1 text-[#D32F2F] cursor-pointer hover:opacity-70">
+                        <Siren size={30} strokeWidth={1.8} />
                     </div>
-                    <button className="h-8 w-8 rounded-md border border-[#B0C4DE] text-[#78909C] hover:text-[#4D94FF] hover:border-[#4D94FF]/40 transition-colors flex items-center justify-center">
-                        <Settings size={16} />
-                    </button>
-                    <button className="h-8 px-4 rounded-md bg-[#FF5252] text-white text-[11px] font-black tracking-wide">CLOSE</button>
+                    <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
+                        <Network size={24} />
+                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[9px] flex items-center justify-center rounded-full font-bold border border-white">5</span>
+                    </div>
+                    <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
+                        <Sun size={24} />
+                    </div>
+                    <div className="relative p-1 text-[#546E7A] cursor-pointer hover:opacity-70">
+                        <Settings size={24} />
+                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[9px] flex items-center justify-center rounded-full font-bold border border-white">10</span>
+                    </div>
                 </div>
             </header>
 
