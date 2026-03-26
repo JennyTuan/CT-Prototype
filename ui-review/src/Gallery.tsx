@@ -290,7 +290,7 @@ export default function Gallery() {
                         ref={previewRef}
                         className={`rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-[#E2E8F0] overflow-hidden ${isWt32Active ? "wt32-preview" : ""}`}
                     >
-                        {active?.component}
+                        {isWt32Active ? <div className="wt32-stage">{active?.component}</div> : active?.component}
                     </div>
                 </div>
             </main>
@@ -313,6 +313,14 @@ export default function Gallery() {
                     width: 1366px !important;
                     height: 768px !important;
                     position: relative;
+                }
+                .wt32-stage {
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    justify-content: center;
+                    align-items: stretch;
+                    background: #eef2f9;
                 }
                 .wt32-preview button {
                     border-radius: 8px !important;
