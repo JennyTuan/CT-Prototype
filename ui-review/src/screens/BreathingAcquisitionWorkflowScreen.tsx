@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import * as dicomParser from "dicom-parser";
 import {
     User,
@@ -488,55 +488,6 @@ function BreathingScoutViewport() {
                 </>
             )}
 
-            {false && loadState === "ready" && (
-                <div className="absolute bottom-3 right-3 w-[220px] rounded-md border border-white/10 bg-black/45 px-3 py-2 text-[#DCE5ED] backdrop-blur-sm">
-                    <div className="mb-2 flex items-center justify-between text-[10px] font-bold tracking-[0.08em]">
-                        <span>窗宽 / 窗位</span>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setWindowWidth(metaRef.current?.ww ?? BREATHING_SCOUT_SERIES.fallbackWindowWidth);
-                                setWindowLevel(metaRef.current?.wl ?? BREATHING_SCOUT_SERIES.fallbackWindowLevel);
-                            }}
-                            className="rounded border border-white/15 px-2 py-0.5 text-[9px] text-white/80 hover:bg-white/10"
-                        >
-                            重置
-                        </button>
-                    </div>
-                    <div className="space-y-2">
-                        <label className="block">
-                            <div className="mb-1 flex items-center justify-between text-[10px]">
-                                <span>WW</span>
-                                <span>{Math.round(windowWidth)}</span>
-                            </div>
-                            <input
-                                type="range"
-                                min="200"
-                                max="1800"
-                                step="10"
-                                value={windowWidth}
-                                onChange={(event) => setWindowWidth(Number(event.target.value))}
-                                className="w-full accent-[#7EAAFF]"
-                            />
-                        </label>
-                        <label className="block">
-                            <div className="mb-1 flex items-center justify-between text-[10px]">
-                                <span>WL</span>
-                                <span>{Math.round(windowLevel)}</span>
-                            </div>
-                            <input
-                                type="range"
-                                min="-250"
-                                max="250"
-                                step="5"
-                                value={windowLevel}
-                                onChange={(event) => setWindowLevel(Number(event.target.value))}
-                                className="w-full accent-[#66BB6A]"
-                            />
-                        </label>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
@@ -685,11 +636,13 @@ const BreathingAcquisitionWorkflowScreen = ({
 
     useEffect(() => {
         if (bottomPanelMode !== "breathing") return;
-
-        setRawWaveData(new Array(500).fill(100));
-        setFilteredWaveData(new Array(500).fill(100));
-        setMetrics({ bpm: "14.8", peakErr: "1.7", freqErr: "1.9" });
-        tRef.current = 0;
+        const t = setTimeout(() => {
+            setRawWaveData(new Array(500).fill(100));
+            setFilteredWaveData(new Array(500).fill(100));
+            setMetrics({ bpm: "14.8", peakErr: "1.7", freqErr: "1.9" });
+            tRef.current = 0;
+        }, 0);
+        return () => clearTimeout(t);
     }, [bottomPanelMode]);
 
     // Initial data
@@ -1336,11 +1289,11 @@ const BreathingAcquisitionWorkflowScreen = ({
                                     <span className="text-[10px] font-bold text-[#2E7D32]">实时波形</span>
                                 </div>
 
-                                <div className="absolute inset-x-8 top-7 bottom-7 flex flex-col justify-between pointer-events-none opacity-20">
+                                <div className="absolute inset-x-8 top-7 bottom-7 flex flex-col justify-between pointer-events-none">
                                     {[1100, 1000, 800, 600, 400, 200, 0].map(val => (
                                         <div key={val} className="flex items-center gap-2">
-                                            <span className="text-[10px] w-6 text-right font-mono text-[#90A4AE]">{val}</span>
-                                            <div className="flex-1 h-[1px] bg-[#B0C4DE]"></div>
+                                            <span className="text-[10px] w-6 text-right font-mono text-[#546E7A]">{val}</span>
+                                            <div className="flex-1 h-[1px] bg-[#90A4AE]/40"></div>
                                         </div>
                                     ))}
                                 </div>

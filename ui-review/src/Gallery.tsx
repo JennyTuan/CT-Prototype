@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import PatientListScreen from "./screens/PatientListScreen";
@@ -29,6 +29,7 @@ import ComponentLibraryScreen from "./screens/ComponentLibraryScreen";
 import DiskManagementScreen from "./screens/DiskManagementScreen";
 import PerformanceEvaluationScreen from "./screens/PerformanceEvaluationScreen";
 import ManualScanScreen from "./screens/ManualScanScreen";
+import FourDViewScreen from "./screens/FourDViewScreen";
 import CTSimulatorUIRefactor from "./screens/CTSimulatorUIRefactor";
 import CTSimulatorUIRefactorLight from "./screens/CTSimulatorUIRefactorLight";
 import CTSimulatorUIRefactorLight2 from "./screens/CTSimulatorUIRefactorLight2";
@@ -86,6 +87,7 @@ export default function Gallery() {
                     { key: "4d-breathing-prep", name: "呼吸训练-自由呼吸模式", component: <FourDBreathingPreparationScreen /> },
                     { key: "free-breathing-mode-confirm", name: "参数确认-自由呼吸模式", component: <FreeBreathingModeConfirmScreen /> },
                     { key: "view", name: "图像浏览", component: <ViewScreen /> },
+                    { key: "4d-view", name: "图像浏览-4D", component: <FourDViewScreen /> },
                     { key: "mock_scan", name: "模拟按键", component: <MockScanScreen /> },
                     { key: "tube-warmup", name: "球管预热", component: <TubeWarmupScreen /> },
                     { key: "air-calibration", name: "空气校正", component: <AirCalibrationScreen /> },
