@@ -288,7 +288,7 @@ export default function Gallery() {
                 <div className="flex-1 overflow-auto p-8 flex justify-center items-start">
                     <div
                         ref={previewRef}
-                        className={`bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-[#E2E8F0] overflow-hidden ${isWt32Active ? "wt32-preview" : ""}`}
+                        className={`rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-[#E2E8F0] overflow-hidden ${isWt32Active ? "wt32-preview" : ""}`}
                     >
                         {active?.component}
                     </div>
