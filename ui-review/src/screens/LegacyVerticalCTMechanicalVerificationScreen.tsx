@@ -8,7 +8,6 @@ import {
     Telescope,
     View,
     Share2,
-    ArrowRight,
 } from "lucide-react";
 import { LegacyPatientAvatar, LegacyToolbarIcon } from "./legacyVerticalCtVisuals";
 
@@ -80,30 +79,6 @@ export default function LegacyVerticalCTMechanicalVerificationScreen() {
                 {/* Left: verification content */}
                 <div className="flex flex-1 flex-col gap-3 min-w-0">
 
-                    {/* Mode selector tab bar — only for config4 */}
-                    {configSupportsModeSwitch && (
-                        <div className="flex gap-1.5 rounded-[14px] bg-white/70 p-1.5 shadow-sm border border-white/80 shrink-0">
-                            {(["horizontal", "vertical"] as ModeKey[]).map((mode) => {
-                                const label = mode === "horizontal" ? "水平模式" : "垂直模式";
-                                const active = selectedMode === mode;
-                                return (
-                                    <button
-                                        key={mode}
-                                        type="button"
-                                        onClick={() => setSelectedMode(mode)}
-                                        className={`flex-1 rounded-[10px] py-[10px] text-[15px] font-bold transition-all ${
-                                            active
-                                                ? "bg-[#2A63BE] text-white shadow-md"
-                                                : "text-[#717A8D] hover:bg-white/60"
-                                        }`}
-                                    >
-                                        {label}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
-
                     {/* Check 1: Mode match — only for config4 */}
                     {configSupportsModeSwitch && (
                         <div
@@ -128,19 +103,29 @@ export default function LegacyVerticalCTMechanicalVerificationScreen() {
                                 </div>
                             </div>
 
-                            <div className="flex items-stretch gap-3">
-                                <div className="flex-1 rounded-[10px] bg-blue-50 border border-blue-100 px-4 py-3 text-center">
-                                    <div className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mb-1">已选目标</div>
+                            <div className="flex items-stretch gap-0">
+                                {/* 已选模式 */}
+                                <div className="flex-1 rounded-l-[10px] bg-blue-50 border border-blue-100 px-4 py-3 text-center">
+                                    <div className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mb-1">已选模式</div>
                                     <div className="text-[17px] font-black text-blue-700">{selectedModeLabel}</div>
                                 </div>
-                                <div className="flex items-center">
-                                    <ArrowRight
-                                        size={18}
-                                        className={modeMatched ? "text-emerald-400" : "text-orange-300"}
-                                    />
+
+                                {/* Center status badge */}
+                                <div className="flex items-center justify-center z-10 -mx-px">
+                                    <div
+                                        className={`flex h-8 w-8 items-center justify-center rounded-full border-2 bg-white text-[13px] font-black shadow-sm ${
+                                            modeMatched
+                                                ? "border-emerald-300 text-emerald-500"
+                                                : "border-orange-300 text-orange-500"
+                                        }`}
+                                    >
+                                        {modeMatched ? "=" : "≠"}
+                                    </div>
                                 </div>
+
+                                {/* 物理位置 */}
                                 <div
-                                    className={`flex-1 rounded-[10px] border px-4 py-3 text-center ${
+                                    className={`flex-1 rounded-r-[10px] border px-4 py-3 text-center ${
                                         modeMatched
                                             ? "bg-emerald-50 border-emerald-100"
                                             : "bg-orange-50 border-orange-100"
