@@ -56,8 +56,8 @@ function ParamRow({
 }) {
     return (
         <div className="flex items-center gap-3">
-            <span className="w-[160px] shrink-0 text-[12px] font-semibold text-[#6c7f97]">{label}</span>
-            <div className="flex flex-1 items-center gap-1.5">
+            <span className="w-[140px] shrink-0 text-[12px] font-semibold text-[#6c7f97]">{label}</span>
+            <div className="flex min-w-0 flex-1 items-center gap-1.5">
                 <input
                     type="text"
                     value={value}
@@ -191,14 +191,14 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
                         </button>
                     </div>
 
-                    <div className="min-h-0 flex-1 overflow-y-auto rounded-[16px] border border-slate-100 bg-white px-5 py-4 shadow-sm">
+                    <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden rounded-[16px] border border-slate-100 bg-white px-5 py-4 shadow-sm">
                         <div className="mb-2 flex items-center justify-between">
                             <div className="text-[12px] font-black uppercase tracking-widest text-slate-400">联调参数补充</div>
                             <div className="text-[11px] text-slate-400">依据《坐姿治疗系统联调说明》补充</div>
                         </div>
 
                         <SectionLabel>CT姿态 / 扫描环</SectionLabel>
-                        <div className="grid grid-cols-2 gap-2.5">
+                        <div className="flex flex-col gap-2.5">
                             <ParamRow label="立柱倾角（待机）" value={integrationParams.columnTiltStandby} unit="°" onChange={(v) => setIntegrationParam("columnTiltStandby", v)} />
                             <ParamRow label="立柱倾角（扫描）" value={integrationParams.columnTiltScan} unit="°" onChange={(v) => setIntegrationParam("columnTiltScan", v)} />
                             <ParamRow label="扫描环倾角（待机）" value={integrationParams.ringTiltStandby} unit="°" onChange={(v) => setIntegrationParam("ringTiltStandby", v)} />
@@ -209,7 +209,7 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
                         {(cfg.id === 2 || cfg.id === 4) && (
                             <>
                                 <SectionLabel>扫描床补充</SectionLabel>
-                                <div className="grid grid-cols-2 gap-2.5">
+                                <div className="flex flex-col gap-2.5">
                                     <ParamRow label="床高度" value={integrationParams.bedHeight} unit="mm" onChange={(v) => setIntegrationParam("bedHeight", v)} />
                                     <ParamRow label="床板角度" value={integrationParams.bedBoardAngle} unit="°" onChange={(v) => setIntegrationParam("bedBoardAngle", v)} />
                                 </div>
@@ -219,7 +219,7 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
                         {(cfg.id === 3 || cfg.id === 4) && (
                             <>
                                 <SectionLabel>座椅预设位补充</SectionLabel>
-                                <div className="grid grid-cols-2 gap-2.5">
+                                <div className="flex flex-col gap-2.5">
                                     <ParamRow label="座椅待机预设" value={integrationParams.chairPresetStandby} onChange={(v) => setIntegrationParam("chairPresetStandby", v)} />
                                     <ParamRow label="座椅扫描预设" value={integrationParams.chairPresetScan} onChange={(v) => setIntegrationParam("chairPresetScan", v)} />
                                 </div>
