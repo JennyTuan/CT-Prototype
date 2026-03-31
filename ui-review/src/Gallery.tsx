@@ -36,6 +36,7 @@ import CTSimulatorUIRefactorLight2 from "./screens/CTSimulatorUIRefactorLight2";
 import LegacyVerticalCTHomeScreen from "./screens/LegacyVerticalCTHomeScreen";
 import LegacyVerticalCTModeConfirmScreen from "./screens/LegacyVerticalCTModeConfirmScreen";
 import LegacyVerticalCTMechanicalVerificationScreen from "./screens/LegacyVerticalCTMechanicalVerificationScreen";
+import LegacyVerticalCTMechanicalVerificationSingleModeScreen from "./screens/LegacyVerticalCTMechanicalVerificationSingleModeScreen";
 //import LegacyVerticalCTModeConfirmCorrectScreen from "./screens/LegacyVerticalCTModeConfirmCorrectScreen";
 import LegacyVerticalCTPatientPositioningScreen from "./screens/LegacyVerticalCTPatientPositioningScreen";
 import LegacyVerticalCTPatientPositioningVerticalScreen from "./screens/LegacyVerticalCTPatientPositioningVerticalScreen";
@@ -116,7 +117,8 @@ export default function Gallery() {
                 screens: [
                     { key: "legacy-vertical-ct-home", name: "首页", component: <LegacyVerticalCTHomeScreen /> },
                     { key: "legacy-vertical-ct-mode-confirm", name: "模式确认", component: <LegacyVerticalCTModeConfirmScreen /> },
-                    { key: "legacy-vertical-ct-mechanical-verification", name: "机械校验", component: <LegacyVerticalCTMechanicalVerificationScreen /> },
+                    { key: "legacy-vertical-ct-mechanical-verification", name: "机械校验（配置4·双模式）", component: <LegacyVerticalCTMechanicalVerificationScreen /> },
+                    { key: "legacy-vertical-ct-mechanical-verification-single", name: "机械校验（配置1/2/3·单模式）", component: <LegacyVerticalCTMechanicalVerificationSingleModeScreen /> },
                 //    { key: "legacy-vertical-ct-mode-confirm-correct", name: "模式确认-模式正确", component: <LegacyVerticalCTModeConfirmCorrectScreen /> },
                     { key: "legacy-vertical-ct-patient-positioning", name: "患者摆位-水平", component: <LegacyVerticalCTPatientPositioningScreen /> },
                     { key: "legacy-vertical-ct-patient-positioning-vertical", name: "患者摆位-垂直", component: <LegacyVerticalCTPatientPositioningVerticalScreen /> },

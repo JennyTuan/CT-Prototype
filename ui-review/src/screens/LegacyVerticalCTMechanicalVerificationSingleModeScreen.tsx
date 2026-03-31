@@ -8,44 +8,30 @@ import {
     Telescope,
     View,
     Share2,
+    Lock,
 } from "lucide-react";
 import { LegacyPatientAvatar, LegacyToolbarIcon } from "./legacyVerticalCtVisuals";
 import LegacyVerticalCTModeSwitchContent from "./LegacyVerticalCTModeSwitchContent";
 
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
-type ModeKey = "horizontal" | "vertical";
+// 单模式配置（配置1 / 2 / 3）：模式出厂设定，无需切换
+// currentMode 由配置文件注入，此处以"垂直模式"为示例
+const currentMode = "垂直模式";
 
-export default function LegacyVerticalCTMechanicalVerificationScreen() {
-    const configSupportsModeSwitch = true;
-
-    const [modeMatched] = useState(false);
+export default function LegacyVerticalCTMechanicalVerificationSingleModeScreen() {
     const [standbyReady] = useState(false);
-    const [selectedMode] = useState<ModeKey>("horizontal");
     const [isSwitching, setIsSwitching] = useState(false);
 
     const standbyDetails = useMemo(
         () => [
-            { id: "bed", name: "扫描床", status: standbyReady },
             { id: "chair", name: "座椅", status: standbyReady },
             { id: "ring", name: "扫描环", status: true },
         ],
         [standbyReady]
     );
 
-    const canProceed = configSupportsModeSwitch ? modeMatched && standbyReady : standbyReady;
-
-    const currentPhysicalMode: ModeKey = modeMatched
-        ? selectedMode
-        : selectedMode === "horizontal" ? "vertical" : "horizontal";
-
-    const selectedModeLabel = selectedMode === "horizontal" ? "水平模式" : "垂直模式";
-    const physicalModeLabel = currentPhysicalMode === "horizontal" ? "水平模式" : "垂直模式";
-
-    const failedItems = [
-        configSupportsModeSwitch && !modeMatched && `切换机械至${selectedModeLabel}`,
-        !standbyReady && "移动各部件至待机位",
-    ].filter(Boolean) as string[];
+    const canProceed = standbyReady;
 
     return (
         <div
@@ -80,87 +66,29 @@ export default function LegacyVerticalCTMechanicalVerificationScreen() {
                 {/* Left column — fills full height */}
                 <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
 
-                    {/* Check 01: Mode match — fixed height, config4 only */}
-                    {configSupportsModeSwitch && (
-                        <div
-                            className={`shrink-0 rounded-[16px] border bg-white p-4 shadow-sm ${
-                                modeMatched ? "border-emerald-100" : "border-orange-100"
-                            }`}
-                        >
-                            <div className="mb-3 flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[12px] font-black tracking-widest text-slate-300">01</span>
-                                    <span className="text-[15px] font-bold text-slate-700">扫描模式匹配</span>
-                                </div>
-                                <div
-                                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12px] font-bold ${
-                                        modeMatched
-                                            ? "bg-emerald-50 text-emerald-600"
-                                            : "bg-orange-50 text-orange-600"
-                                    }`}
-                                >
-                                    {modeMatched ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
-                                    <span>{modeMatched ? "已匹配" : "模式不匹配"}</span>
-                                </div>
-                            </div>
-
-                            <div className="flex items-stretch gap-0">
-                                <div className="flex-1 rounded-l-[10px] border border-blue-100 bg-blue-50 px-4 py-3 text-center">
-                                    <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-blue-400">
-                                        已选模式
-                                    </div>
-                                    <div className="text-[17px] font-black text-blue-700">{selectedModeLabel}</div>
-                                </div>
-
-                                <div className="z-10 -mx-px flex items-center justify-center">
-                                    <div
-                                        className={`flex h-8 w-8 items-center justify-center rounded-full border-2 bg-white text-[13px] font-black shadow-sm ${
-                                            modeMatched
-                                                ? "border-emerald-300 text-emerald-500"
-                                                : "border-orange-300 text-orange-500"
-                                        }`}
-                                    >
-                                        {modeMatched ? "=" : "≠"}
-                                    </div>
-                                </div>
-
-                                <div
-                                    className={`flex-1 rounded-r-[10px] border px-4 py-3 text-center ${
-                                        modeMatched
-                                            ? "border-emerald-100 bg-emerald-50"
-                                            : "border-orange-100 bg-orange-50"
-                                    }`}
-                                >
-                                    <div
-                                        className={`mb-1 text-[10px] font-bold uppercase tracking-widest ${
-                                            modeMatched ? "text-emerald-400" : "text-orange-400"
-                                        }`}
-                                    >
-                                        当前物理位置
-                                    </div>
-                                    <div
-                                        className={`text-[17px] font-black ${
-                                            modeMatched ? "text-emerald-700" : "text-orange-600"
-                                        }`}
-                                    >
-                                        {physicalModeLabel}
-                                    </div>
-                                </div>
-                            </div>
+                    {/* Mode indicator — fixed height */}
+                    <div className="flex shrink-0 items-center gap-3 rounded-[14px] border border-white/80 bg-white/60 px-4 py-[10px] shadow-sm">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#EEF4FF] text-[#2A63BE]">
+                            <Lock size={13} strokeWidth={2.2} />
                         </div>
-                    )}
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-[11px] font-bold tracking-widest text-slate-400">
+                                当前扫描模式 · 出厂设定
+                            </span>
+                            <span className="text-[15px] font-black text-[#2A63BE]">{currentMode}</span>
+                        </div>
+                    </div>
 
-                    {/* Check 02: Standby — flex-1, fills remaining height */}
+                    {/* Standby card — flex-1, fills remaining height */}
                     <div
                         className={`flex min-h-0 flex-1 flex-col rounded-[16px] border bg-white p-4 shadow-sm ${
                             standbyReady ? "border-emerald-100" : "border-orange-100"
                         }`}
                     >
+                        {/* Section header */}
                         <div className="mb-3 flex shrink-0 items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <span className="text-[12px] font-black tracking-widest text-slate-300">
-                                    {configSupportsModeSwitch ? "02" : "01"}
-                                </span>
+                                <span className="text-[12px] font-black tracking-widest text-slate-300">01</span>
                                 <span className="text-[15px] font-bold text-slate-700">待机位状态</span>
                             </div>
                             <div
@@ -175,8 +103,8 @@ export default function LegacyVerticalCTMechanicalVerificationScreen() {
                             </div>
                         </div>
 
-                        {/* Device cards — 3 cols, fill remaining card height */}
-                        <div className="grid min-h-0 flex-1 grid-cols-3 gap-3">
+                        {/* Device cards — grid fills remaining card height */}
+                        <div className="grid min-h-0 flex-1 grid-cols-2 gap-3">
                             {standbyDetails.map((item) => (
                                 <div
                                     key={item.id}
@@ -198,18 +126,18 @@ export default function LegacyVerticalCTMechanicalVerificationScreen() {
                                         <span className="text-[11px] font-medium text-slate-300">硬件插画</span>
                                     </div>
 
-                                    {/* Info strip — fixed at bottom */}
-                                    <div className="flex shrink-0 items-center justify-between px-3 py-3">
-                                        <span className="text-[14px] font-bold text-slate-700">{item.name}</span>
+                                    {/* Info strip — fixed height at bottom */}
+                                    <div className="flex shrink-0 items-center justify-between px-4 py-3">
+                                        <span className="text-[15px] font-bold text-slate-700">{item.name}</span>
                                         <div
-                                            className={`flex items-center gap-1 text-[11px] font-bold ${
+                                            className={`flex items-center gap-1.5 text-[12px] font-bold ${
                                                 item.status ? "text-emerald-600" : "text-orange-500"
                                             }`}
                                         >
                                             {item.status ? (
-                                                <CheckCircle2 size={12} />
+                                                <CheckCircle2 size={13} />
                                             ) : (
-                                                <Move size={12} className="animate-pulse" />
+                                                <Move size={13} className="animate-pulse" />
                                             )}
                                             <span>{item.status ? "已在待机位" : "偏离待机位"}</span>
                                         </div>
@@ -220,7 +148,7 @@ export default function LegacyVerticalCTMechanicalVerificationScreen() {
                     </div>
                 </div>
 
-                {/* Right column */}
+                {/* Right column — same full height as left */}
                 <aside
                     className={`flex shrink-0 flex-col gap-3 ${
                         isSwitching ? "w-fit" : "w-[210px]"
@@ -230,7 +158,7 @@ export default function LegacyVerticalCTMechanicalVerificationScreen() {
                         <LegacyVerticalCTModeSwitchContent onCancel={() => setIsSwitching(false)} />
                     ) : (
                         <>
-                            {/* Status card — flex-1, no orphaned gap */}
+                            {/* Status card — flex-1, grows to fill height above buttons */}
                             <div
                                 className={`flex min-h-0 flex-1 flex-col overflow-hidden rounded-[16px] border bg-white shadow-sm ${
                                     canProceed ? "border-emerald-100" : "border-slate-100"
@@ -262,21 +190,14 @@ export default function LegacyVerticalCTMechanicalVerificationScreen() {
                                 </div>
 
                                 {/* Failed items — pinned to card bottom */}
-                                {!canProceed && failedItems.length > 0 && (
+                                {!canProceed && (
                                     <div className="shrink-0 border-t border-slate-100 px-4 py-3">
                                         <div className="mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
                                             待处理项目
                                         </div>
-                                        <div className="space-y-2">
-                                            {failedItems.map((item) => (
-                                                <div
-                                                    key={item}
-                                                    className="flex items-start gap-2 text-[12px] font-medium text-slate-600"
-                                                >
-                                                    <div className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400" />
-                                                    <span>{item}</span>
-                                                </div>
-                                            ))}
+                                        <div className="flex items-start gap-2 text-[12px] font-medium text-slate-600">
+                                            <div className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400" />
+                                            <span>移动各部件至待机位</span>
                                         </div>
                                     </div>
                                 )}
@@ -291,7 +212,7 @@ export default function LegacyVerticalCTMechanicalVerificationScreen() {
                                         className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#10b981] text-white shadow-md shadow-emerald-100 transition-all hover:bg-[#059669] active:scale-95"
                                     >
                                         <RefreshCw size={18} />
-                                        <span className="text-[15px] font-bold">一键模式切换</span>
+                                        <span className="text-[15px] font-bold">一键复位</span>
                                     </button>
                                 ) : (
                                     <button
