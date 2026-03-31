@@ -7,35 +7,18 @@ import {
     Telescope,
     View,
 } from "lucide-react";
-
-const imgSystem = "https://www.figma.com/api/mcp/asset/0f00e16f-223e-459a-a4a1-fba281a95725";
-const imgMachine = "https://www.figma.com/api/mcp/asset/a434ca2c-b5c7-4847-985a-8429917eb0e9";
-const imgLaser = "https://www.figma.com/api/mcp/asset/aff6e8ff-2b61-43bf-914d-9d401cfccea1";
-const imgEmergency = "https://www.figma.com/api/mcp/asset/bfc511ee-8358-46e6-9d1c-3959ad3f6809";
-const imgPatient = "https://www.figma.com/api/mcp/asset/03451ece-f71a-4cbf-9dfe-fa05e0bcc6a9";
+import { LegacyPatientAvatar, LegacyToolbarIcon } from "./legacyVerticalCtVisuals";
 
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
 const scoutParams = [
     { label: "扫描长度", value: "122.00" },
     { label: "扫描协议", value: "Head_Surview90" },
-    { label: "\u4f53\u4f4d", value: "HFS" },
+    { label: "体位", value: "HFS" },
     { label: "mA", value: "10" },
     { label: "kV", value: "80" },
     { label: "平扫角度", value: "90" },
 ] as const;
-
-function ToolbarIcon({ src, alt, left }: { src: string; alt: string; left: number }) {
-    return (
-        <img
-            src={src}
-            alt={alt}
-            draggable={false}
-            className="absolute top-[20px] h-[32px] w-[32px] object-contain select-none"
-            style={{ left }}
-        />
-    );
-}
 
 function ParamField({ label, value }: { label: string; value: string }) {
     return (
@@ -65,17 +48,12 @@ function ParamOptionField({
             <div className="flex flex-1 rounded-[6px] border border-[#ccd8e8] bg-[#eef2f7] p-[3px] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
                 {options.map((option) => {
                     const active = value === option;
-
                     return (
                         <button
                             key={option}
                             type="button"
                             onClick={() => onChange(option)}
-                            className={`flex-1 rounded-[4px] px-[6px] py-[4px] text-[12px] font-semibold transition-all ${
-                                active
-                                    ? "bg-white text-[#4d6f9f] shadow-[0_1px_2px_rgba(149,166,191,0.22)]"
-                                    : "text-[#7f90a7]"
-                            }`}
+                            className={`flex-1 rounded-[4px] px-[6px] py-[4px] text-[12px] font-semibold transition-all ${active ? "bg-white text-[#4d6f9f] shadow-[0_1px_2px_rgba(149,166,191,0.22)]" : "text-[#7f90a7]"}`}
                         >
                             {option}
                         </button>
@@ -102,10 +80,7 @@ function CameraPreviewPanel() {
 
             try {
                 stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        width: { ideal: 960 },
-                        height: { ideal: 720 },
-                    },
+                    video: { width: { ideal: 960 }, height: { ideal: 720 } },
                     audio: false,
                 });
 
@@ -129,9 +104,7 @@ function CameraPreviewPanel() {
 
         return () => {
             active = false;
-            if (stream) {
-                stream.getTracks().forEach((track) => track.stop());
-            }
+            if (stream) stream.getTracks().forEach((track) => track.stop());
         };
     }, []);
 
@@ -160,7 +133,7 @@ export default function LegacyVerticalCTScoutConfirmScreen() {
     const [startPos, setStartPos] = useState("472.95");
     const [endPos, setEndPos] = useState("595.17");
     const [selectedPosition, setSelectedPosition] = useState<"start" | "end">("end");
-    const [tableDirection, setTableDirection] = useState<"\u8fdb\u5e8a" | "\u51fa\u5e8a">("\u8fdb\u5e8a");
+    const [tableDirection, setTableDirection] = useState<"进床" | "出床">("进床");
 
     const handleSwap = () => {
         setStartPos(endPos);
@@ -172,12 +145,7 @@ export default function LegacyVerticalCTScoutConfirmScreen() {
             <div className="absolute left-0 top-0 h-[80px] w-full bg-[#C1C5D5] opacity-50" />
             <div className="absolute left-0 top-0 z-10 h-[80px] w-full">
                 <div className="absolute left-[20px] top-[12px] h-[50px] w-[100px] rounded-[5px] border border-[#95B0E2] bg-[#D2D7E6]">
-                    <img
-                        src={imgPatient}
-                        alt="patient"
-                        draggable={false}
-                        className="absolute left-[4px] top-[8px] h-[29.818px] w-[31.552px] object-contain select-none"
-                    />
+                    <LegacyPatientAvatar alt="患者" />
                     <div className="absolute left-[38px] top-[4px] w-[56px] whitespace-nowrap text-center text-[14px] font-medium leading-[1.15] text-[#717579]">
                         <div>欧阳祖华</div>
                         <div>000001</div>
@@ -187,10 +155,10 @@ export default function LegacyVerticalCTScoutConfirmScreen() {
                     <div className="text-[32px] font-black leading-none">13:06</div>
                     <div className="mt-[9px] text-[15px] font-black leading-none">3月9日 周日</div>
                 </div>
-                <ToolbarIcon src={imgEmergency} alt="急停" left={760} />
-                <ToolbarIcon src={imgLaser} alt="激光" left={824} />
-                <ToolbarIcon src={imgMachine} alt="设备状态" left={888} />
-                <ToolbarIcon src={imgSystem} alt="系统管理" left={952} />
+                <LegacyToolbarIcon kind="emergency" alt="急停" left={756} />
+                <LegacyToolbarIcon kind="laser" alt="激光" left={820} />
+                <LegacyToolbarIcon kind="machine" alt="设备状态" left={884} />
+                <LegacyToolbarIcon kind="system" alt="系统管理" left={948} />
             </div>
 
             <div className="absolute left-[20px] right-[20px] top-[92px] h-[588px]">
@@ -200,40 +168,37 @@ export default function LegacyVerticalCTScoutConfirmScreen() {
                             <div className="whitespace-nowrap text-[22px] font-medium leading-[1.1] text-[#4b6f9f]">请打开激光灯获取定位</div>
 
                             <div className="mt-[18px] rounded-[10px] border border-[#D7E1EE] bg-[rgba(255,255,255,0.45)] px-[12px] py-[10px]">
-                                <div className="flex items-stretch gap-3 h-[118px]">
-                                    <div className="flex flex-col items-center self-stretch justify-center py-2 shrink-0">
+                                <div className="flex h-[118px] items-stretch gap-3">
+                                    <div className="flex shrink-0 flex-col items-center self-stretch justify-center py-2">
                                         <button
                                             type="button"
                                             onClick={() => setSelectedPosition("start")}
-                                            className={`w-3 h-3 rounded-full border-2 flex items-center justify-center p-[2px] shrink-0 transition-all ${selectedPosition === "start" ? "bg-[#4D94FF] border-white shadow-sm" : "bg-white border-[#B0C4DE]"}`}
+                                            className={`flex h-3 w-3 shrink-0 items-center justify-center rounded-full border-2 p-[2px] transition-all ${selectedPosition === "start" ? "border-white bg-[#4D94FF] shadow-sm" : "border-[#B0C4DE] bg-white"}`}
                                         >
-                                            {selectedPosition === "start" && <div className="w-full h-full bg-white rounded-full" />}
+                                            {selectedPosition === "start" && <div className="h-full w-full rounded-full bg-white" />}
                                         </button>
-                                        <div className="w-px flex-1 bg-[#C5D5E8] my-1" />
+                                        <div className="my-1 flex-1 w-px bg-[#C5D5E8]" />
                                         <button
                                             type="button"
                                             onClick={handleSwap}
                                             title="交换起始/结束位置"
-                                            className="w-[20px] h-[20px] rounded-full bg-white border border-[#B0C4DE] flex items-center justify-center text-[#78A0BF] hover:text-[#4D94FF] hover:border-[#4D94FF] hover:bg-[#EEF6FF] transition-all active:scale-90 shadow-sm shrink-0"
+                                            className="flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-full border border-[#B0C4DE] bg-white text-[#78A0BF] shadow-sm transition-all hover:border-[#4D94FF] hover:bg-[#EEF6FF] hover:text-[#4D94FF] active:scale-90"
                                         >
                                             <ArrowUpDown size={10} />
                                         </button>
-                                        <div className="w-px flex-1 bg-[#C5D5E8] my-1" />
+                                        <div className="my-1 flex-1 w-px bg-[#C5D5E8]" />
                                         <button
                                             type="button"
                                             onClick={() => setSelectedPosition("end")}
-                                            className={`w-3 h-3 rounded-full border-2 flex items-center justify-center p-[2px] shrink-0 transition-all ${selectedPosition === "end" ? "bg-[#66BB6A] border-white shadow-sm" : "bg-white border-[#B0C4DE]"}`}
+                                            className={`flex h-3 w-3 shrink-0 items-center justify-center rounded-full border-2 p-[2px] transition-all ${selectedPosition === "end" ? "border-white bg-[#66BB6A] shadow-sm" : "border-[#B0C4DE] bg-white"}`}
                                         >
-                                            {selectedPosition === "end" && <div className="w-full h-full bg-white rounded-full" />}
+                                            {selectedPosition === "end" && <div className="h-full w-full rounded-full bg-white" />}
                                         </button>
                                     </div>
 
-                                    <div className="flex flex-col flex-1 min-w-0 self-stretch justify-between py-4">
-                                        <div
-                                            onClick={() => setSelectedPosition("start")}
-                                            className="flex items-center gap-2 h-[32px] min-w-0 cursor-pointer"
-                                        >
-                                            <span className={`text-[12px] font-bold w-[60px] shrink-0 transition-colors ${selectedPosition === "start" ? "text-[#4D94FF]" : "text-[#90A4AE]"}`}>起始位置 :</span>
+                                    <div className="flex min-w-0 flex-1 flex-col justify-between self-stretch py-4">
+                                        <div onClick={() => setSelectedPosition("start")} className="flex h-[32px] min-w-0 cursor-pointer items-center gap-2">
+                                            <span className={`w-[60px] shrink-0 text-[12px] font-bold transition-colors ${selectedPosition === "start" ? "text-[#4D94FF]" : "text-[#90A4AE]"}`}>起始位置:</span>
                                             <input
                                                 type="text"
                                                 value={startPos}
@@ -245,14 +210,11 @@ export default function LegacyVerticalCTScoutConfirmScreen() {
                                                     e.stopPropagation();
                                                     setSelectedPosition("start");
                                                 }}
-                                                className={`flex-1 min-w-0 h-[32px] bg-white border rounded px-2 text-[13px] font-bold outline-none transition-colors ${selectedPosition === "start" ? "border-[#4D94FF] text-[#4D94FF]" : "border-[#B0C4DE] text-[#90A4AE]"} focus:border-[#4D94FF]`}
+                                                className={`h-[32px] min-w-0 flex-1 rounded border bg-white px-2 text-[13px] font-bold outline-none transition-colors ${selectedPosition === "start" ? "border-[#4D94FF] text-[#4D94FF]" : "border-[#B0C4DE] text-[#90A4AE]"} focus:border-[#4D94FF]`}
                                             />
                                         </div>
-                                        <div
-                                            onClick={() => setSelectedPosition("end")}
-                                            className="flex items-center gap-2 h-[32px] min-w-0 cursor-pointer"
-                                        >
-                                            <span className={`text-[12px] font-bold w-[60px] shrink-0 transition-colors ${selectedPosition === "end" ? "text-[#66BB6A]" : "text-[#90A4AE]"}`}>结束位置 :</span>
+                                        <div onClick={() => setSelectedPosition("end")} className="flex h-[32px] min-w-0 cursor-pointer items-center gap-2">
+                                            <span className={`w-[60px] shrink-0 text-[12px] font-bold transition-colors ${selectedPosition === "end" ? "text-[#66BB6A]" : "text-[#90A4AE]"}`}>结束位置:</span>
                                             <input
                                                 type="text"
                                                 value={endPos}
@@ -264,7 +226,7 @@ export default function LegacyVerticalCTScoutConfirmScreen() {
                                                     e.stopPropagation();
                                                     setSelectedPosition("end");
                                                 }}
-                                                className={`flex-1 min-w-0 h-[32px] bg-white border rounded px-2 text-[13px] font-bold outline-none transition-colors ${selectedPosition === "end" ? "border-[#66BB6A] text-[#66BB6A]" : "border-[#B0C4DE] text-[#90A4AE]"} focus:border-[#4D94FF]`}
+                                                className={`h-[32px] min-w-0 flex-1 rounded border bg-white px-2 text-[13px] font-bold outline-none transition-colors ${selectedPosition === "end" ? "border-[#66BB6A] text-[#66BB6A]" : "border-[#B0C4DE] text-[#90A4AE]"} focus:border-[#4D94FF]`}
                                             />
                                         </div>
                                     </div>
@@ -277,8 +239,8 @@ export default function LegacyVerticalCTScoutConfirmScreen() {
                                     <ParamOptionField
                                         label=""
                                         value={tableDirection}
-                                        options={["\u8fdb\u5e8a", "\u51fa\u5e8a"] as const}
-                                        onChange={(value) => setTableDirection(value as "\u8fdb\u5e8a" | "\u51fa\u5e8a")}
+                                        options={["进床", "出床"] as const}
+                                        onChange={(value) => setTableDirection(value as "进床" | "出床")}
                                     />
                                     {scoutParams.map((item) => (
                                         <ParamField key={item.label} label={item.label} value={item.value} />

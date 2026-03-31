@@ -7,12 +7,7 @@ import {
     Telescope,
     View,
 } from "lucide-react";
-
-const imgSystem = "https://www.figma.com/api/mcp/asset/0f00e16f-223e-459a-a4a1-fba281a95725";
-const imgMachine = "https://www.figma.com/api/mcp/asset/a434ca2c-b5c7-4847-985a-8429917eb0e9";
-const imgLaser = "https://www.figma.com/api/mcp/asset/aff6e8ff-2b61-43bf-914d-9d401cfccea1";
-const imgEmergency = "https://www.figma.com/api/mcp/asset/bfc511ee-8358-46e6-9d1c-3959ad3f6809";
-const imgPatient = "https://www.figma.com/api/mcp/asset/03451ece-f71a-4cbf-9dfe-fa05e0bcc6a9";
+import { LegacyPatientAvatar, LegacyPoseIllustrationCard, LegacyToolbarIcon } from "./legacyVerticalCtVisuals";
 
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
@@ -27,18 +22,6 @@ const directionOptions = [
     { id: "head-first", label: "头先进", active: true },
     { id: "feet-first", label: "脚先进", active: false },
 ] as const;
-
-function ToolbarIcon({ src, alt, left }: { src: string; alt: string; left: number }) {
-    return (
-        <img
-            src={src}
-            alt={alt}
-            draggable={false}
-            className="absolute top-[20px] h-[32px] w-[32px] object-contain select-none"
-            style={{ left }}
-        />
-    );
-}
 
 function SelectionChip({
     label,
@@ -64,16 +47,6 @@ function SelectionChip({
     );
 }
 
-function VerticalPoseIllustration() {
-    return (
-        <div className="relative flex h-[176px] w-[260px] items-center justify-center overflow-hidden rounded-[10px] border border-dashed border-[#AEB7C7] bg-[linear-gradient(180deg,#E5E9F2_0%,#D7DCE7_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.42)]">
-            <div className="flex h-[72px] w-[128px] items-center justify-center rounded-[8px] border border-[#C2CAD8] bg-[rgba(248,250,255,0.82)] text-[12px] font-semibold tracking-[0.08em] text-[#77829A]">
-                体位示意占位
-            </div>
-        </div>
-    );
-}
-
 function CameraPreviewPanel() {
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -90,10 +63,7 @@ function CameraPreviewPanel() {
 
             try {
                 stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        width: { ideal: 960 },
-                        height: { ideal: 720 },
-                    },
+                    video: { width: { ideal: 960 }, height: { ideal: 720 } },
                     audio: false,
                 });
 
@@ -117,9 +87,7 @@ function CameraPreviewPanel() {
 
         return () => {
             active = false;
-            if (stream) {
-                stream.getTracks().forEach((track) => track.stop());
-            }
+            if (stream) stream.getTracks().forEach((track) => track.stop());
         };
     }, []);
 
@@ -148,12 +116,7 @@ export default function LegacyVerticalCTPatientPositioningVerticalScreen() {
             <div className="absolute left-0 top-0 h-[80px] w-full bg-[#C1C5D5] opacity-50" />
             <div className="absolute left-0 top-0 z-10 h-[80px] w-full">
                 <div className="absolute left-[20px] top-[12px] h-[50px] w-[100px] rounded-[5px] border border-[#95B0E2] bg-[#D2D7E6]">
-                    <img
-                        src={imgPatient}
-                        alt="患者"
-                        draggable={false}
-                        className="absolute left-[4px] top-[8px] h-[29.818px] w-[31.552px] object-contain select-none"
-                    />
+                    <LegacyPatientAvatar alt="患者" />
                     <div className="absolute left-[38px] top-[4px] w-[56px] whitespace-nowrap text-center text-[14px] font-medium leading-[1.15] text-[#717579]">
                         <div>欧阳祖华</div>
                         <div>000001</div>
@@ -161,12 +124,12 @@ export default function LegacyVerticalCTPatientPositioningVerticalScreen() {
                 </div>
                 <div className="absolute left-1/2 top-[12px] -translate-x-1/2 text-center text-[#717579]">
                     <div className="text-[32px] font-black leading-none">13:06</div>
-                    <div className="mt-[9px] text-[15px] font-black leading-none">3月1日 周日</div>
+                    <div className="mt-[9px] text-[15px] font-black leading-none">3月9日 周日</div>
                 </div>
-                <ToolbarIcon src={imgEmergency} alt="急停" left={760} />
-                <ToolbarIcon src={imgLaser} alt="激光" left={824} />
-                <ToolbarIcon src={imgMachine} alt="机器状态" left={888} />
-                <ToolbarIcon src={imgSystem} alt="系统管理" left={952} />
+                <LegacyToolbarIcon kind="emergency" alt="急停" left={756} />
+                <LegacyToolbarIcon kind="laser" alt="激光" left={820} />
+                <LegacyToolbarIcon kind="machine" alt="机器状态" left={884} />
+                <LegacyToolbarIcon kind="system" alt="系统管理" left={948} />
             </div>
 
             <div className="absolute left-[20px] right-[20px] top-[92px] h-[588px]">
@@ -190,7 +153,7 @@ export default function LegacyVerticalCTPatientPositioningVerticalScreen() {
                             </div>
 
                             <div className="mt-[16px] flex justify-center">
-                                <VerticalPoseIllustration />
+                                <LegacyPoseIllustrationCard label="体位示意" />
                             </div>
 
                             <div className="mt-[20px] border-t border-[#bcc1cd] pt-[18px]">
