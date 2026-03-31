@@ -45,30 +45,6 @@ const DEFAULT_PARAMS: Params = {
     chairHeightDefault: "500.0",
 };
 
-type IntegrationParams = {
-    columnTiltStandby: string;
-    columnTiltScan: string;
-    ringTiltStandby: string;
-    ringTiltScan: string;
-    horizontalTravelScan: string;
-    bedHeight: string;
-    bedBoardAngle: string;
-    chairPresetStandby: string;
-    chairPresetScan: string;
-};
-
-const DEFAULT_INTEGRATION_PARAMS: IntegrationParams = {
-    columnTiltStandby: "0",
-    columnTiltScan: "0",
-    ringTiltStandby: "0",
-    ringTiltScan: "90",
-    horizontalTravelScan: "1200",
-    bedHeight: "800",
-    bedBoardAngle: "0",
-    chairPresetStandby: "预设位置0",
-    chairPresetScan: "预设位置1",
-};
-
 // ── 小组件 ────────────────────────────────────────────────
 function ParamRow({
     label,
@@ -115,7 +91,6 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 export default function LegacyVerticalCTServiceConfigScreen() {
     const [selectedConfig, setSelectedConfig] = useState<ConfigId>(4);
     const [params, setParams] = useState<Params>(DEFAULT_PARAMS);
-    const [integrationParams, setIntegrationParams] = useState<IntegrationParams>(DEFAULT_INTEGRATION_PARAMS);
     const [saved, setSaved] = useState(false);
     const [time, setTime] = useState(new Date());
 
@@ -133,17 +108,11 @@ export default function LegacyVerticalCTServiceConfigScreen() {
 
     function handleReset() {
         setParams(DEFAULT_PARAMS);
-        setIntegrationParams(DEFAULT_INTEGRATION_PARAMS);
         setSaved(false);
     }
 
     function handleSave() {
         setSaved(true);
-    }
-
-    function setIntegrationParam(key: keyof IntegrationParams, value: string) {
-        setIntegrationParams((p) => ({ ...p, [key]: value }));
-        setSaved(false);
     }
 
     return (
@@ -361,85 +330,6 @@ export default function LegacyVerticalCTServiceConfigScreen() {
                         )}
                     </div>
 
-                    {/* 新增：联调参数补充区（位于原界面下方，不破坏初版布局） */}
-                    <div className="shrink-0 rounded-[14px] border border-[#dbe5f2] bg-white/70 px-5 py-4 shadow-sm">
-                        <div className="mb-2 flex items-center justify-between">
-                            <div className="text-[12px] font-black uppercase tracking-widest text-slate-400">联调参数补充</div>
-                            <div className="text-[11px] text-slate-400">依据《坐姿治疗系统联调说明》补充</div>
-                        </div>
-
-                        <SectionLabel>CT姿态 / 扫描环</SectionLabel>
-                        <div className="grid grid-cols-2 gap-2.5">
-                            <ParamRow
-                                label="立柱倾角（待机）"
-                                value={integrationParams.columnTiltStandby}
-                                unit="°"
-                                onChange={(v) => setIntegrationParam("columnTiltStandby", v)}
-                            />
-                            <ParamRow
-                                label="立柱倾角（扫描）"
-                                value={integrationParams.columnTiltScan}
-                                unit="°"
-                                onChange={(v) => setIntegrationParam("columnTiltScan", v)}
-                            />
-                            <ParamRow
-                                label="扫描环倾角（待机）"
-                                value={integrationParams.ringTiltStandby}
-                                unit="°"
-                                onChange={(v) => setIntegrationParam("ringTiltStandby", v)}
-                            />
-                            <ParamRow
-                                label="扫描环倾角（扫描）"
-                                value={integrationParams.ringTiltScan}
-                                unit="°"
-                                onChange={(v) => setIntegrationParam("ringTiltScan", v)}
-                            />
-                            <ParamRow
-                                label="水平行程（扫描）"
-                                value={integrationParams.horizontalTravelScan}
-                                unit="mm"
-                                onChange={(v) => setIntegrationParam("horizontalTravelScan", v)}
-                            />
-                        </div>
-
-                        {(cfg.id === 2 || cfg.id === 4) && (
-                            <>
-                                <SectionLabel>扫描床补充</SectionLabel>
-                                <div className="grid grid-cols-2 gap-2.5">
-                                    <ParamRow
-                                        label="床高度"
-                                        value={integrationParams.bedHeight}
-                                        unit="mm"
-                                        onChange={(v) => setIntegrationParam("bedHeight", v)}
-                                    />
-                                    <ParamRow
-                                        label="床板角度"
-                                        value={integrationParams.bedBoardAngle}
-                                        unit="°"
-                                        onChange={(v) => setIntegrationParam("bedBoardAngle", v)}
-                                    />
-                                </div>
-                            </>
-                        )}
-
-                        {(cfg.id === 3 || cfg.id === 4) && (
-                            <>
-                                <SectionLabel>座椅预设位补充</SectionLabel>
-                                <div className="grid grid-cols-2 gap-2.5">
-                                    <ParamRow
-                                        label="座椅待机预设"
-                                        value={integrationParams.chairPresetStandby}
-                                        onChange={(v) => setIntegrationParam("chairPresetStandby", v)}
-                                    />
-                                    <ParamRow
-                                        label="座椅扫描预设"
-                                        value={integrationParams.chairPresetScan}
-                                        onChange={(v) => setIntegrationParam("chairPresetScan", v)}
-                                    />
-                                </div>
-                            </>
-                        )}
-                    </div>
                 </div>
             </main>
 

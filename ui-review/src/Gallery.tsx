@@ -42,6 +42,7 @@ import LegacyVerticalCTPatientPositioningScreen from "./screens/LegacyVerticalCT
 import LegacyVerticalCTPatientPositioningVerticalScreen from "./screens/LegacyVerticalCTPatientPositioningVerticalScreen";
 import LegacyVerticalCTScoutConfirmScreen from "./screens/LegacyVerticalCTScoutConfirmScreen";
 import LegacyVerticalCTServiceConfigScreen from "./screens/LegacyVerticalCTServiceConfigScreen";
+import LegacyVerticalCTIntegrationConfigScreen from "./screens/LegacyVerticalCTIntegrationConfigScreen";
 
 type ScreenItem = {
     key: string;
@@ -125,6 +126,7 @@ export default function Gallery() {
                     { key: "legacy-vertical-ct-patient-positioning-vertical", name: "患者摆位-垂直", component: <LegacyVerticalCTPatientPositioningVerticalScreen /> },
                     { key: "legacy-vertical-ct-scout-confirm", name: "定位像确认", component: <LegacyVerticalCTScoutConfirmScreen /> },
                     { key: "legacy-vertical-ct-service-config", name: "服务模式·系统配置", component: <LegacyVerticalCTServiceConfigScreen /> },
+                    { key: "legacy-vertical-ct-integration-config", name: "服务模式·联调参数", component: <LegacyVerticalCTIntegrationConfigScreen /> },
                 ],
             },
         ],
