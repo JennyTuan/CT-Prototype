@@ -10,6 +10,7 @@ import {
     Share2,
 } from "lucide-react";
 import { LegacyPatientAvatar, LegacyToolbarIcon } from "./legacyVerticalCtVisuals";
+import LegacyVerticalCTModeSwitchContent from "./LegacyVerticalCTModeSwitchContent";
 
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
@@ -18,9 +19,10 @@ type ModeKey = "horizontal" | "vertical";
 export default function LegacyVerticalCTMechanicalVerificationScreen() {
     const configSupportsModeSwitch = true;
 
-    const [modeMatched, setModeMatched] = useState(false);
-    const [standbyReady, setStandbyReady] = useState(false);
-    const [selectedMode, setSelectedMode] = useState<ModeKey>("horizontal");
+    const [modeMatched] = useState(false);
+    const [standbyReady] = useState(false);
+    const [selectedMode] = useState<ModeKey>("horizontal");
+    const [isSwitching, setIsSwitching] = useState(false);
 
     const standbyDetails = useMemo(
         () => [
@@ -52,7 +54,6 @@ export default function LegacyVerticalCTMechanicalVerificationScreen() {
             className="flex h-[768px] w-[1024px] select-none flex-col overflow-hidden bg-[#DCE0ED]"
             style={{ fontFamily: pingFang }}
         >
-            {/* Header */}
             <header className="relative h-[80px] shrink-0">
                 <div className="absolute inset-0 bg-[#C1C5D5] opacity-50" />
                 <div className="relative z-10 flex h-full items-center px-5">
@@ -74,19 +75,15 @@ export default function LegacyVerticalCTMechanicalVerificationScreen() {
                 </div>
             </header>
 
-            {/* Main */}
             <main className="flex flex-1 gap-4 overflow-hidden px-5 py-4">
-                {/* Left: verification content */}
-                <div className="flex flex-1 flex-col gap-3 min-w-0">
-
-                    {/* Check 1: Mode match — only for config4 */}
+                <div className="flex min-w-0 flex-1 flex-col gap-3">
                     {configSupportsModeSwitch && (
                         <div
-                            className={`rounded-[16px] border bg-white p-4 shadow-sm shrink-0 ${
+                            className={`shrink-0 rounded-[16px] border bg-white p-4 shadow-sm ${
                                 modeMatched ? "border-emerald-100" : "border-orange-100"
                             }`}
                         >
-                            <div className="flex items-center justify-between mb-3">
+                            <div className="mb-3 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <span className="text-[12px] font-black tracking-widest text-slate-300">01</span>
                                     <span className="text-[15px] font-bold text-slate-700">扫描模式匹配</span>
@@ -104,14 +101,14 @@ export default function LegacyVerticalCTMechanicalVerificationScreen() {
                             </div>
 
                             <div className="flex items-stretch gap-0">
-                                {/* 已选模式 */}
-                                <div className="flex-1 rounded-l-[10px] bg-blue-50 border border-blue-100 px-4 py-3 text-center">
-                                    <div className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mb-1">已选模式</div>
+                                <div className="flex-1 rounded-l-[10px] border border-blue-100 bg-blue-50 px-4 py-3 text-center">
+                                    <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-blue-400">
+                                        已选模式
+                                    </div>
                                     <div className="text-[17px] font-black text-blue-700">{selectedModeLabel}</div>
                                 </div>
 
-                                {/* Center status badge */}
-                                <div className="flex items-center justify-center z-10 -mx-px">
+                                <div className="z-10 -mx-px flex items-center justify-center">
                                     <div
                                         className={`flex h-8 w-8 items-center justify-center rounded-full border-2 bg-white text-[13px] font-black shadow-sm ${
                                             modeMatched
@@ -123,16 +120,15 @@ export default function LegacyVerticalCTMechanicalVerificationScreen() {
                                     </div>
                                 </div>
 
-                                {/* 物理位置 */}
                                 <div
                                     className={`flex-1 rounded-r-[10px] border px-4 py-3 text-center ${
                                         modeMatched
-                                            ? "bg-emerald-50 border-emerald-100"
-                                            : "bg-orange-50 border-orange-100"
+                                            ? "border-emerald-100 bg-emerald-50"
+                                            : "border-orange-100 bg-orange-50"
                                     }`}
                                 >
                                     <div
-                                        className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${
+                                        className={`mb-1 text-[10px] font-bold uppercase tracking-widest ${
                                             modeMatched ? "text-emerald-400" : "text-orange-400"
                                         }`}
                                     >
@@ -150,13 +146,12 @@ export default function LegacyVerticalCTMechanicalVerificationScreen() {
                         </div>
                     )}
 
-                    {/* Check 2: Standby positions */}
                     <div
-                        className={`flex-1 rounded-[16px] border bg-white p-4 shadow-sm flex flex-col ${
+                        className={`flex flex-1 flex-col rounded-[16px] border bg-white p-4 shadow-sm ${
                             standbyReady ? "border-emerald-100" : "border-orange-100"
                         }`}
                     >
-                        <div className="flex items-center justify-between mb-3 shrink-0">
+                        <div className="mb-3 flex shrink-0 items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <span className="text-[12px] font-black tracking-widest text-slate-300">
                                     {configSupportsModeSwitch ? "02" : "01"}
@@ -206,86 +201,84 @@ export default function LegacyVerticalCTMechanicalVerificationScreen() {
                     </div>
                 </div>
 
-                {/* Right: Status & Action */}
-                <aside className="flex w-[210px] shrink-0 flex-col gap-3">
-                    {/* Status summary */}
-                    <div
-                        className={`rounded-[16px] border bg-white p-4 shadow-sm text-center ${
-                            canProceed ? "border-emerald-100" : "border-slate-100"
-                        }`}
-                    >
-                        <div
-                            className={`mx-auto mb-3 flex h-[60px] w-[60px] items-center justify-center rounded-full ${
-                                canProceed ? "bg-emerald-50 text-emerald-500" : "bg-slate-100 text-slate-400"
-                            }`}
-                        >
-                            {canProceed ? <CheckCircle2 size={36} /> : <AlertCircle size={36} />}
-                        </div>
-                        <div className="text-[15px] font-black text-slate-700">
-                            {canProceed ? "校验已通过" : "校验未通过"}
-                        </div>
-                        {!canProceed && (
-                            <div className="mt-1.5 text-[12px] leading-relaxed text-slate-400">
-                                完成下列操作后可继续
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Failed items */}
-                    {!canProceed && failedItems.length > 0 && (
-                        <div className="rounded-[16px] border border-slate-100 bg-white p-4 shadow-sm">
-                            <div className="mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                待处理项目
-                            </div>
-                            <div className="space-y-2">
-                                {failedItems.map((item) => (
-                                    <div
-                                        key={item}
-                                        className="flex items-start gap-2 text-[13px] font-medium text-slate-600"
-                                    >
-                                        <div className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400" />
-                                        <span>{item}</span>
+                <aside className={`flex shrink-0 flex-col ${isSwitching ? "w-fit" : "w-[210px]"} ${isSwitching ? "" : "gap-3"}`}>
+                    {!isSwitching ? (
+                        <>
+                            <div
+                                className={`rounded-[16px] border bg-white p-4 text-center shadow-sm ${
+                                    canProceed ? "border-emerald-100" : "border-slate-100"
+                                }`}
+                            >
+                                <div
+                                    className={`mx-auto mb-3 flex h-[60px] w-[60px] items-center justify-center rounded-full ${
+                                        canProceed ? "bg-emerald-50 text-emerald-500" : "bg-slate-100 text-slate-400"
+                                    }`}
+                                >
+                                    {canProceed ? <CheckCircle2 size={36} /> : <AlertCircle size={36} />}
+                                </div>
+                                <div className="text-[15px] font-black text-slate-700">
+                                    {canProceed ? "校验已通过" : "校验未通过"}
+                                </div>
+                                {!canProceed && (
+                                    <div className="mt-1.5 text-[12px] leading-relaxed text-slate-400">
+                                        完成下列操作后可继续
                                     </div>
-                                ))}
+                                )}
                             </div>
-                        </div>
-                    )}
 
-                    {/* Action buttons — push to bottom */}
-                    <div className="mt-auto space-y-2">
-                        {!canProceed ? (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setModeMatched(true);
-                                    setStandbyReady(true);
-                                }}
-                                className="flex h-[54px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#10b981] text-white shadow-lg shadow-emerald-100 transition-all hover:bg-[#059669] active:scale-95"
-                            >
-                                <RefreshCw size={20} />
-                                <span className="text-[16px] font-bold">
-                                    {configSupportsModeSwitch ? "一键模式切换" : "一键复位"}
-                                </span>
-                            </button>
-                        ) : (
-                            <button
-                                type="button"
-                                className="flex h-[54px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#2A63BE] text-white shadow-lg shadow-blue-100 transition-all active:scale-95"
-                            >
-                                <span className="text-[16px] font-bold">进入患者列表</span>
-                            </button>
-                        )}
-                        <button
-                            type="button"
-                            className="h-10 w-full rounded-xl text-[14px] font-bold text-slate-400 transition-colors hover:bg-white/50"
-                        >
-                            返回首页
-                        </button>
-                    </div>
+                            {!canProceed && failedItems.length > 0 && (
+                                <div className="rounded-[16px] border border-slate-100 bg-white p-4 shadow-sm">
+                                    <div className="mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                        待处理项目
+                                    </div>
+                                    <div className="space-y-2">
+                                        {failedItems.map((item) => (
+                                            <div
+                                                key={item}
+                                                className="flex items-start gap-2 text-[13px] font-medium text-slate-600"
+                                            >
+                                                <div className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400" />
+                                                <span>{item}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="mt-auto space-y-2">
+                                {!canProceed ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsSwitching(true)}
+                                        className="flex h-[54px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#10b981] text-white shadow-lg shadow-emerald-100 transition-all hover:bg-[#059669] active:scale-95"
+                                    >
+                                        <RefreshCw size={20} />
+                                        <span className="text-[16px] font-bold">
+                                            {configSupportsModeSwitch ? "一键模式切换" : "一键复位"}
+                                        </span>
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        className="flex h-[54px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#2A63BE] text-white shadow-lg shadow-blue-100 transition-all active:scale-95"
+                                    >
+                                        <span className="text-[16px] font-bold">进入患者列表</span>
+                                    </button>
+                                )}
+                                <button
+                                    type="button"
+                                    className="h-10 w-full rounded-xl text-[14px] font-bold text-slate-400 transition-colors hover:bg-white/50"
+                                >
+                                    返回首页
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        <LegacyVerticalCTModeSwitchContent onCancel={() => setIsSwitching(false)} />
+                    )}
                 </aside>
             </main>
 
-            {/* Footer */}
             <footer className="h-[80px] shrink-0 bg-[#88A3D2] px-[18px] pt-[8px]">
                 <div className="grid h-[64px] w-full grid-cols-4 gap-[2px]">
                     <button
