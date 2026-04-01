@@ -194,7 +194,6 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
                     <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden rounded-[16px] border border-slate-100 bg-white px-5 py-4 shadow-sm">
                         <div className="mb-2 flex items-center justify-between">
                             <div className="text-[12px] font-black uppercase tracking-widest text-slate-400">联调参数补充</div>
-                            <div className="text-[11px] text-slate-400">依据《坐姿治疗系统联调说明》补充</div>
                         </div>
 
                         <SectionLabel>CT姿态 / 扫描环</SectionLabel>
