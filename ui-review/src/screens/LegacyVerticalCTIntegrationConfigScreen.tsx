@@ -170,21 +170,21 @@ function EnableToggle({
             type="button"
             onClick={onToggle}
             aria-pressed={enabled}
-            className={`flex items-center gap-2 rounded-[8px] border px-3 py-1.5 text-[12px] font-bold transition-colors ${
-                enabled
-                    ? "border-[#bfd4f3] bg-[#edf4ff] text-[#2A63BE] hover:border-[#9fbee9]"
-                    : "border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-600"
-            }`}
+            className="flex items-center gap-2 rounded-[6px] px-1.5 py-1 transition-colors hover:bg-slate-100/70"
         >
-            <span>{enabled ? "已启用" : "已停用"}</span>
+            <span className={`text-[12px] font-semibold transition-colors ${enabled ? "text-[#2A63BE]" : "text-slate-400"}`}>
+                {enabled ? "已启用" : "已停用"}
+            </span>
+            {/* pill track */}
             <span
-                className={`relative h-5 w-9 rounded-full transition-colors ${
+                className={`relative h-[22px] w-[42px] shrink-0 rounded-full transition-colors duration-200 ${
                     enabled ? "bg-[#2A63BE]" : "bg-slate-300"
                 }`}
             >
+                {/* knob — 用 left 定位，避免 overflow-hidden 裁剪 */}
                 <span
-                    className={`absolute top-[2px] h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
-                        enabled ? "translate-x-4" : "translate-x-[2px]"
+                    className={`absolute top-[2px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-all duration-200 ${
+                        enabled ? "left-[22px]" : "left-[2px]"
                     }`}
                 />
             </span>
@@ -196,12 +196,16 @@ function EnableToggle({
 
 export default function LegacyVerticalCTIntegrationConfigScreen() {
     const [selectedConfig, setSelectedConfig] = useState<ConfigId>(4);
-    const [enabled, setEnabled] = useState(true);
+    // 全局唯一激活配置，null 表示当前无配置生效
+    const [activeConfig, setActiveConfig] = useState<ConfigId | null>(4);
     const [integrationParams, setIntegrationParams] = useState<IntegrationParams>(
         CONFIG_DEFAULTS[4],
     );
     const [saved, setSaved] = useState(false);
     const [time, setTime] = useState(new Date());
+
+    // 当前查看的配置是否正在生效
+    const enabled = activeConfig === selectedConfig;
 
     useEffect(() => {
         const t = window.setInterval(() => setTime(new Date()), 60000);
@@ -370,32 +374,41 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
                 <div className="flex w-[300px] shrink-0 flex-col gap-2">
                     <div className="mb-1 px-1 text-[11px] font-black uppercase tracking-widest text-slate-400">硬件配置</div>
                     {CONFIGS.map((c) => {
-                        const active = selectedConfig === c.id;
+                        const selected = selectedConfig === c.id;
+                        const live = activeConfig === c.id;
                         return (
                             <button
                                 key={c.id}
                                 type="button"
                                 onClick={() => selectConfig(c.id)}
                                 className={`flex items-start gap-3 rounded-[14px] border p-3 text-left transition-all ${
-                                    active ? "border-[#2A63BE]/30 bg-white shadow-md" : "border-transparent bg-white/50 hover:bg-white/70"
+                                    selected ? "border-[#2A63BE]/30 bg-white shadow-md" : "border-transparent bg-white/50 hover:bg-white/70"
                                 }`}
                             >
                                 <div
                                     className={`mt-[2px] flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[12px] font-black ${
-                                        active ? "bg-[#2A63BE] text-white" : "bg-slate-200 text-slate-500"
+                                        selected ? "bg-[#2A63BE] text-white" : "bg-slate-200 text-slate-500"
                                     }`}
                                 >
                                     {c.id}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <div className={`text-[13px] font-bold leading-snug ${active ? "text-[#2A63BE]" : "text-slate-600"}`}>{c.hardware}</div>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-[13px] font-bold leading-snug ${selected ? "text-[#2A63BE]" : "text-slate-600"}`}>{c.hardware}</span>
+                                        {live && (
+                                            <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-[1px] text-[10px] font-bold text-emerald-600">
+                                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                                生效中
+                                            </span>
+                                        )}
+                                    </div>
                                     <div className="mt-1 flex gap-1">
                                         {c.modeH && <span className="rounded-[4px] bg-blue-50 px-1.5 py-[1px] text-[10px] font-bold text-blue-500">水平</span>}
                                         {c.modeV && <span className="rounded-[4px] bg-indigo-50 px-1.5 py-[1px] text-[10px] font-bold text-indigo-500">垂直</span>}
                                     </div>
                                     <div className="mt-1 text-[11px] leading-snug text-slate-400">{c.note}</div>
                                 </div>
-                                <ChevronRight size={14} className={`mt-[4px] shrink-0 ${active ? "text-[#2A63BE]" : "text-slate-300"}`} />
+                                <ChevronRight size={14} className={`mt-[4px] shrink-0 ${selected ? "text-[#2A63BE]" : "text-slate-300"}`} />
                             </button>
                         );
                     })}
@@ -414,7 +427,10 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
                             <span className="text-[13px] font-bold text-slate-700">{cfg.hardware}</span>
                             <span className="ml-2 text-[11px] text-slate-400">{cfg.note}</span>
                         </div>
-                        <EnableToggle enabled={enabled} onToggle={() => setEnabled((v) => !v)} />
+                        <EnableToggle
+                            enabled={enabled}
+                            onToggle={() => setActiveConfig(enabled ? null : selectedConfig)}
+                        />
                         <button
                             type="button"
                             onClick={() => {
