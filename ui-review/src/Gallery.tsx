@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import PatientListScreen from "./screens/PatientListScreen";

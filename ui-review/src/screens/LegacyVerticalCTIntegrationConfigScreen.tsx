@@ -109,11 +109,13 @@ function ParamRow({
     label,
     value,
     unit,
+    disabled,
     onChange,
 }: {
     label: string;
     value: string;
     unit?: string;
+    disabled?: boolean;
     onChange: (v: string) => void;
 }) {
     return (
@@ -124,7 +126,8 @@ function ParamRow({
                     type="text"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
-                    className="h-[30px] flex-1 rounded-[6px] border border-[#ccd8e8] bg-[#eef2f7] px-[10px] text-[13px] text-[#4d6890] outline-none focus:border-[#7aaad4]"
+                    disabled={disabled}
+                    className="h-[30px] flex-1 rounded-[6px] border border-[#ccd8e8] bg-[#eef2f7] px-[10px] text-[13px] text-[#4d6890] outline-none transition focus:border-[#7aaad4] disabled:cursor-not-allowed disabled:border-[#d7dee8] disabled:bg-[#f5f7fa] disabled:text-[#9eb0c3]"
                 />
                 {unit && (
                     <span className="w-8 shrink-0 text-[12px] font-semibold text-[#9aadbe]">{unit}</span>
@@ -155,10 +158,45 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     );
 }
 
+function EnableToggle({
+    enabled,
+    onToggle,
+}: {
+    enabled: boolean;
+    onToggle: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onToggle}
+            aria-pressed={enabled}
+            className={`flex items-center gap-2 rounded-[8px] border px-3 py-1.5 text-[12px] font-bold transition-colors ${
+                enabled
+                    ? "border-[#bfd4f3] bg-[#edf4ff] text-[#2A63BE] hover:border-[#9fbee9]"
+                    : "border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-600"
+            }`}
+        >
+            <span>{enabled ? "已启用" : "已停用"}</span>
+            <span
+                className={`relative h-5 w-9 rounded-full transition-colors ${
+                    enabled ? "bg-[#2A63BE]" : "bg-slate-300"
+                }`}
+            >
+                <span
+                    className={`absolute top-[2px] h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                        enabled ? "translate-x-4" : "translate-x-[2px]"
+                    }`}
+                />
+            </span>
+        </button>
+    );
+}
+
 // ─── 主组件 ───────────────────────────────────────────────────────────────────
 
 export default function LegacyVerticalCTIntegrationConfigScreen() {
     const [selectedConfig, setSelectedConfig] = useState<ConfigId>(4);
+    const [enabled, setEnabled] = useState(true);
     const [integrationParams, setIntegrationParams] = useState<IntegrationParams>(
         CONFIG_DEFAULTS[4],
     );
@@ -376,6 +414,7 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
                             <span className="text-[13px] font-bold text-slate-700">{cfg.hardware}</span>
                             <span className="ml-2 text-[11px] text-slate-400">{cfg.note}</span>
                         </div>
+                        <EnableToggle enabled={enabled} onToggle={() => setEnabled((v) => !v)} />
                         <button
                             type="button"
                             onClick={() => {
@@ -390,11 +429,17 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
                     </div>
 
                     {/* 参数表单 */}
-                    <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden rounded-[16px] border border-slate-100 bg-white px-5 py-4 shadow-sm">
+                    <div
+                        className={`min-h-0 flex-1 overflow-y-auto overflow-x-hidden rounded-[16px] border bg-white px-5 py-4 shadow-sm transition-opacity ${
+                            enabled ? "border-slate-100" : "border-slate-200 opacity-55"
+                        }`}
+                    >
                         <div className="mb-1 text-[12px] font-black uppercase tracking-widest text-slate-400">
                             联调参数补充
                         </div>
-                        {renderParams()}
+                        <fieldset disabled={!enabled} className="contents">
+                            {renderParams()}
+                        </fieldset>
                     </div>
                 </div>
             </main>
@@ -412,11 +457,17 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
                 <div className="ml-auto">
                     <button
                         type="button"
-                        onClick={() => setSaved(true)}
-                        className={`flex h-[38px] items-center gap-2 rounded-[6px] px-5 text-[13px] font-bold shadow-sm transition-all active:scale-95 ${
-                            saved
+                        onClick={() => {
+                            if (!enabled) return;
+                            setSaved(true);
+                        }}
+                        disabled={!enabled}
+                        className={`flex h-[38px] items-center gap-2 rounded-[6px] px-5 text-[13px] font-bold shadow-sm transition-all ${
+                            !enabled
+                                ? "cursor-not-allowed bg-slate-300 text-slate-500"
+                                : saved
                                 ? "border border-emerald-200 bg-emerald-50 text-emerald-600"
-                                : "bg-[#2A63BE] text-white hover:bg-[#1e52a8]"
+                                : "bg-[#2A63BE] text-white hover:bg-[#1e52a8] active:scale-95"
                         }`}
                     >
                         {saved ? (
