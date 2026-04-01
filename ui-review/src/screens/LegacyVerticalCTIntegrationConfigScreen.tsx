@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, RotateCcw, Save, ChevronRight, Check } from "lucide-react";
+import { ArrowLeft, RotateCcw, Save, ChevronRight, Check, Info } from "lucide-react";
 import { LegacyPatientAvatar, LegacyToolbarIcon } from "./legacyVerticalCtVisuals";
 
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
@@ -20,28 +20,90 @@ const CONFIGS: {
 ];
 
 type IntegrationParams = {
-    columnTiltStandby: string;
-    columnTiltScan: string;
-    ringTiltStandby: string;
-    ringTiltScan: string;
-    horizontalTravelScan: string;
-    bedHeight: string;
-    bedBoardAngle: string;
+    // CT 立柱 — 垂直模式 (configs 1, 3, 4-vertical)
+    columnStrokeStandby: string;    // 立柱行程（待机） mm
+    columnStrokeScan: string;       // 立柱行程（扫描） mm
+    columnTiltStandby: string;      // 立柱倾角（待机） °
+    ringTiltStandby: string;        // 扫描环倾角（待机） °
+    horizontalTravel: string;       // 水平行程 mm
+    // CT 立柱 — 水平模式 (config 2 standalone; config 4 horizontal)
+    columnStrokeHorizontal: string; // 立柱行程（水平待机） mm
+    ringTiltHorizontal: string;     // 扫描环倾角（水平待机） °
+    // 扫描床 (configs 2, 4)
+    bedHeight: string;              // 床高度 mm
+    bedBoardAngle: string;          // 床板角度 ° (config 4 垂直扫描位可配置)
+    // 座椅预设 (configs 3, 4)
     chairPresetStandby: string;
     chairPresetScan: string;
 };
 
-const DEFAULT_INTEGRATION_PARAMS: IntegrationParams = {
-    columnTiltStandby: "0",
-    columnTiltScan: "0",
-    ringTiltStandby: "0",
-    ringTiltScan: "90",
-    horizontalTravelScan: "1200",
-    bedHeight: "800",
-    bedBoardAngle: "0",
-    chairPresetStandby: "预设位置0",
-    chairPresetScan: "预设位置1",
+// 每个配置独立默认值，严格对照联调说明文档
+const CONFIG_DEFAULTS: Record<ConfigId, IntegrationParams> = {
+    // 配置1：CT主机，仅垂直，第三方座椅
+    1: {
+        columnStrokeStandby: "0",
+        columnStrokeScan: "300",
+        columnTiltStandby: "0",
+        ringTiltStandby: "0",
+        horizontalTravel: "1200",
+        columnStrokeHorizontal: "1250",
+        ringTiltHorizontal: "90",
+        bedHeight: "800",
+        bedBoardAngle: "0",
+        chairPresetStandby: "预设位置0",
+        chairPresetScan: "预设位置1",
+    },
+    // 配置2：CT主机+扫描床，仅水平
+    // 文档：CT待机位 立柱行程1250mm，立柱倾角0°，扫描环倾角90°，水平行程1200mm，床高度800mm
+    2: {
+        columnStrokeStandby: "1250",
+        columnStrokeScan: "0",
+        columnTiltStandby: "0",
+        ringTiltStandby: "90",
+        horizontalTravel: "1200",
+        columnStrokeHorizontal: "1250",
+        ringTiltHorizontal: "90",
+        bedHeight: "800",
+        bedBoardAngle: "0",
+        chairPresetStandby: "预设位置0",
+        chairPresetScan: "预设位置1",
+    },
+    // 配置3：CT主机+座椅，仅垂直坐姿
+    // 文档：垂直待机位 立柱行程0mm，立柱倾角0°，扫描环倾角90°，水平行程1200mm
+    //       扫描位 立柱行程300mm，倾角联动，扫描环倾角与立柱垂直
+    3: {
+        columnStrokeStandby: "0",
+        columnStrokeScan: "300",
+        columnTiltStandby: "0",
+        ringTiltStandby: "90",      // 配置3 垂直待机位扫描环倾角 = 90°（区别于配置4的0°）
+        horizontalTravel: "1200",
+        columnStrokeHorizontal: "1250",
+        ringTiltHorizontal: "90",
+        bedHeight: "800",
+        bedBoardAngle: "0",
+        chairPresetStandby: "预设位置0",
+        chairPresetScan: "预设位置1",
+    },
+    // 配置4：CT主机+扫描床+座椅，双模式
+    // 垂直待机：立柱行程0mm，立柱倾角0°，扫描环倾角0°（区别于配置3的90°）
+    // 垂直扫描：立柱行程300mm，倾角联动，扫描环与立柱垂直，床板角度可配置
+    // 水平待机：立柱行程1250mm，立柱倾角0°，扫描环倾角90°
+    4: {
+        columnStrokeStandby: "0",
+        columnStrokeScan: "300",
+        columnTiltStandby: "0",
+        ringTiltStandby: "0",       // 配置4 垂直待机位扫描环倾角 = 0°
+        horizontalTravel: "1200",
+        columnStrokeHorizontal: "1250",
+        ringTiltHorizontal: "90",
+        bedHeight: "800",
+        bedBoardAngle: "0",
+        chairPresetStandby: "预设位置0",
+        chairPresetScan: "预设位置1",
+    },
 };
+
+// ─── 子组件 ───────────────────────────────────────────────────────────────────
 
 function ParamRow({
     label,
@@ -56,7 +118,7 @@ function ParamRow({
 }) {
     return (
         <div className="flex items-center gap-3">
-            <span className="w-[140px] shrink-0 text-[12px] font-semibold text-[#6c7f97]">{label}</span>
+            <span className="w-[152px] shrink-0 text-[12px] font-semibold text-[#6c7f97]">{label}</span>
             <div className="flex min-w-0 flex-1 items-center gap-1.5">
                 <input
                     type="text"
@@ -68,6 +130,15 @@ function ParamRow({
                     <span className="w-8 shrink-0 text-[12px] font-semibold text-[#9aadbe]">{unit}</span>
                 )}
             </div>
+        </div>
+    );
+}
+
+function InfoRow({ text }: { text: string }) {
+    return (
+        <div className="flex items-start gap-2 rounded-[6px] bg-blue-50/60 px-3 py-1.5">
+            <Info size={11} className="mt-[2px] shrink-0 text-blue-400" />
+            <span className="text-[11px] leading-relaxed text-blue-500">{text}</span>
         </div>
     );
 }
@@ -84,9 +155,13 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     );
 }
 
+// ─── 主组件 ───────────────────────────────────────────────────────────────────
+
 export default function LegacyVerticalCTIntegrationConfigScreen() {
     const [selectedConfig, setSelectedConfig] = useState<ConfigId>(4);
-    const [integrationParams, setIntegrationParams] = useState<IntegrationParams>(DEFAULT_INTEGRATION_PARAMS);
+    const [integrationParams, setIntegrationParams] = useState<IntegrationParams>(
+        CONFIG_DEFAULTS[4],
+    );
     const [saved, setSaved] = useState(false);
     const [time, setTime] = useState(new Date());
 
@@ -97,13 +172,135 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
 
     const cfg = CONFIGS.find((c) => c.id === selectedConfig)!;
 
-    function setIntegrationParam(key: keyof IntegrationParams, value: string) {
+    function selectConfig(id: ConfigId) {
+        setSelectedConfig(id);
+        setIntegrationParams(CONFIG_DEFAULTS[id]); // 切换配置时加载该配置的默认值
+        setSaved(false);
+    }
+
+    function setParam(key: keyof IntegrationParams, value: string) {
         setIntegrationParams((p) => ({ ...p, [key]: value }));
         setSaved(false);
     }
 
+    // ── 各配置的参数区块渲染 ──────────────────────────────────────────────────
+
+    /** 配置1：垂直模式，第三方座椅 */
+    function renderConfig1() {
+        return (
+            <>
+                <SectionLabel>CT姿态 / 扫描环（垂直模式）</SectionLabel>
+                <div className="flex flex-col gap-2.5">
+                    <ParamRow label="立柱行程（待机）" value={integrationParams.columnStrokeStandby} unit="mm" onChange={(v) => setParam("columnStrokeStandby", v)} />
+                    <ParamRow label="立柱行程（扫描）" value={integrationParams.columnStrokeScan} unit="mm" onChange={(v) => setParam("columnStrokeScan", v)} />
+                    <ParamRow label="立柱倾角（待机）" value={integrationParams.columnTiltStandby} unit="°" onChange={(v) => setParam("columnTiltStandby", v)} />
+                    <ParamRow label="扫描环倾角（待机）" value={integrationParams.ringTiltStandby} unit="°" onChange={(v) => setParam("ringTiltStandby", v)} />
+                    <ParamRow label="水平行程" value={integrationParams.horizontalTravel} unit="mm" onChange={(v) => setParam("horizontalTravel", v)} />
+                    <InfoRow text="扫描时立柱倾角与座椅靠背联动，扫描环倾角随立柱自动垂直，无需配置" />
+                </div>
+
+                <SectionLabel>座椅</SectionLabel>
+                <div className="flex flex-col gap-2.5">
+                    <InfoRow text="配置1使用第三方座椅，软件不控制座椅运动，座椅预设位由第三方系统管理" />
+                </div>
+            </>
+        );
+    }
+
+    /** 配置2：水平模式，仅扫描床 */
+    function renderConfig2() {
+        return (
+            <>
+                <SectionLabel>CT姿态 / 扫描环（水平模式）</SectionLabel>
+                <div className="flex flex-col gap-2.5">
+                    <ParamRow label="立柱行程（待机）" value={integrationParams.columnStrokeStandby} unit="mm" onChange={(v) => setParam("columnStrokeStandby", v)} />
+                    <ParamRow label="立柱倾角（待机）" value={integrationParams.columnTiltStandby} unit="°" onChange={(v) => setParam("columnTiltStandby", v)} />
+                    <ParamRow label="扫描环倾角（待机）" value={integrationParams.ringTiltStandby} unit="°" onChange={(v) => setParam("ringTiltStandby", v)} />
+                    <ParamRow label="水平行程" value={integrationParams.horizontalTravel} unit="mm" onChange={(v) => setParam("horizontalTravel", v)} />
+                </div>
+
+                <SectionLabel>扫描床</SectionLabel>
+                <div className="flex flex-col gap-2.5">
+                    <ParamRow label="床高度（待机）" value={integrationParams.bedHeight} unit="mm" onChange={(v) => setParam("bedHeight", v)} />
+                </div>
+            </>
+        );
+    }
+
+    /** 配置3：垂直模式，仅座椅 */
+    function renderConfig3() {
+        return (
+            <>
+                <SectionLabel>CT姿态 / 扫描环（垂直模式）</SectionLabel>
+                <div className="flex flex-col gap-2.5">
+                    <ParamRow label="立柱行程（待机）" value={integrationParams.columnStrokeStandby} unit="mm" onChange={(v) => setParam("columnStrokeStandby", v)} />
+                    <ParamRow label="立柱行程（扫描）" value={integrationParams.columnStrokeScan} unit="mm" onChange={(v) => setParam("columnStrokeScan", v)} />
+                    <ParamRow label="立柱倾角（待机）" value={integrationParams.columnTiltStandby} unit="°" onChange={(v) => setParam("columnTiltStandby", v)} />
+                    <ParamRow label="扫描环倾角（待机）" value={integrationParams.ringTiltStandby} unit="°" onChange={(v) => setParam("ringTiltStandby", v)} />
+                    <ParamRow label="水平行程" value={integrationParams.horizontalTravel} unit="mm" onChange={(v) => setParam("horizontalTravel", v)} />
+                    <InfoRow text="扫描时立柱倾角与座椅靠背联动，扫描环倾角随立柱自动垂直，无需配置" />
+                </div>
+
+                <SectionLabel>座椅预设位</SectionLabel>
+                <div className="flex flex-col gap-2.5">
+                    <ParamRow label="座椅待机预设" value={integrationParams.chairPresetStandby} onChange={(v) => setParam("chairPresetStandby", v)} />
+                    <ParamRow label="座椅扫描预设" value={integrationParams.chairPresetScan} onChange={(v) => setParam("chairPresetScan", v)} />
+                </div>
+            </>
+        );
+    }
+
+    /** 配置4：双模式，扫描床+座椅 */
+    function renderConfig4() {
+        return (
+            <>
+                {/* ── 垂直扫描 ── */}
+                <SectionLabel>垂直扫描模式 — CT姿态 / 扫描环</SectionLabel>
+                <div className="flex flex-col gap-2.5">
+                    <ParamRow label="立柱行程（待机）" value={integrationParams.columnStrokeStandby} unit="mm" onChange={(v) => setParam("columnStrokeStandby", v)} />
+                    <ParamRow label="立柱行程（扫描）" value={integrationParams.columnStrokeScan} unit="mm" onChange={(v) => setParam("columnStrokeScan", v)} />
+                    <ParamRow label="立柱倾角（待机）" value={integrationParams.columnTiltStandby} unit="°" onChange={(v) => setParam("columnTiltStandby", v)} />
+                    <ParamRow label="扫描环倾角（垂直待机）" value={integrationParams.ringTiltStandby} unit="°" onChange={(v) => setParam("ringTiltStandby", v)} />
+                    <ParamRow label="水平行程" value={integrationParams.horizontalTravel} unit="mm" onChange={(v) => setParam("horizontalTravel", v)} />
+                    <ParamRow label="床板角度（扫描位）" value={integrationParams.bedBoardAngle} unit="°" onChange={(v) => setParam("bedBoardAngle", v)} />
+                    <InfoRow text="扫描时立柱倾角与座椅靠背联动，扫描环倾角随立柱自动垂直，无需配置" />
+                </div>
+
+                {/* ── 水平扫描 ── */}
+                <SectionLabel>水平扫描模式 — CT姿态 / 扫描环</SectionLabel>
+                <div className="flex flex-col gap-2.5">
+                    <ParamRow label="立柱行程（水平待机）" value={integrationParams.columnStrokeHorizontal} unit="mm" onChange={(v) => setParam("columnStrokeHorizontal", v)} />
+                    <ParamRow label="扫描环倾角（水平待机）" value={integrationParams.ringTiltHorizontal} unit="°" onChange={(v) => setParam("ringTiltHorizontal", v)} />
+                </div>
+
+                {/* ── 扫描床（双模式共用） ── */}
+                <SectionLabel>扫描床（双模式共用）</SectionLabel>
+                <div className="flex flex-col gap-2.5">
+                    <ParamRow label="床高度" value={integrationParams.bedHeight} unit="mm" onChange={(v) => setParam("bedHeight", v)} />
+                </div>
+
+                {/* ── 座椅预设 ── */}
+                <SectionLabel>座椅预设位</SectionLabel>
+                <div className="flex flex-col gap-2.5">
+                    <ParamRow label="座椅待机预设" value={integrationParams.chairPresetStandby} onChange={(v) => setParam("chairPresetStandby", v)} />
+                    <ParamRow label="座椅扫描预设" value={integrationParams.chairPresetScan} onChange={(v) => setParam("chairPresetScan", v)} />
+                </div>
+            </>
+        );
+    }
+
+    const renderParams = () => {
+        if (selectedConfig === 1) return renderConfig1();
+        if (selectedConfig === 2) return renderConfig2();
+        if (selectedConfig === 3) return renderConfig3();
+        return renderConfig4();
+    };
+
+    // ── JSX ──────────────────────────────────────────────────────────────────
+
     return (
         <div className="flex h-[768px] w-[1024px] select-none flex-col overflow-hidden bg-[#DCE0ED]" style={{ fontFamily: pingFang }}>
+            {/* 顶栏 */}
             <header className="relative h-[80px] shrink-0">
                 <div className="absolute inset-0 bg-[#C1C5D5] opacity-50" />
                 <div className="relative z-10 flex h-full items-center px-5">
@@ -129,7 +326,9 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
                 </div>
             </header>
 
+            {/* 主体 */}
             <main className="flex min-h-0 flex-1 gap-4 px-5 py-4">
+                {/* 左侧：硬件配置列表 */}
                 <div className="flex w-[300px] shrink-0 flex-col gap-2">
                     <div className="mb-1 px-1 text-[11px] font-black uppercase tracking-widest text-slate-400">硬件配置</div>
                     {CONFIGS.map((c) => {
@@ -138,10 +337,7 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
                             <button
                                 key={c.id}
                                 type="button"
-                                onClick={() => {
-                                    setSelectedConfig(c.id);
-                                    setSaved(false);
-                                }}
+                                onClick={() => selectConfig(c.id)}
                                 className={`flex items-start gap-3 rounded-[14px] border p-3 text-left transition-all ${
                                     active ? "border-[#2A63BE]/30 bg-white shadow-md" : "border-transparent bg-white/50 hover:bg-white/70"
                                 }`}
@@ -171,7 +367,9 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
                     </div>
                 </div>
 
+                {/* 右侧：参数区 */}
                 <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+                    {/* 配置标题栏 */}
                     <div className="flex shrink-0 items-center gap-3 rounded-[14px] border border-white/80 bg-white/60 px-4 py-[10px] shadow-sm">
                         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#2A63BE] text-[12px] font-black text-white">{cfg.id}</div>
                         <div className="flex-1">
@@ -181,7 +379,7 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
                         <button
                             type="button"
                             onClick={() => {
-                                setIntegrationParams(DEFAULT_INTEGRATION_PARAMS);
+                                setIntegrationParams(CONFIG_DEFAULTS[selectedConfig]);
                                 setSaved(false);
                             }}
                             className="flex items-center gap-1.5 rounded-[8px] border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-700"
@@ -191,43 +389,17 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
                         </button>
                     </div>
 
+                    {/* 参数表单 */}
                     <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden rounded-[16px] border border-slate-100 bg-white px-5 py-4 shadow-sm">
-                        <div className="mb-2 flex items-center justify-between">
-                            <div className="text-[12px] font-black uppercase tracking-widest text-slate-400">联调参数补充</div>
+                        <div className="mb-1 text-[12px] font-black uppercase tracking-widest text-slate-400">
+                            联调参数补充
                         </div>
-
-                        <SectionLabel>CT姿态 / 扫描环</SectionLabel>
-                        <div className="flex flex-col gap-2.5">
-                            <ParamRow label="立柱倾角（待机）" value={integrationParams.columnTiltStandby} unit="°" onChange={(v) => setIntegrationParam("columnTiltStandby", v)} />
-                            <ParamRow label="立柱倾角（扫描）" value={integrationParams.columnTiltScan} unit="°" onChange={(v) => setIntegrationParam("columnTiltScan", v)} />
-                            <ParamRow label="扫描环倾角（待机）" value={integrationParams.ringTiltStandby} unit="°" onChange={(v) => setIntegrationParam("ringTiltStandby", v)} />
-                            <ParamRow label="扫描环倾角（扫描）" value={integrationParams.ringTiltScan} unit="°" onChange={(v) => setIntegrationParam("ringTiltScan", v)} />
-                            <ParamRow label="水平行程（扫描）" value={integrationParams.horizontalTravelScan} unit="mm" onChange={(v) => setIntegrationParam("horizontalTravelScan", v)} />
-                        </div>
-
-                        {(cfg.id === 2 || cfg.id === 4) && (
-                            <>
-                                <SectionLabel>扫描床补充</SectionLabel>
-                                <div className="flex flex-col gap-2.5">
-                                    <ParamRow label="床高度" value={integrationParams.bedHeight} unit="mm" onChange={(v) => setIntegrationParam("bedHeight", v)} />
-                                    <ParamRow label="床板角度" value={integrationParams.bedBoardAngle} unit="°" onChange={(v) => setIntegrationParam("bedBoardAngle", v)} />
-                                </div>
-                            </>
-                        )}
-
-                        {(cfg.id === 3 || cfg.id === 4) && (
-                            <>
-                                <SectionLabel>座椅预设位补充</SectionLabel>
-                                <div className="flex flex-col gap-2.5">
-                                    <ParamRow label="座椅待机预设" value={integrationParams.chairPresetStandby} onChange={(v) => setIntegrationParam("chairPresetStandby", v)} />
-                                    <ParamRow label="座椅扫描预设" value={integrationParams.chairPresetScan} onChange={(v) => setIntegrationParam("chairPresetScan", v)} />
-                                </div>
-                            </>
-                        )}
+                        {renderParams()}
                     </div>
                 </div>
             </main>
 
+            {/* 底栏 */}
             <footer className="flex h-[64px] shrink-0 items-center border-t border-[#b8c3d8] bg-[#C8D0E2] px-5">
                 <div className="flex items-center gap-4">
                     <button type="button" className="flex h-[38px] items-center gap-2 rounded-[6px] border border-[#b0bdd0] bg-white px-4 text-[13px] font-semibold text-slate-600 shadow-sm transition-colors hover:bg-slate-50">
@@ -242,7 +414,9 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
                         type="button"
                         onClick={() => setSaved(true)}
                         className={`flex h-[38px] items-center gap-2 rounded-[6px] px-5 text-[13px] font-bold shadow-sm transition-all active:scale-95 ${
-                            saved ? "border border-emerald-200 bg-emerald-50 text-emerald-600" : "bg-[#2A63BE] text-white hover:bg-[#1e52a8]"
+                            saved
+                                ? "border border-emerald-200 bg-emerald-50 text-emerald-600"
+                                : "bg-[#2A63BE] text-white hover:bg-[#1e52a8]"
                         }`}
                     >
                         {saved ? (
