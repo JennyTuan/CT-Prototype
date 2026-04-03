@@ -1,26 +1,31 @@
 import { useEffect, useRef, useState } from "react";
 import {
+    ArrowDown,
     ArrowLeft,
     ArrowRightLeft,
+    ArrowUp,
     ChevronRight,
     Download,
     Telescope,
     View,
 } from "lucide-react";
-import { LegacyPatientAvatar, LegacyPoseIllustrationCard, LegacyToolbarIcon } from "./legacyVerticalCtVisuals";
+import { LegacyPatientAvatar, LegacyToolbarIcon } from "./legacyVerticalCtVisuals";
 
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
-const stanceOptions = [
-    { id: "standing", label: "正向", active: true },
-    { id: "sitting", label: "反向", active: false },
-    { id: "leaning", label: "左侧", active: false },
-    { id: "wheelchair", label: "右侧", active: false },
-] as const;
-
 const directionOptions = [
-    { id: "head-first", label: "头先进", active: true },
-    { id: "feet-first", label: "脚先进", active: false },
+    {
+        id: "head-to-feet",
+        label: "头到脚",
+        description: "扫描范围自头侧向脚侧推进",
+        icon: ArrowDown,
+    },
+    {
+        id: "feet-to-head",
+        label: "脚到头",
+        description: "扫描范围自脚侧向头侧推进",
+        icon: ArrowUp,
+    },
 ] as const;
 
 function SelectionChip({
@@ -44,6 +49,86 @@ function SelectionChip({
         >
             {label}
         </button>
+    );
+}
+
+function DirectionCard({
+    label,
+    description,
+    active = false,
+    icon: Icon,
+    onClick,
+}: {
+    label: string;
+    description: string;
+    active?: boolean;
+    icon: typeof ArrowDown;
+    onClick: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className="flex w-full items-center gap-[14px] rounded-[10px] border px-[16px] py-[14px] text-left transition-all"
+            style={{
+                color: active ? "#214D93" : "#445067",
+                background: active ? "linear-gradient(180deg,#F3F8FF 0%,#E5EEFF 100%)" : "linear-gradient(180deg,#F6F8FC 0%,#EEF2FA 100%)",
+                borderColor: active ? "#7EA4EE" : "#C7D0DE",
+                boxShadow: active ? "0 8px 20px rgba(92,126,191,0.18), inset 0 1px 0 rgba(255,255,255,0.85)" : "inset 0 1px 0 rgba(255,255,255,0.72)",
+            }}
+        >
+            <div
+                className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[12px]"
+                style={{
+                    background: active ? "linear-gradient(180deg,#7EA4EE 0%,#6D92DD 100%)" : "linear-gradient(180deg,#D7E0EF 0%,#C6D0E2 100%)",
+                    color: active ? "#FFFFFF" : "#5D6F89",
+                }}
+            >
+                <Icon size={24} strokeWidth={2.4} />
+            </div>
+            <div className="min-w-0 flex-1">
+                <div className="text-[16px] font-semibold leading-[1.2]">{label}</div>
+                <div className="mt-[4px] text-[12px] leading-[1.45] text-[#6B7A90]">{description}</div>
+            </div>
+            <div
+                className="h-[18px] w-[18px] shrink-0 rounded-full border"
+                style={{
+                    borderColor: active ? "#6D92DD" : "#B8C4D6",
+                    background: active ? "#6D92DD" : "#FFFFFF",
+                    boxShadow: active ? "inset 0 0 0 4px #FFFFFF" : "none",
+                }}
+            />
+        </button>
+    );
+}
+
+function DirectionIllustrationPlaceholder() {
+    return (
+        <div className="mt-[14px] rounded-[12px] border border-dashed border-[#B8C6DA] bg-[linear-gradient(180deg,#F5F8FD_0%,#EDF2F8_100%)] px-[14px] py-[16px]">
+            <div className="flex items-center justify-between">
+                <div>
+                    <div className="text-[14px] font-semibold text-[#52657F]">扫描方向示意图</div>
+                    <div className="mt-[4px] text-[12px] text-[#7A899D]">预留给 UI 补充头到脚 / 脚到头示意图</div>
+                </div>
+                <div className="rounded-full border border-[#C7D3E3] bg-white px-[10px] py-[4px] text-[11px] font-semibold text-[#6D7D93]">
+                    Placeholder
+                </div>
+            </div>
+
+            <div className="mt-[14px] flex h-[124px] items-center justify-center rounded-[10px] border border-[#D4DEEB] bg-[rgba(255,255,255,0.72)]">
+                <div className="flex items-center gap-[26px] text-[#6D84A8]">
+                    <div className="flex flex-col items-center gap-[8px]">
+                        <ArrowDown size={28} strokeWidth={2.4} />
+                        <span className="text-[12px] font-semibold">头到脚</span>
+                    </div>
+                    <div className="h-[46px] w-px bg-[#D0D9E6]" />
+                    <div className="flex flex-col items-center gap-[8px]">
+                        <ArrowUp size={28} strokeWidth={2.4} />
+                        <span className="text-[12px] font-semibold">脚到头</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -111,6 +196,8 @@ function CameraPreviewPanel() {
 }
 
 export default function LegacyVerticalCTPatientPositioningVerticalScreen() {
+    const [selectedDirection, setSelectedDirection] = useState<(typeof directionOptions)[number]["id"]>("head-to-feet");
+
     return (
         <div className="relative h-[768px] w-[1024px] overflow-hidden bg-[#DCE0ED] text-[#535353]" style={{ fontFamily: pingFang }}>
             <div className="absolute left-0 top-0 h-[80px] w-full bg-[#C1C5D5] opacity-50" />
@@ -124,7 +211,7 @@ export default function LegacyVerticalCTPatientPositioningVerticalScreen() {
                 </div>
                 <div className="absolute left-1/2 top-[12px] -translate-x-1/2 text-center text-[#717579]">
                     <div className="text-[32px] font-black leading-none">13:06</div>
-                    <div className="mt-[9px] text-[15px] font-black leading-none">3月9日 周日</div>
+                    <div className="mt-[9px] text-[15px] font-black leading-none">3月9日 星期日</div>
                 </div>
                 <LegacyToolbarIcon kind="emergency" alt="急停" left={756} />
                 <LegacyToolbarIcon kind="laser" alt="激光" left={820} />
@@ -143,24 +230,19 @@ export default function LegacyVerticalCTPatientPositioningVerticalScreen() {
                                 </span>
                             </div>
 
-                            <div className="mt-[14px]">
-                                <div className="mb-[8px] text-[13px] font-semibold text-[#59657B]">摆位姿态</div>
-                                <div className="grid grid-cols-2 gap-[10px]">
-                                    {stanceOptions.map((option) => (
-                                        <SelectionChip key={option.id} label={option.label} active={option.active} />
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="mt-[16px] flex justify-center">
-                                <LegacyPoseIllustrationCard label="体位示意" />
-                            </div>
-
                             <div className="mt-[20px] border-t border-[#bcc1cd] pt-[18px]">
-                                <h2 className="text-[17px] font-semibold text-[#23262b]">请选择患者方向</h2>
+                                <h2 className="text-[17px] font-semibold text-[#23262b]">请选择扫描方向</h2>
+                                <DirectionIllustrationPlaceholder />
                                 <div className="mt-[16px] flex flex-col gap-[12px]">
                                     {directionOptions.map((option) => (
-                                        <SelectionChip key={option.id} label={option.label} active={option.active} />
+                                        <DirectionCard
+                                            key={option.id}
+                                            label={option.label}
+                                            description={option.description}
+                                            icon={option.icon}
+                                            active={selectedDirection === option.id}
+                                            onClick={() => setSelectedDirection(option.id)}
+                                        />
                                     ))}
                                 </div>
                             </div>
