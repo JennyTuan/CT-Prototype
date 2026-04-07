@@ -28,30 +28,6 @@ const directionOptions = [
     },
 ] as const;
 
-function SelectionChip({
-    label,
-    active = false,
-}: {
-    label: string;
-    active?: boolean;
-}) {
-    return (
-        <button
-            type="button"
-            className="flex h-[40px] items-center justify-center rounded-[4px] border text-[14px] font-semibold tracking-[0.02em] transition-colors"
-            style={{
-                width: "100%",
-                color: active ? "#F6FAFF" : "#445067",
-                background: active ? "linear-gradient(180deg,#7EA4EE 0%,#6D92DD 100%)" : "#EEF2FA",
-                borderColor: active ? "#6B8FDB" : "#C0C8D8",
-                boxShadow: active ? "inset 0 1px 0 rgba(255,255,255,0.22)" : "inset 0 1px 0 rgba(255,255,255,0.6)",
-            }}
-        >
-            {label}
-        </button>
-    );
-}
-
 function DirectionCard({
     label,
     description,
@@ -104,30 +80,8 @@ function DirectionCard({
 
 function DirectionIllustrationPlaceholder() {
     return (
-        <div className="mt-[14px] rounded-[12px] border border-dashed border-[#B8C6DA] bg-[linear-gradient(180deg,#F5F8FD_0%,#EDF2F8_100%)] px-[14px] py-[16px]">
-            <div className="flex items-center justify-between">
-                <div>
-                    <div className="text-[14px] font-semibold text-[#52657F]">扫描方向示意图</div>
-                    <div className="mt-[4px] text-[12px] text-[#7A899D]">预留给 UI 补充头到脚 / 脚到头示意图</div>
-                </div>
-                <div className="rounded-full border border-[#C7D3E3] bg-white px-[10px] py-[4px] text-[11px] font-semibold text-[#6D7D93]">
-                    Placeholder
-                </div>
-            </div>
-
-            <div className="mt-[14px] flex h-[124px] items-center justify-center rounded-[10px] border border-[#D4DEEB] bg-[rgba(255,255,255,0.72)]">
-                <div className="flex items-center gap-[26px] text-[#6D84A8]">
-                    <div className="flex flex-col items-center gap-[8px]">
-                        <ArrowDown size={28} strokeWidth={2.4} />
-                        <span className="text-[12px] font-semibold">头到脚</span>
-                    </div>
-                    <div className="h-[46px] w-px bg-[#D0D9E6]" />
-                    <div className="flex flex-col items-center gap-[8px]">
-                        <ArrowUp size={28} strokeWidth={2.4} />
-                        <span className="text-[12px] font-semibold">脚到头</span>
-                    </div>
-                </div>
-            </div>
+        <div className="mt-[14px] rounded-[12px] border border-dashed border-[#B8C6DA] bg-[linear-gradient(180deg,#F5F8FD_0%,#EDF2F8_100%)] p-[12px]">
+            <div className="h-[280px] rounded-[10px] border border-[#D7E1EE] bg-[linear-gradient(180deg,rgba(255,255,255,0.78)_0%,rgba(244,248,253,0.92)_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]" />
         </div>
     );
 }
@@ -223,14 +177,7 @@ export default function LegacyVerticalCTPatientPositioningVerticalScreen() {
                 <div className="flex h-full">
                     <section className="w-[312px] pt-[10px]">
                         <div className="flex h-[580px] flex-col rounded-[12px] border border-[#b6bbc8] bg-[linear-gradient(180deg,#d8dbe4_0%,#d3d6df_100%)] px-[14px] py-[16px] shadow-[0_2px_8px_rgba(112,117,131,0.22)]">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-[17px] font-semibold text-[#23262b]">患者摆位-垂直</h2>
-                                <span className="rounded-full bg-[#D8E6FF] px-2.5 py-1 text-[11px] font-bold tracking-[0.08em] text-[#2D64C7]">
-                                    VERTICAL
-                                </span>
-                            </div>
-
-                            <div className="mt-[20px] border-t border-[#bcc1cd] pt-[18px]">
+                            <div>
                                 <h2 className="text-[17px] font-semibold text-[#23262b]">请选择扫描方向</h2>
                                 <DirectionIllustrationPlaceholder />
                                 <div className="mt-[16px] flex flex-col gap-[12px]">
