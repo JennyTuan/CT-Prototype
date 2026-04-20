@@ -132,17 +132,19 @@ function ParamRow({
     value,
     unit,
     disabled,
+    labelWidthClass,
     onChange,
 }: {
     label: string;
     value: string;
     unit?: string;
     disabled?: boolean;
+    labelWidthClass?: string;
     onChange: (v: string) => void;
 }) {
     return (
         <div className="flex items-center gap-3">
-            <span className="w-[152px] shrink-0 text-[12px] font-semibold text-[#6c7f97]">{label}</span>
+            <span className={`${labelWidthClass ?? "w-[152px]"} shrink-0 text-[12px] font-semibold text-[#6c7f97]`}>{label}</span>
             <div className="flex min-w-0 flex-1 items-center gap-1.5">
                 <input
                     type="text"
@@ -253,7 +255,7 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
 
     function renderChairAxisRows(presetId: ChairPresetId) {
         return (
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+            <div className="grid grid-cols-2 gap-x-8 gap-y-3">
                 {CHAIR_AXIS_KEYS.map((axisKey, index) => {
                     const fieldKey = getChairPresetAxisKey(presetId, axisKey);
 
@@ -262,6 +264,7 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
                             key={fieldKey}
                             label={`轴${index + 1}参数`}
                             value={integrationParams[fieldKey]}
+                            labelWidthClass="w-[70px]"
                             onChange={(v) => setParam(fieldKey, v)}
                         />
                     );
