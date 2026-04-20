@@ -5,6 +5,26 @@ import { LegacyPatientAvatar, LegacyToolbarIcon } from "./legacyVerticalCtVisual
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
 type ConfigId = 1 | 2 | 3 | 4;
+type ChairPresetId = 0 | 1;
+
+const CHAIR_AXIS_KEYS = [
+    "axis1",
+    "axis2",
+    "axis3",
+    "axis4",
+    "axis5",
+    "axis6",
+    "axis7",
+    "axis8",
+    "axis9",
+    "axis10",
+    "axis11",
+] as const;
+
+const CHAIR_PRESET_IDS: ChairPresetId[] = [0, 1];
+
+type ChairAxisKey = (typeof CHAIR_AXIS_KEYS)[number];
+type ChairPresetAxisKey = `chairPreset${ChairPresetId}${Capitalize<ChairAxisKey>}`;
 
 const CONFIGS: {
     id: ConfigId;
@@ -32,10 +52,16 @@ type IntegrationParams = {
     // 扫描床 (configs 2, 4)
     bedHeight: string;              // 床高度 mm
     bedBoardAngle: string;          // 床板角度 ° (config 4 垂直扫描位可配置)
-    // 座椅预设 (configs 3, 4)
-    chairPresetStandby: string;
-    chairPresetScan: string;
-};
+} & Record<ChairPresetAxisKey, string>;
+
+const CHAIR_PRESET_AXIS_DEFAULTS = Object.fromEntries(
+    CHAIR_PRESET_IDS.flatMap((presetId) =>
+        CHAIR_AXIS_KEYS.map((axisKey) => [
+            `chairPreset${presetId}${axisKey.charAt(0).toUpperCase()}${axisKey.slice(1)}`,
+            "",
+        ]),
+    ),
+) as Record<ChairPresetAxisKey, string>;
 
 // 每个配置独立默认值，严格对照联调说明文档
 const CONFIG_DEFAULTS: Record<ConfigId, IntegrationParams> = {
@@ -50,8 +76,7 @@ const CONFIG_DEFAULTS: Record<ConfigId, IntegrationParams> = {
         ringTiltHorizontal: "90",
         bedHeight: "800",
         bedBoardAngle: "0",
-        chairPresetStandby: "预设位置0",
-        chairPresetScan: "预设位置1",
+        ...CHAIR_PRESET_AXIS_DEFAULTS,
     },
     // 配置2：CT主机+扫描床，仅水平
     // 文档：CT待机位 立柱行程1250mm，立柱倾角0°，扫描环倾角90°，水平行程1200mm，床高度800mm
@@ -65,8 +90,7 @@ const CONFIG_DEFAULTS: Record<ConfigId, IntegrationParams> = {
         ringTiltHorizontal: "90",
         bedHeight: "800",
         bedBoardAngle: "0",
-        chairPresetStandby: "预设位置0",
-        chairPresetScan: "预设位置1",
+        ...CHAIR_PRESET_AXIS_DEFAULTS,
     },
     // 配置3：CT主机+座椅，仅垂直坐姿
     // 文档：垂直待机位 立柱行程0mm，立柱倾角0°，扫描环倾角90°，水平行程1200mm
@@ -81,8 +105,7 @@ const CONFIG_DEFAULTS: Record<ConfigId, IntegrationParams> = {
         ringTiltHorizontal: "90",
         bedHeight: "800",
         bedBoardAngle: "0",
-        chairPresetStandby: "预设位置0",
-        chairPresetScan: "预设位置1",
+        ...CHAIR_PRESET_AXIS_DEFAULTS,
     },
     // 配置4：CT主机+扫描床+座椅，双模式
     // 垂直待机：立柱行程0mm，立柱倾角0°，扫描环倾角0°（区别于配置3的90°）
@@ -98,8 +121,7 @@ const CONFIG_DEFAULTS: Record<ConfigId, IntegrationParams> = {
         ringTiltHorizontal: "90",
         bedHeight: "800",
         bedBoardAngle: "0",
-        chairPresetStandby: "预设位置0",
-        chairPresetScan: "预设位置1",
+        ...CHAIR_PRESET_AXIS_DEFAULTS,
     },
 };
 
@@ -225,6 +247,29 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
         setSaved(false);
     }
 
+    function getChairPresetAxisKey(presetId: ChairPresetId, axisKey: ChairAxisKey): ChairPresetAxisKey {
+        return `chairPreset${presetId}${axisKey.charAt(0).toUpperCase()}${axisKey.slice(1)}` as ChairPresetAxisKey;
+    }
+
+    function renderChairAxisRows(presetId: ChairPresetId) {
+        return (
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                {CHAIR_AXIS_KEYS.map((axisKey, index) => {
+                    const fieldKey = getChairPresetAxisKey(presetId, axisKey);
+
+                    return (
+                        <ParamRow
+                            key={fieldKey}
+                            label={`轴${index + 1}参数`}
+                            value={integrationParams[fieldKey]}
+                            onChange={(v) => setParam(fieldKey, v)}
+                        />
+                    );
+                })}
+            </div>
+        );
+    }
+
     // ── 各配置的参数区块渲染 ──────────────────────────────────────────────────
 
     /** 配置1：垂直模式，第三方座椅 */
@@ -283,11 +328,7 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
                     <InfoRow text="扫描时立柱倾角与座椅靠背联动，扫描环倾角随立柱自动垂直，无需配置" />
                 </div>
 
-                <SectionLabel>座椅预设位</SectionLabel>
-                <div className="flex flex-col gap-2.5">
-                    <ParamRow label="座椅待机预设" value={integrationParams.chairPresetStandby} onChange={(v) => setParam("chairPresetStandby", v)} />
-                    <ParamRow label="座椅扫描预设" value={integrationParams.chairPresetScan} onChange={(v) => setParam("chairPresetScan", v)} />
-                </div>
+                <InfoRow text="座椅包含两套固定参数：预设位置0对应待机位，预设位置1对应扫描位；两套参数分别维护各自的11轴数据。" />
             </>
         );
     }
@@ -322,11 +363,7 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
                 </div>
 
                 {/* ── 座椅预设 ── */}
-                <SectionLabel>座椅预设位</SectionLabel>
-                <div className="flex flex-col gap-2.5">
-                    <ParamRow label="座椅待机预设" value={integrationParams.chairPresetStandby} onChange={(v) => setParam("chairPresetStandby", v)} />
-                    <ParamRow label="座椅扫描预设" value={integrationParams.chairPresetScan} onChange={(v) => setParam("chairPresetScan", v)} />
-                </div>
+                <InfoRow text="座椅包含两套固定参数：预设位置0对应待机位，预设位置1对应扫描位；两套参数分别维护各自的11轴数据。" />
             </>
         );
     }
@@ -336,6 +373,23 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
         if (selectedConfig === 2) return renderConfig2();
         if (selectedConfig === 3) return renderConfig3();
         return renderConfig4();
+    };
+
+    const renderChairAxisSection = () => {
+        if (selectedConfig !== 3 && selectedConfig !== 4) return null;
+
+        return (
+            <>
+                <SectionLabel>预设位置0 · 待机位 · 11轴参数</SectionLabel>
+                <div className="flex flex-col gap-2.5">
+                    {renderChairAxisRows(0)}
+                </div>
+                <SectionLabel>预设位置1 · 扫描位 · 11轴参数</SectionLabel>
+                <div className="flex flex-col gap-2.5">
+                    {renderChairAxisRows(1)}
+                </div>
+            </>
+        );
     };
 
     // ── JSX ──────────────────────────────────────────────────────────────────
@@ -455,6 +509,7 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
                         </div>
                         <fieldset disabled={!enabled} className="contents">
                             {renderParams()}
+                            {renderChairAxisSection()}
                         </fieldset>
                     </div>
                 </div>
