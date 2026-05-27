@@ -11,6 +11,9 @@ import {
 } from "lucide-react";
 import { LegacyPatientAvatar, LegacyToolbarIcon } from "./legacyVerticalCtVisuals";
 
+const directionHeadToFeetImg = "/scan-direction-head-to-feet.png";
+const directionFeetToHeadImg = "/scan-direction-feet-to-head.png";
+
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
 const directionOptions = [
@@ -78,10 +81,16 @@ function DirectionCard({
     );
 }
 
-function DirectionIllustrationPlaceholder() {
+function DirectionIllustration({ direction }: { direction: "head-to-feet" | "feet-to-head" }) {
+    const headToFeet = direction === "head-to-feet";
+    const src = headToFeet ? directionHeadToFeetImg : directionFeetToHeadImg;
     return (
-        <div className="mt-[14px] rounded-[12px] border border-dashed border-[#B8C6DA] bg-[linear-gradient(180deg,#F5F8FD_0%,#EDF2F8_100%)] p-[12px]">
-            <div className="h-[280px] rounded-[10px] border border-[#D7E1EE] bg-[linear-gradient(180deg,rgba(255,255,255,0.78)_0%,rgba(244,248,253,0.92)_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]" />
+        <div className="mt-[14px] rounded-[12px] border border-[#D7E1EE] bg-white p-[10px] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+            <img
+                src={src}
+                alt={`扫描方向示意图：${headToFeet ? "头到脚" : "脚到头"}`}
+                className="block h-[280px] w-full object-contain"
+            />
         </div>
     );
 }
@@ -179,7 +188,7 @@ export default function LegacyVerticalCTPatientPositioningVerticalScreen() {
                         <div className="flex h-[580px] flex-col rounded-[12px] border border-[#b6bbc8] bg-[linear-gradient(180deg,#d8dbe4_0%,#d3d6df_100%)] px-[14px] py-[16px] shadow-[0_2px_8px_rgba(112,117,131,0.22)]">
                             <div>
                                 <h2 className="text-[17px] font-semibold text-[#23262b]">请选择扫描方向</h2>
-                                <DirectionIllustrationPlaceholder />
+                                <DirectionIllustration direction={selectedDirection} />
                                 <div className="mt-[16px] flex flex-col gap-[12px]">
                                     {directionOptions.map((option) => (
                                         <DirectionCard

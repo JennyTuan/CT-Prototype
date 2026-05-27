@@ -16,19 +16,48 @@ const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
 type ModeKey = "horizontal" | "vertical";
 
-export default function LegacyVerticalCTMechanicalVerificationScreen() {
+type LegacyVerticalCTMechanicalVerificationScreenProps = {
+    defaultSelectedMode?: ModeKey;
+};
+
+export default function LegacyVerticalCTMechanicalVerificationScreen({
+    defaultSelectedMode = "horizontal",
+}: LegacyVerticalCTMechanicalVerificationScreenProps = {}) {
     const configSupportsModeSwitch = true;
 
-    const [modeMatched] = useState(false);
-    const [standbyReady] = useState(false);
-    const [selectedMode] = useState<ModeKey>("horizontal");
+    const [modeMatched, setModeMatched] = useState(false);
+    const [standbyReady, setStandbyReady] = useState(false);
     const [isSwitching, setIsSwitching] = useState(false);
+    const [colorPressed, setColorPressed] = useState(false);
+    const selectedMode: ModeKey = defaultSelectedMode;
+
+    const panelPhase: "mode-color" | "mode-enable" | "standby" = modeMatched
+        ? "standby"
+        : colorPressed
+        ? "mode-enable"
+        : "mode-color";
+
+    const handleAdvance = () => {
+        if (!modeMatched) {
+            if (!colorPressed) {
+                setColorPressed(true);
+                return;
+            }
+            setModeMatched(true);
+            setColorPressed(false);
+            return;
+        }
+        if (!standbyReady) {
+            setStandbyReady(true);
+            setIsSwitching(false);
+        }
+    };
 
     const standbyDetails = useMemo(
         () => [
-            { id: "bed", name: "扫描床", status: standbyReady },
-            { id: "chair", name: "座椅", status: standbyReady },
-            { id: "ring", name: "扫描环", status: true },
+            { id: "bed", name: "扫描床", status: standbyReady, image: "/medical_table_transparent.png" },
+            { id: "chair", name: "座椅", status: standbyReady, image: "/seat_transparent.png" },
+            { id: "ring", name: "扫描环", status: true, image: "/ceiling_device_transparent.png" },
         ],
         [standbyReady]
     );
@@ -186,16 +215,18 @@ export default function LegacyVerticalCTMechanicalVerificationScreen() {
                                             : "border-orange-100 bg-orange-50/10"
                                     }`}
                                 >
-                                    {/* Illustration area — flex-1, grows to fill card
-                                        ↓ 设计师在此处替换为硬件插画 ↓ */}
                                     <div
-                                        className={`flex min-h-0 flex-1 items-center justify-center border-b border-dashed ${
+                                        className={`flex min-h-0 flex-1 items-center justify-center border-b border-dashed p-3 ${
                                             item.status
                                                 ? "border-emerald-100 bg-emerald-50/30"
                                                 : "border-slate-100 bg-slate-50/60"
                                         }`}
                                     >
-                                        <span className="text-[11px] font-medium text-slate-300">硬件插画</span>
+                                        <img
+                                            src={item.image}
+                                            alt={item.name}
+                                            className="block h-full w-full object-contain"
+                                        />
                                     </div>
 
                                     {/* Info strip — fixed at bottom */}
@@ -227,7 +258,12 @@ export default function LegacyVerticalCTMechanicalVerificationScreen() {
                     }`}
                 >
                     {isSwitching ? (
-                        <LegacyVerticalCTModeSwitchContent onCancel={() => setIsSwitching(false)} />
+                        <LegacyVerticalCTModeSwitchContent
+                            phase={panelPhase}
+                            targetMode={selectedMode}
+                            onAdvance={handleAdvance}
+                            onCancel={() => setIsSwitching(false)}
+                        />
                     ) : (
                         <>
                             {/* Status card — flex-1, no orphaned gap */}
@@ -291,7 +327,9 @@ export default function LegacyVerticalCTMechanicalVerificationScreen() {
                                         className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#10b981] text-white shadow-md shadow-emerald-100 transition-all hover:bg-[#059669] active:scale-95"
                                     >
                                         <RefreshCw size={18} />
-                                        <span className="text-[15px] font-bold">一键模式切换</span>
+                                        <span className="text-[15px] font-bold">
+                                            {modeMatched ? "一键就位" : "一键模式切换"}
+                                        </span>
                                     </button>
                                 ) : (
                                     <button

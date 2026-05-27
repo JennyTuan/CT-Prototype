@@ -30,11 +30,7 @@ import DiskManagementScreen from "./screens/DiskManagementScreen";
 import PerformanceEvaluationScreen from "./screens/PerformanceEvaluationScreen";
 import ManualScanScreen from "./screens/ManualScanScreen";
 import FourDViewScreen from "./screens/FourDViewScreen";
-import CTSimulatorUIRefactor from "./screens/CTSimulatorUIRefactor";
-import CTSimulatorUIRefactorLight from "./screens/CTSimulatorUIRefactorLight";
-import CTSimulatorUIRefactorLight2 from "./screens/CTSimulatorUIRefactorLight2";
 import LegacyVerticalCTHomeScreen from "./screens/LegacyVerticalCTHomeScreen";
-import LegacyVerticalCTModeConfirmScreen from "./screens/LegacyVerticalCTModeConfirmScreen";
 import LegacyVerticalCTMechanicalVerificationScreen from "./screens/LegacyVerticalCTMechanicalVerificationScreen";
 import LegacyVerticalCTMechanicalVerificationSingleModeScreen from "./screens/LegacyVerticalCTMechanicalVerificationSingleModeScreen";
 //import LegacyVerticalCTModeConfirmCorrectScreen from "./screens/LegacyVerticalCTModeConfirmCorrectScreen";
@@ -104,22 +100,14 @@ export default function Gallery() {
                 ],
             },
             {
-                id: "vertical-ct",
-                name: "垂直 CT 平台",
-                screens: [
-                    { key: "ct-simulator-ui-refactor-dark", name: "CTSimulatorUIRefactor-dark", component: <CTSimulatorUIRefactor /> },
-                    { key: "CTSimulatorUIRefactor-light", name: "CTSimulatorUIRefactor-light", component: <CTSimulatorUIRefactorLight /> },
-                    { key: "CTSimulatorUIRefactor-light2", name: "CTSimulatorUIRefactor-light2", component: <CTSimulatorUIRefactorLight2 /> },
-                ],
-            },
-            {
                 id: "legacy-vertical-ct",
                 name: "旧版垂直CT平台",
                 screens: [
                     { key: "legacy-vertical-ct-home", name: "首页", component: <LegacyVerticalCTHomeScreen /> },
-                    { key: "legacy-vertical-ct-mode-confirm", name: "模式确认（作废）", component: <LegacyVerticalCTModeConfirmScreen /> },
-                    { key: "legacy-vertical-ct-mechanical-verification", name: "机械校验（配置4·双模式）", component: <LegacyVerticalCTMechanicalVerificationScreen /> },
-                    { key: "legacy-vertical-ct-mechanical-verification-single", name: "机械校验（配置1/2/3·单模式）", component: <LegacyVerticalCTMechanicalVerificationSingleModeScreen /> },
+                    { key: "legacy-vertical-ct-mechanical-verification", name: "机械校验（配置4·双模式·已选水平）", component: <LegacyVerticalCTMechanicalVerificationScreen defaultSelectedMode="horizontal" /> },
+                    { key: "legacy-vertical-ct-mechanical-verification-vertical-target", name: "机械校验（配置4·双模式·已选垂直）", component: <LegacyVerticalCTMechanicalVerificationScreen defaultSelectedMode="vertical" /> },
+                    { key: "legacy-vertical-ct-mechanical-verification-single", name: "机械校验（配置1/3·单模式·垂直）", component: <LegacyVerticalCTMechanicalVerificationSingleModeScreen mode="vertical" /> },
+                    { key: "legacy-vertical-ct-mechanical-verification-single-horizontal", name: "机械校验（配置2·单模式·水平）", component: <LegacyVerticalCTMechanicalVerificationSingleModeScreen mode="horizontal" /> },
                 //    { key: "legacy-vertical-ct-mode-confirm-correct", name: "模式确认-模式正确", component: <LegacyVerticalCTModeConfirmCorrectScreen /> },
                     { key: "legacy-vertical-ct-patient-positioning", name: "患者摆位-水平", component: <LegacyVerticalCTPatientPositioningScreen /> },
                     { key: "legacy-vertical-ct-patient-positioning-vertical", name: "患者摆位-垂直", component: <LegacyVerticalCTPatientPositioningVerticalScreen /> },
@@ -297,7 +285,7 @@ export default function Gallery() {
                         ref={previewRef}
                         className={`rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-[#E2E8F0] overflow-hidden ${useWt32Preview ? "wt32-preview" : ""}`}
                     >
-                        {useWt32Stage ? <div className="wt32-stage">{active?.component}</div> : active?.component}
+                        {useWt32Stage ? <div key={activeKey} className="wt32-stage">{active?.component}</div> : <div key={activeKey}>{active?.component}</div>}
                     </div>
                 </div>
             </main>

@@ -11,30 +11,43 @@ import { LegacyPatientAvatar, LegacyToolbarIcon } from "./legacyVerticalCtVisual
 
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
-const postureOptions: ReadonlyArray<{ id: string; label: string; active?: boolean }> = [
-    { id: "supine", label: "仰卧", active: true },
+type PostureId = "supine" | "prone" | "left" | "right";
+type DirectionId = "head-first" | "feet-first";
+
+const postureOptions: ReadonlyArray<{ id: PostureId; label: string }> = [
+    { id: "supine", label: "仰卧" },
     { id: "prone", label: "俯卧" },
     { id: "left", label: "左侧卧" },
     { id: "right", label: "右侧卧" },
 ];
 
-const directionOptions: ReadonlyArray<{ id: string; label: string; active?: boolean }> = [
-    { id: "head-first", label: "头先进", active: true },
+const directionOptions: ReadonlyArray<{ id: DirectionId; label: string }> = [
+    { id: "head-first", label: "头先进" },
     { id: "feet-first", label: "脚先进" },
 ];
+
+const postureImageMap: Record<PostureId, string> = {
+    supine: "/仰卧.png",
+    prone: "/俯卧.png",
+    left: "/左侧卧.png",
+    right: "/右侧卧.png",
+};
 
 function SelectionButton({
     label,
     active = false,
     wide = false,
+    onClick,
 }: {
     label: string;
     active?: boolean;
     wide?: boolean;
+    onClick?: () => void;
 }) {
     return (
         <button
             type="button"
+            onClick={onClick}
             className={`flex h-[38px] items-center justify-center rounded-[3px] text-[14px] font-semibold tracking-[0.02em] transition-colors ${wide ? "w-full" : "w-[110px]"}`}
             style={{
                 color: "#F4F7FF",
@@ -47,21 +60,13 @@ function SelectionButton({
     );
 }
 
-function PatientPoseIllustration() {
+function PatientPoseIllustration({ posture }: { posture: PostureId }) {
     return (
-        <div className="relative h-[92px] w-[240px] overflow-hidden border border-[#B4B7C5] bg-[linear-gradient(180deg,#CFD2DB_0%,#C9CCD6_100%)]">
-            <div className="absolute left-[18px] top-[7px] h-[62px] w-[28px] rounded-l-[20px] rounded-r-[6px] border-[6px] border-[#E7E6E2] border-r-[5px] bg-transparent opacity-95" />
-            <div className="absolute left-[42px] top-[48px] h-[26px] w-[182px] -skew-x-12 rounded-r-[8px] bg-[linear-gradient(180deg,#D9D6CC_0%,#C8C3B7_100%)] shadow-[0_8px_12px_rgba(88,92,106,0.22)]" />
-            <div className="absolute left-[67px] top-[35px] h-[9px] w-[108px] rotate-[8deg] rounded-full bg-[rgba(78,84,98,0.24)] blur-[3px]" />
-            <div className="absolute left-[55px] top-[30px] h-[14px] w-[16px] rounded-full bg-[linear-gradient(180deg,#D7DBE5_0%,#A9AFBC_100%)] shadow-[0_1px_2px_rgba(73,78,92,0.28)]" />
-            <div className="absolute left-[66px] top-[34px] h-[14px] w-[88px] rotate-[7deg] rounded-full bg-[linear-gradient(180deg,#C6CBD7_0%,#9098A9_100%)] shadow-[0_2px_4px_rgba(79,84,97,0.24)]" />
-            <div className="absolute left-[114px] top-[30px] h-[12px] w-[34px] rotate-[8deg] rounded-full bg-[linear-gradient(180deg,#B8BFCD_0%,#8C93A3_100%)]" />
-            <div className="absolute left-[147px] top-[34px] h-[10px] w-[28px] rotate-[12deg] rounded-full bg-[linear-gradient(180deg,#BFC5D2_0%,#8E96A5_100%)]" />
-            <div className="absolute left-[90px] top-[42px] h-[10px] w-[60px] rotate-[10deg] rounded-full bg-[linear-gradient(180deg,#B7BDCB_0%,#838B9D_100%)]" />
-            <div className="absolute left-[142px] top-[45px] h-[9px] w-[40px] rotate-[8deg] rounded-full bg-[linear-gradient(180deg,#B9BFCC_0%,#858D9E_100%)]" />
-            <div className="absolute left-[180px] top-[28px] h-[19px] w-[4px] rotate-[12deg] rounded-full bg-[linear-gradient(180deg,#9EA7B7_0%,#768092_100%)]" />
-            <div className="absolute left-[183px] top-[24px] h-[17px] w-[4px] rotate-[-16deg] rounded-full bg-[linear-gradient(180deg,#A5AEBD_0%,#7B8496_100%)]" />
-        </div>
+        <img
+            src={postureImageMap[posture]}
+            alt={`体位示意图：${postureOptions.find((o) => o.id === posture)?.label ?? ""}`}
+            className="block h-[92px] w-[240px] object-contain"
+        />
     );
 }
 
@@ -129,6 +134,9 @@ function CameraPreviewPanel() {
 }
 
 export default function LegacyVerticalCTPatientPositioningScreen() {
+    const [posture, setPosture] = useState<PostureId>("supine");
+    const [direction, setDirection] = useState<DirectionId>("head-first");
+
     return (
         <div className="relative h-[768px] w-[1024px] overflow-hidden bg-[#DCE0ED] text-[#535353]" style={{ fontFamily: pingFang }}>
             <div className="absolute left-0 top-0 h-[80px] w-full bg-[#C1C5D5] opacity-50" />
@@ -157,19 +165,30 @@ export default function LegacyVerticalCTPatientPositioningScreen() {
                             <h2 className="text-[17px] font-semibold text-[#23262b]">请选择患者的体位</h2>
                             <div className="mt-[14px] grid grid-cols-2 gap-x-[18px] gap-y-[12px]">
                                 {postureOptions.map((option) => (
-                                    <SelectionButton key={option.id} label={option.label} active={option.active} />
+                                    <SelectionButton
+                                        key={option.id}
+                                        label={option.label}
+                                        active={posture === option.id}
+                                        onClick={() => setPosture(option.id)}
+                                    />
                                 ))}
                             </div>
 
                             <div className="mt-[18px] flex justify-center">
-                                <PatientPoseIllustration />
+                                <PatientPoseIllustration posture={posture} />
                             </div>
 
                             <div className="mt-[20px] border-t border-[#bcc1cd] pt-[18px]">
                                 <h2 className="text-[17px] font-semibold text-[#23262b]">请选择患者的方向</h2>
                                 <div className="mt-[16px] flex flex-col gap-[12px]">
                                     {directionOptions.map((option) => (
-                                        <SelectionButton key={option.id} label={option.label} active={option.active} wide />
+                                        <SelectionButton
+                                            key={option.id}
+                                            label={option.label}
+                                            active={direction === option.id}
+                                            onClick={() => setDirection(option.id)}
+                                            wide
+                                        />
                                     ))}
                                 </div>
                             </div>

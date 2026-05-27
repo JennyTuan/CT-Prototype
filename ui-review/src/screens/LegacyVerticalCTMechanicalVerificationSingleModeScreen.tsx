@@ -16,19 +16,40 @@ import LegacyVerticalCTModeSwitchContent from "./LegacyVerticalCTModeSwitchConte
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
 // 单模式配置（配置1 / 2 / 3）：模式出厂设定，无需切换
-// currentMode 由配置文件注入，此处以"垂直模式"为示例
-const currentMode = "垂直模式";
+// mode 由配置文件注入：配置1/3 = 垂直；配置2 = 水平
+type SingleModeKey = "horizontal" | "vertical";
 
-export default function LegacyVerticalCTMechanicalVerificationSingleModeScreen() {
-    const [standbyReady] = useState(false);
+type LegacyVerticalCTMechanicalVerificationSingleModeScreenProps = {
+    mode?: SingleModeKey;
+};
+
+export default function LegacyVerticalCTMechanicalVerificationSingleModeScreen({
+    mode = "vertical",
+}: LegacyVerticalCTMechanicalVerificationSingleModeScreenProps = {}) {
+    const [standbyReady, setStandbyReady] = useState(false);
     const [isSwitching, setIsSwitching] = useState(false);
 
+    const currentMode = mode === "horizontal" ? "水平模式" : "垂直模式";
+
+    const handleAdvance = () => {
+        if (!standbyReady) {
+            setStandbyReady(true);
+            setIsSwitching(false);
+        }
+    };
+
     const standbyDetails = useMemo(
-        () => [
-            { id: "chair", name: "座椅", status: standbyReady },
-            { id: "ring", name: "扫描环", status: true },
-        ],
-        [standbyReady]
+        () =>
+            mode === "horizontal"
+                ? [
+                      { id: "bed", name: "扫描床", status: standbyReady, image: "/medical_table_transparent.png" },
+                      { id: "ring", name: "扫描环", status: true, image: "/ceiling_device_transparent.png" },
+                  ]
+                : [
+                      { id: "chair", name: "座椅", status: standbyReady, image: "/seat_transparent.png" },
+                      { id: "ring", name: "扫描环", status: true, image: "/ceiling_device_transparent.png" },
+                  ],
+        [mode, standbyReady]
     );
 
     const canProceed = standbyReady;
@@ -114,16 +135,18 @@ export default function LegacyVerticalCTMechanicalVerificationSingleModeScreen()
                                             : "border-orange-100 bg-orange-50/10"
                                     }`}
                                 >
-                                    {/* Illustration area — flex-1, grows to fill card
-                                        ↓ 设计师在此处替换为硬件插画 ↓ */}
                                     <div
-                                        className={`flex min-h-0 flex-1 items-center justify-center border-b border-dashed ${
+                                        className={`flex min-h-0 flex-1 items-center justify-center border-b border-dashed p-3 ${
                                             item.status
                                                 ? "border-emerald-100 bg-emerald-50/30"
                                                 : "border-slate-100 bg-slate-50/60"
                                         }`}
                                     >
-                                        <span className="text-[11px] font-medium text-slate-300">硬件插画</span>
+                                        <img
+                                            src={item.image}
+                                            alt={item.name}
+                                            className="block h-full w-full object-contain"
+                                        />
                                     </div>
 
                                     {/* Info strip — fixed height at bottom */}
@@ -155,7 +178,11 @@ export default function LegacyVerticalCTMechanicalVerificationSingleModeScreen()
                     }`}
                 >
                     {isSwitching ? (
-                        <LegacyVerticalCTModeSwitchContent onCancel={() => setIsSwitching(false)} />
+                        <LegacyVerticalCTModeSwitchContent
+                            phase="standby"
+                            onAdvance={handleAdvance}
+                            onCancel={() => setIsSwitching(false)}
+                        />
                     ) : (
                         <>
                             {/* Status card — flex-1, grows to fill height above buttons */}
