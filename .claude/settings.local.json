@@ -11,7 +11,11 @@
       "Bash(awk 'NR>=83 && NR<=314' \"C:/STN/projects/CT-Prototype/ui-review/src/screens/LegacyVerticalCTPatientPositioningVerticalScreen.tsx\")",
       "Bash(awk 'NR==96 || NR==328' \"C:/STN/projects/CT-Prototype/ui-review/src/screens/LegacyVerticalCTPatientPositioningVerticalScreen.tsx\")",
       "Bash(awk 'NR<97 || NR>327' C:/STN/projects/CT-Prototype/ui-review/src/screens/LegacyVerticalCTPatientPositioningVerticalScreen.tsx)",
-      "PowerShell(Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\('C:\\\\STN\\\\projects\\\\CT-Prototype\\\\ui-review\\\\public\\\\弹出实体按键.png'\\); \"$\\($img.Width\\)x$\\($img.Height\\)\"; $img.Dispose\\(\\))"
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\('C:\\\\STN\\\\projects\\\\CT-Prototype\\\\ui-review\\\\public\\\\弹出实体按键.png'\\); \"$\\($img.Width\\)x$\\($img.Height\\)\"; $img.Dispose\\(\\))",
+      "Bash(git log *)",
+      "Bash(npm install *)",
+      "Bash(git checkout *)",
+      "PowerShell(Get-Process | Where-Object { $_.ProcessName -match 'electron|node' } | Select-Object Id, ProcessName, Path)"
     ]
   }
 }

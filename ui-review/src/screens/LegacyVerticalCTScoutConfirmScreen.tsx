@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import {
     ArrowRightLeft,
     ArrowUpDown,
+    AlertTriangle,
     Download,
     ScanLine,
     Telescope,
     View,
 } from "lucide-react";
 import { LegacyPatientAvatar, LegacyToolbarIcon } from "./legacyVerticalCtVisuals";
+import LegacyVerticalCTModeSwitchContent from "./LegacyVerticalCTModeSwitchContent";
 
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
@@ -132,8 +134,35 @@ function CameraPreviewPanel() {
 export default function LegacyVerticalCTScoutConfirmScreen() {
     const [startPos, setStartPos] = useState("472.95");
     const [endPos, setEndPos] = useState("595.17");
-    const [selectedPosition, setSelectedPosition] = useState<"start" | "end">("end");
+    const [selectedPosition, setSelectedPositionState] = useState<"start" | "end">("start");
     const [tableDirection, setTableDirection] = useState<"进床" | "出床">("进床");
+    const [tiltSynced, setTiltSynced] = useState(false);
+    const [seatAtScanPosition, setSeatAtScanPosition] = useState(false);
+    const [showSyncDialog, setShowSyncDialog] = useState(false);
+    const [showEnablePanel, setShowEnablePanel] = useState(false);
+
+    useEffect(() => {
+        if (!tiltSynced) setShowSyncDialog(true);
+    }, []);
+
+    const selectPosition = (next: "start" | "end") => {
+        if (!tiltSynced) {
+            setShowSyncDialog(true);
+            return;
+        }
+        setSelectedPositionState(next);
+    };
+
+    const handleStartSync = () => {
+        setShowSyncDialog(false);
+        setShowEnablePanel(true);
+    };
+
+    const handleEnableConfirm = () => {
+        setShowEnablePanel(false);
+        setTiltSynced(true);
+        setSelectedPositionState("end");
+    };
 
     const handleSwap = () => {
         setStartPos(endPos);
@@ -172,7 +201,7 @@ export default function LegacyVerticalCTScoutConfirmScreen() {
                                     <div className="flex shrink-0 flex-col items-center self-stretch justify-center py-2">
                                         <button
                                             type="button"
-                                            onClick={() => setSelectedPosition("start")}
+                                            onClick={() => selectPosition("start")}
                                             className={`flex h-3 w-3 shrink-0 items-center justify-center rounded-full border-2 p-[2px] transition-all ${selectedPosition === "start" ? "border-white bg-[#4D94FF] shadow-sm" : "border-[#B0C4DE] bg-white"}`}
                                         >
                                             {selectedPosition === "start" && <div className="h-full w-full rounded-full bg-white" />}
@@ -189,7 +218,7 @@ export default function LegacyVerticalCTScoutConfirmScreen() {
                                         <div className="my-1 flex-1 w-px bg-[#C5D5E8]" />
                                         <button
                                             type="button"
-                                            onClick={() => setSelectedPosition("end")}
+                                            onClick={() => selectPosition("end")}
                                             className={`flex h-3 w-3 shrink-0 items-center justify-center rounded-full border-2 p-[2px] transition-all ${selectedPosition === "end" ? "border-white bg-[#66BB6A] shadow-sm" : "border-[#B0C4DE] bg-white"}`}
                                         >
                                             {selectedPosition === "end" && <div className="h-full w-full rounded-full bg-white" />}
@@ -197,34 +226,34 @@ export default function LegacyVerticalCTScoutConfirmScreen() {
                                     </div>
 
                                     <div className="flex min-w-0 flex-1 flex-col justify-between self-stretch py-4">
-                                        <div onClick={() => setSelectedPosition("start")} className="flex h-[32px] min-w-0 cursor-pointer items-center gap-2">
+                                        <div onClick={() => selectPosition("start")} className="flex h-[32px] min-w-0 cursor-pointer items-center gap-2">
                                             <span className={`w-[60px] shrink-0 text-[12px] font-bold transition-colors ${selectedPosition === "start" ? "text-[#4D94FF]" : "text-[#90A4AE]"}`}>起始位置:</span>
                                             <input
                                                 type="text"
                                                 value={startPos}
                                                 onChange={(e) => {
-                                                    setSelectedPosition("start");
+                                                    selectPosition("start");
                                                     setStartPos(e.target.value);
                                                 }}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    setSelectedPosition("start");
+                                                    selectPosition("start");
                                                 }}
                                                 className={`h-[32px] min-w-0 flex-1 rounded border bg-white px-2 text-[13px] font-bold outline-none transition-colors ${selectedPosition === "start" ? "border-[#4D94FF] text-[#4D94FF]" : "border-[#B0C4DE] text-[#90A4AE]"} focus:border-[#4D94FF]`}
                                             />
                                         </div>
-                                        <div onClick={() => setSelectedPosition("end")} className="flex h-[32px] min-w-0 cursor-pointer items-center gap-2">
+                                        <div onClick={() => selectPosition("end")} className="flex h-[32px] min-w-0 cursor-pointer items-center gap-2">
                                             <span className={`w-[60px] shrink-0 text-[12px] font-bold transition-colors ${selectedPosition === "end" ? "text-[#66BB6A]" : "text-[#90A4AE]"}`}>结束位置:</span>
                                             <input
                                                 type="text"
                                                 value={endPos}
                                                 onChange={(e) => {
-                                                    setSelectedPosition("end");
+                                                    selectPosition("end");
                                                     setEndPos(e.target.value);
                                                 }}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    setSelectedPosition("end");
+                                                    selectPosition("end");
                                                 }}
                                                 className={`h-[32px] min-w-0 flex-1 rounded border bg-white px-2 text-[13px] font-bold outline-none transition-colors ${selectedPosition === "end" ? "border-[#66BB6A] text-[#66BB6A]" : "border-[#B0C4DE] text-[#90A4AE]"} focus:border-[#4D94FF]`}
                                             />
@@ -313,6 +342,86 @@ export default function LegacyVerticalCTScoutConfirmScreen() {
                     </button>
                 </div>
             </div>
+
+            {showSyncDialog && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center bg-[rgba(20,28,44,0.32)]">
+                    <div className="w-[380px] overflow-hidden rounded-[14px] border border-[#c9d3e3] bg-white shadow-[0_18px_40px_rgba(40,52,80,0.28)]">
+                        {seatAtScanPosition ? (
+                            <>
+                                <div className="flex items-start gap-3 px-[22px] pt-[20px] pb-[14px]">
+                                    <div className="mt-[2px] flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FFF4E0] text-[#E0A23A]">
+                                        <AlertTriangle size={18} strokeWidth={2.2} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="text-[15px] font-semibold text-[#2c3a55]">扫描环倾角与座椅靠背未同步</div>
+                                        <div className="mt-[6px] text-[12px] leading-[1.55] text-[#6b7a92]">
+                                            扫描环从顶部下降前必须先与座椅靠背倾角对齐，否则下降过程可能与座椅发生碰撞。请点击"开始同步"完成倾角对齐后再进行起始 / 结束位置的上下定位。
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex justify-end gap-[10px] border-t border-[#eef1f7] bg-[#f7f9fc] px-[20px] py-[12px]">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowSyncDialog(false)}
+                                        className="h-[32px] rounded-[6px] border border-[#c7d1e0] bg-white px-[14px] text-[12px] font-semibold text-[#5b6b85]"
+                                    >
+                                        取消
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleStartSync}
+                                        className="h-[32px] rounded-[6px] bg-[#3A6FD4] px-[14px] text-[12px] font-semibold text-white shadow-[0_2px_6px_rgba(58,111,212,0.32)]"
+                                    >
+                                        开始同步
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="flex items-start gap-3 px-[22px] pt-[20px] pb-[14px]">
+                                    <div className="mt-[2px] flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FFE6E6] text-[#D9534F]">
+                                        <AlertTriangle size={18} strokeWidth={2.2} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="text-[15px] font-semibold text-[#2c3a55]">座椅尚未到达扫描位置</div>
+                                        <div className="mt-[6px] text-[12px] leading-[1.55] text-[#6b7a92]">
+                                            请使用<span className="font-semibold text-[#3A6FD4]">手持控制器</span>将座椅移动到扫描位置，到位后将自动进入倾角同步。
+                                        </div>
+                                        <div className="mt-[12px] flex items-center gap-2 rounded-[6px] border border-[#F3D6D6] bg-[#FFF6F6] px-[10px] py-[7px]">
+                                            <span className="relative flex h-[8px] w-[8px]">
+                                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#E5746E] opacity-70" />
+                                                <span className="relative inline-flex h-[8px] w-[8px] rounded-full bg-[#D9534F]" />
+                                            </span>
+                                            <span className="text-[11px] font-semibold text-[#9c3d3a]">座椅状态：未到位</span>
+                                            <span className="ml-auto text-[11px] text-[#b48b89]">等待中…</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-end gap-[10px] border-t border-[#eef1f7] bg-[#f7f9fc] px-[20px] py-[10px]">
+                                    <button
+                                        type="button"
+                                        onClick={() => setSeatAtScanPosition(true)}
+                                        className="text-[11px] font-medium text-[#8a96ad] underline decoration-dotted underline-offset-2"
+                                    >
+                                        模拟座椅已到位
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {showEnablePanel && (
+                <div className="absolute right-0 top-[92px] z-30 h-[588px] w-[210px]">
+                    <LegacyVerticalCTModeSwitchContent
+                        phase="mode-enable"
+                        targetMode="vertical"
+                        onAdvance={handleEnableConfirm}
+                        onCancel={() => setShowEnablePanel(false)}
+                    />
+                </div>
+            )}
         </div>
     );
 }
