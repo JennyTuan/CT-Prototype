@@ -1,0 +1,23 @@
+# Dependency and build output
+ui-review/node_modules/
+ui-review/dist/
+ui-review/package-lock.json
+
+# Bulky medical image/demo assets
+ui-review/public/dicom/
+ui-review/public/dicom-4d/
+ui-review/public/**/*.dcm
+ui-review/public/**/*.dicom
+ui-review/public/**/*.webp
+
+# Old comparison/debug artifacts
+ui-review/*_orig.txt
+ui-review/*_full.txt
+ui-review/compile_errors.txt
+ui-review/*.png
+
+# Local/editor noise
+*.log
+.DS_Store
+.idea/
+.vscode/

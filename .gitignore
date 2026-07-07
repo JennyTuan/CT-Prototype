@@ -1,0 +1,32 @@
+# Dependencies and build output
+node_modules/
+ui-review/node_modules/
+dist/
+ui-review/dist/
+dist-ssr/
+
+# Logs and local files
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.local
+
+# Local/editor noise
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Large generated demo data should stay out unless explicitly curated.
+ui-review/public/dicom/
+ui-review/public/dicom-4d/
+ui-review/public/**/*.dcm
+ui-review/public/**/*.dicom
