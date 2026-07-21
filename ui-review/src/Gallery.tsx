@@ -38,6 +38,8 @@ import LegacyVerticalCTPatientPositioningScreen from "./screens/LegacyVerticalCT
 import LegacyVerticalCTPatientPositioningVerticalScreen from "./screens/LegacyVerticalCTPatientPositioningVerticalScreen";
 import LegacyVerticalCTScoutConfirmScreen from "./screens/LegacyVerticalCTScoutConfirmScreen";
 import LegacyVerticalCTIntegrationConfigScreen from "./screens/LegacyVerticalCTIntegrationConfigScreen";
+import LegacyVerticalCTMovementModeSelectScreen from "./screens/LegacyVerticalCTMovementModeSelectScreen";
+import LegacyVerticalCTMovementModeSelectEnglishScreen from "./screens/LegacyVerticalCTMovementModeSelectEnglishScreen";
 
 type ScreenItem = {
     key: string;
@@ -104,6 +106,8 @@ export default function Gallery() {
                 name: "旧版垂直CT平台",
                 screens: [
                     { key: "legacy-vertical-ct-home", name: "首页", component: <LegacyVerticalCTHomeScreen /> },
+                    { key: "legacy-vertical-ct-movement-mode-select", name: "行走模式选择（水平／垂直）", component: <LegacyVerticalCTMovementModeSelectScreen /> },
+                    { key: "legacy-vertical-ct-movement-mode-select-en", name: "Movement Mode Selection (English)", component: <LegacyVerticalCTMovementModeSelectEnglishScreen /> },
                     { key: "legacy-vertical-ct-mechanical-verification", name: "机械校验（配置4·双模式·已选水平）", component: <LegacyVerticalCTMechanicalVerificationScreen defaultSelectedMode="horizontal" /> },
                     { key: "legacy-vertical-ct-mechanical-verification-vertical-target", name: "机械校验（配置4·双模式·已选垂直）", component: <LegacyVerticalCTMechanicalVerificationScreen defaultSelectedMode="vertical" /> },
                     { key: "legacy-vertical-ct-mechanical-verification-single", name: "机械校验（配置1/3·单模式·垂直）", component: <LegacyVerticalCTMechanicalVerificationSingleModeScreen mode="vertical" /> },

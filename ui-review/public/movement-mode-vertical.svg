@@ -1,0 +1,22 @@
+<svg width="136" height="76" viewBox="0 0 136 76" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="verticalBody" x1="0" y1="7" x2="0" y2="62" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#D8E2F3"/>
+    </linearGradient>
+    <linearGradient id="verticalRail" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#F8FBFF"/>
+      <stop offset="1" stop-color="#AEBFDB"/>
+    </linearGradient>
+  </defs>
+  <path d="M14 63C14 60.24 16.24 58 19 58H117C119.76 58 122 60.24 122 63V66C122 67.1 121.1 68 120 68H16C14.9 68 14 67.1 14 66V63Z" fill="url(#verticalRail)" stroke="#8FA4C7"/>
+  <rect x="61" y="6" width="14" height="54" rx="6" fill="#D7E2F4" stroke="#7895C5" stroke-width="1.5"/>
+  <path d="M68 9V54" stroke="#6E95DA" stroke-width="2" stroke-linecap="round" stroke-dasharray="3 3"/>
+  <path d="M64.5 15L68 9L71.5 15" stroke="#6E95DA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M64.5 48L68 54L71.5 48" stroke="#6E95DA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M37 37C37 23.75 50.88 13 68 13C85.12 13 99 23.75 99 37C99 50.25 85.12 61 68 61C50.88 61 37 50.25 37 37Z" fill="url(#verticalBody)" stroke="#6E95DA" stroke-width="2"/>
+  <ellipse cx="68" cy="37" rx="19" ry="7.5" fill="#F7FAFF" stroke="#89A5D7" stroke-width="3"/>
+  <path d="M49 36.5H87" stroke="white" stroke-width="2" stroke-linecap="round" opacity=".88"/>
+  <path d="M40.5 39.5C44.3 49.7 55.2 56.5 68 56.5" stroke="#B3C4E2" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="68" cy="17" r="2" fill="#6E95DA"/>
+</svg>
