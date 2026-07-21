@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
     User,
     Settings,
@@ -17,7 +17,15 @@ import {
     LayoutGrid,
     Lightbulb,
     Square,
-    AlertTriangle
+    AlertTriangle,
+    Clock,
+    Target,
+    Zap,
+    Layers,
+    Check,
+    RotateCcw,
+    Play,
+    Cpu
 } from 'lucide-react';
 
 const AirCalibrationScreen = () => {
@@ -86,16 +94,20 @@ const AirCalibrationScreen = () => {
         { icon: <MousePointer2 size={18} />, label: "手动扫描" },
     ];
 
-    const OptionButton = ({ label, active, onClick }: { label: string, active: boolean, onClick: () => void }) => (
+    const OptionButton = ({ label, unit, active, onClick }: { label: string, unit?: string, active: boolean, onClick: () => void }) => (
         <button
             onClick={onClick}
-            className={`px-4 py-2 rounded-full border transition-all flex items-center gap-2 ${active
-                ? 'bg-[#4D94FF] text-white border-[#4D94FF] shadow-md'
-                : 'bg-white text-[#546E7A] border-[#B0C4DE] hover:bg-gray-50'
-                }`}
+            className={`relative px-4 h-[38px] rounded-xl border transition-all duration-200 flex items-center gap-2 font-medium text-[13px] select-none ${
+                active
+                    ? 'bg-[#4D94FF] text-white border-[#4D94FF] shadow-[0_4px_12px_rgba(77,148,255,0.25)] hover:bg-[#3B82F6] scale-[1.01]'
+                    : 'bg-white text-[#334155] border-[#CBD5E1] hover:border-[#94A3B8] hover:bg-[#F8FAFC] hover:shadow-2xs active:scale-[0.98]'
+            }`}
         >
-            <div className={`w-3 h-3 rounded-full ${active ? 'bg-white' : 'bg-[#E8EAF1]'}`} />
-            <span className="font-bold text-[14px]">{label}</span>
+            <div className={`w-4 h-4 rounded-full flex items-center justify-center transition-all ${active ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-400 border border-slate-300'}`}>
+                {active ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-400/60" />}
+            </div>
+            <span className="font-bold tracking-tight">{label}</span>
+            {unit && <span className={`text-[11px] font-semibold ${active ? 'text-blue-50' : 'text-slate-400'}`}>{unit}</span>}
         </button>
     );
 
@@ -193,106 +205,184 @@ const AirCalibrationScreen = () => {
                     </aside>
 
                     {/* Main Content Card */}
-                    <section className="flex-1 bg-white border border-[#B0C4DE] rounded-md shadow-sm p-8 flex flex-col relative overflow-hidden">
-
-                        <div className="grid grid-cols-2 gap-6 flex-1 h-0 overflow-y-auto pr-2 custom-scrollbar">
-                            {/* 1. Rotation Speed */}
-                            <div className="bg-[#F8FAFC] border border-[#B0C4DE] rounded-xl p-6 shadow-sm">
-                                <div className="flex items-center gap-2 mb-6">
-                                    <div className="w-1.5 h-6 bg-[#4D94FF] rounded-full" />
-                                    <h3 className="text-[18px] font-black text-[#37474F]">旋转速度</h3>
+                    <section className="flex-1 bg-white border border-[#CBD5E1] rounded-xl shadow-xs p-6 flex flex-col relative overflow-hidden h-full">
+                        <div className="flex-1 min-h-0 flex flex-col justify-between">
+                            <div>
+                                {/* Header Title Bar */}
+                                <div className="flex items-center justify-between pb-3.5 border-b border-[#E2E8F0]">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-[#4D94FF] text-white flex items-center justify-center shadow-sm shrink-0">
+                                            <Wind className="w-5 h-5 stroke-[2.2]" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-[18px] font-black text-[#1E293B] tracking-tight">空气校正参数</h2>
+                                            <p className="text-[12px] text-[#64748B]">请选择本次空气校正的参数组合。</p>
+                                        </div>
+                                    </div>
+                                    <div className="px-3 py-1 bg-[#E3F2FD] border border-[#BBDEFB] rounded-full text-[11px] font-bold text-[#1E88E5] flex items-center gap-1.5">
+                                        <div className="w-2 h-2 rounded-full bg-[#4D94FF] animate-pulse" />
+                                        <span>{totalCombinations} 个组合待执行</span>
+                                    </div>
                                 </div>
-                                <div className="flex flex-wrap gap-3">
-                                    {['1', '2', '0.75'].map(val => (
-                                        <OptionButton
-                                            key={val}
-                                            label={val}
-                                            active={rotationSpeeds.includes(val)}
-                                            onClick={() => toggleSelection(val, rotationSpeeds, setRotationSpeeds)}
-                                        />
-                                    ))}
+
+                                {/* Parameter Cards Grid */}
+                                <div className="grid grid-cols-2 gap-3.5 mt-4">
+                                    {/* 1. Rotation Speed */}
+                                    <div className="bg-[#F8FAFC]/90 border border-[#E2E8F0] rounded-xl p-3.5 transition-all hover:bg-slate-50">
+                                        <div className="flex items-center justify-between mb-2.5">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded-lg bg-[#E3F2FD] border border-[#BBDEFB] text-[#1E88E5] flex items-center justify-center">
+                                                    <Clock className="w-3.5 h-3.5" />
+                                                </div>
+                                                <span className="text-[13px] font-black text-[#1E293B]">旋转时间</span>
+                                                <span className="text-[10px] text-[#64748B]">(s)</span>
+                                            </div>
+                                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#E3F2FD] text-[#1E88E5] border border-[#BBDEFB]">
+                                                已选 {rotationSpeeds.length}/3
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {['1', '2', '0.75'].map(val => (
+                                                <OptionButton
+                                                    key={val}
+                                                    label={val}
+                                                    unit="s"
+                                                    active={rotationSpeeds.includes(val)}
+                                                    onClick={() => toggleSelection(val, rotationSpeeds, setRotationSpeeds)}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* 2. Focus */}
+                                    <div className="bg-[#F8FAFC]/90 border border-[#E2E8F0] rounded-xl p-3.5 transition-all hover:bg-slate-50">
+                                        <div className="flex items-center justify-between mb-2.5">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded-lg bg-[#E3F2FD] border border-[#BBDEFB] text-[#1E88E5] flex items-center justify-center">
+                                                    <Target className="w-3.5 h-3.5" />
+                                                </div>
+                                                <span className="text-[13px] font-black text-[#1E293B]">焦点</span>
+                                            </div>
+                                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#E3F2FD] text-[#1E88E5] border border-[#BBDEFB]">
+                                                已选 {focuses.length}/2
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {['small', 'big'].map(val => (
+                                                <OptionButton
+                                                    key={val}
+                                                    label={val === 'small' ? '小焦点' : '大焦点'}
+                                                    active={focuses.includes(val)}
+                                                    onClick={() => toggleSelection(val, focuses, setFocuses)}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* 3. Voltage */}
+                                    <div className="bg-[#F8FAFC]/90 border border-[#E2E8F0] rounded-xl p-3.5 transition-all hover:bg-slate-50">
+                                        <div className="flex items-center justify-between mb-2.5">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded-lg bg-[#E3F2FD] border border-[#BBDEFB] text-[#1E88E5] flex items-center justify-center">
+                                                    <Zap className="w-3.5 h-3.5" />
+                                                </div>
+                                                <span className="text-[13px] font-black text-[#1E293B]">管电压</span>
+                                                <span className="text-[10px] text-[#64748B]">(kV)</span>
+                                            </div>
+                                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#E3F2FD] text-[#1E88E5] border border-[#BBDEFB]">
+                                                已选 {voltages.length}/4
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {['80', '100', '120', '140'].map(val => (
+                                                <OptionButton
+                                                    key={val}
+                                                    label={val}
+                                                    unit="kV"
+                                                    active={voltages.includes(val)}
+                                                    onClick={() => toggleSelection(val, voltages, setVoltages)}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* 4. Collimator Width */}
+                                    <div className="bg-[#F8FAFC]/90 border border-[#E2E8F0] rounded-xl p-3.5 transition-all hover:bg-slate-50">
+                                        <div className="flex items-center justify-between mb-2.5">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded-lg bg-[#E3F2FD] border border-[#BBDEFB] text-[#1E88E5] flex items-center justify-center">
+                                                    <Layers className="w-3.5 h-3.5" />
+                                                </div>
+                                                <span className="text-[13px] font-black text-[#1E293B]">准直器</span>
+                                            </div>
+                                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#E3F2FD] text-[#1E88E5] border border-[#BBDEFB]">
+                                                已选 {collimators.length}/1
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {['32*0.6'].map(val => (
+                                                <OptionButton
+                                                    key={val}
+                                                    label={val}
+                                                    active={collimators.includes(val)}
+                                                    onClick={() => toggleSelection(val, collimators, setCollimators)}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Matrix Calculation Summary */}
+                                <div className="mt-3.5 p-3 rounded-xl bg-gradient-to-r from-slate-50 to-[#F0F7FF] border border-[#BBDEFB] flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-white border border-[#BBDEFB] shadow-2xs flex items-center justify-center text-[#1E88E5] shrink-0">
+                                            <Cpu className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                            <div className="text-[12px] font-bold text-[#1E293B] flex items-center gap-1.5">
+                                                <span>校正组合矩阵</span>
+                                                <span className="text-[11px] font-normal text-[#64748B]">({rotationSpeeds.length} 速度 × {focuses.length} 焦点 × {voltages.length} 电压 × {collimators.length} 准直器)</span>
+                                            </div>
+                                            <div className="text-[11px] text-[#64748B] mt-0.5">预计扫描时间: ~{Math.max(1, Math.round((totalCombinations * 10) / 60))} 分钟</div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[11px] font-semibold text-slate-500">待执行:</span>
+                                        <span className="px-2.5 py-0.5 bg-white border border-[#BBDEFB] rounded-md text-[14px] font-black text-[#1E88E5]">
+                                            {totalCombinations}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* 2. Focus */}
-                            <div className="bg-[#F8FAFC] border border-[#B0C4DE] rounded-xl p-6 shadow-sm">
-                                <div className="flex items-center gap-2 mb-6">
-                                    <div className="w-1.5 h-6 bg-[#4D94FF] rounded-full" />
-                                    <h3 className="text-[18px] font-black text-[#37474F]">焦点</h3>
+                            {/* Bottom Actions */}
+                            <div className="pt-3 border-t border-[#E2E8F0] flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-[12px] font-bold text-[#334155]">
+                                    <span>队列数量：</span>
+                                    <span className="px-2 py-0.5 rounded bg-[#E3F2FD] text-[#1E88E5] border border-[#BBDEFB] font-black">{totalCombinations}</span>
+                                    <span className="text-[#64748B] text-[11px] font-normal ml-1">(已完成 0, 失败 0, 待执行 {totalCombinations})</span>
                                 </div>
-                                <div className="flex flex-wrap gap-3">
-                                    {['small', 'big'].map(val => (
-                                        <OptionButton
-                                            key={val}
-                                            label={val}
-                                            active={focuses.includes(val)}
-                                            onClick={() => toggleSelection(val, focuses, setFocuses)}
-                                        />
-                                    ))}
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => {
+                                            setRotationSpeeds(['1']);
+                                            setVoltages(['100']);
+                                            setFocuses(['small']);
+                                            setCollimators(['32*0.6']);
+                                        }}
+                                        className="px-4 h-[38px] bg-white border border-[#CBD5E1] text-[#475569] hover:bg-[#F8FAFC] hover:text-[#1E293B] font-bold rounded-xl transition-all shadow-2xs text-[12px] flex items-center gap-1.5 active:scale-95"
+                                    >
+                                        <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+                                        <span>清空</span>
+                                    </button>
+                                    <button
+                                        onClick={handleStartCalibration}
+                                        className="flex items-center justify-center gap-2 px-6 h-[38px] bg-[#4D94FF] hover:bg-[#3B82F6] text-white font-black rounded-xl shadow-[0_6px_18px_rgba(77,148,255,0.25)] active:scale-95 text-[13px]"
+                                    >
+                                        <Play className="w-3.5 h-3.5 fill-current" />
+                                        <span>开始校正</span>
+                                    </button>
                                 </div>
-                            </div>
-
-                            {/* 3. Voltage */}
-                            <div className="bg-[#F8FAFC] border border-[#B0C4DE] rounded-xl p-6 shadow-sm">
-                                <div className="flex items-center gap-2 mb-6">
-                                    <div className="w-1.5 h-6 bg-[#4D94FF] rounded-full" />
-                                    <h3 className="text-[18px] font-black text-[#37474F]">电压</h3>
-                                </div>
-                                <div className="flex flex-wrap gap-3">
-                                    {['80', '100', '120', '140'].map(val => (
-                                        <OptionButton
-                                            key={val}
-                                            label={val}
-                                            active={voltages.includes(val)}
-                                            onClick={() => toggleSelection(val, voltages, setVoltages)}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* 4. Collimator Width */}
-                            <div className="bg-[#F8FAFC] border border-[#B0C4DE] rounded-xl p-6 shadow-sm">
-                                <div className="flex items-center gap-2 mb-6">
-                                    <div className="w-1.5 h-6 bg-[#4D94FF] rounded-full" />
-                                    <h3 className="text-[18px] font-black text-[#37474F]">准直器宽度</h3>
-                                </div>
-                                <div className="flex flex-wrap gap-3">
-                                    {['32*0.6'].map(val => (
-                                        <OptionButton
-                                            key={val}
-                                            label={val}
-                                            active={collimators.includes(val)}
-                                            onClick={() => toggleSelection(val, collimators, setCollimators)}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="mt-8 pt-6 border-t border-gray-100 flex items-center justify-between">
-                            <div className="text-[14px] font-bold text-[#546E7A]">
-                                当前组合数：<span className="text-[#1E88E5] text-[18px]"> {totalCombinations} </span>
-                                <span className="text-[#90A4AE] ml-2">(已完成 0, 待校正 {totalCombinations})</span>
-                            </div>
-                            <div className="flex items-end gap-4">
-                                <button
-                                    onClick={() => {
-                                        setRotationSpeeds(['1']);
-                                        setVoltages(['100']);
-                                        setFocuses(['small']);
-                                        setCollimators(['32*0.6']);
-                                    }}
-                                    className="px-6 h-[48px] bg-white border border-[#B0C4DE] text-[#546E7A] font-bold rounded-lg hover:bg-gray-50 transition-all shadow-sm active:scale-95"
-                                >
-                                    清空记录
-                                </button>
-                                <button
-                                    onClick={handleStartCalibration}
-                                    className="flex items-center gap-3 px-12 h-[64px] bg-[#4D94FF] text-white font-black rounded-xl shadow-lg hover:bg-blue-600 transition-all active:scale-95"
-                                >
-                                    <div className="w-4 h-4 rounded-full bg-white opacity-40" />
-                                    <span className="text-[20px]">开始校正</span>
-                                </button>
                             </div>
                         </div>
                     </section>
@@ -310,33 +400,42 @@ const AirCalibrationScreen = () => {
 
                 {/* 4. Progress Overlay */}
                 {isCalibrating && (
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] z-50 flex items-center justify-center animate-in fade-in duration-300">
-                        <div className="bg-white w-[640px] h-[360px] rounded-3xl shadow-2xl p-10 flex flex-col justify-center animate-in zoom-in-95 duration-300">
-                            <div className="flex justify-between items-baseline mb-8">
-                                <h2 className="text-[32px] font-black text-[#37474F]">空气校正中...</h2>
-                                <span className="text-[72px] font-black text-[#4D94FF] italic">{Math.floor(calibrationProgress)}%</span>
+                    <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center animate-in fade-in duration-300">
+                        <div className="bg-white w-[640px] rounded-3xl shadow-2xl p-8 border border-slate-100 flex flex-col justify-between animate-in zoom-in-95 duration-300">
+                            <div>
+                                <div className="flex justify-between items-start mb-6">
+                                    <div>
+                                        <div className="flex items-center gap-2 text-blue-600 font-bold text-xs uppercase tracking-wider mb-1">
+                                            <span>CALIBRATION IN PROGRESS</span>
+                                        </div>
+                                        <h2 className="text-[26px] font-black text-[#1E293B]">空气校正中...</h2>
+                                    </div>
+                                    <span className="text-[52px] font-black leading-none bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent italic">{Math.floor(calibrationProgress)}%</span>
+                                </div>
+
+                                <div className="w-full h-3.5 bg-slate-100 rounded-full overflow-hidden mb-6 shadow-inner">
+                                    <div
+                                        className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-300 relative"
+                                        style={{ width: `${calibrationProgress}%` }}
+                                    >
+                                        <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                                    </div>
+                                </div>
                             </div>
 
-                            <div className="w-full h-4 bg-[#F0F4F9] rounded-full overflow-hidden mb-10 shadow-inner">
-                                <div
-                                    className="h-full bg-[#4D94FF] rounded-full transition-all duration-300"
-                                    style={{ width: `${calibrationProgress}%` }}
-                                ></div>
-                            </div>
-
-                            <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-3">
-                                    <span className="text-[18px] text-[#90A4AE] font-bold">当前进度实时更新：</span>
-                                    <div className="px-4 py-1.5 bg-[#F8FAFC] border border-[#B0C4DE] rounded-lg text-[18px] font-bold text-[#37474F] shadow-sm">
+                            <div className="flex justify-between items-center pt-4 border-t border-slate-100">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[13px] text-slate-500 font-bold">进度：</span>
+                                    <div className="px-3 py-1 bg-slate-100 border border-slate-200 rounded-lg text-[13px] font-bold text-slate-700">
                                         {calibrationProgress.toFixed(2)}%
                                     </div>
                                 </div>
                                 <button
                                     onClick={handleAbort}
-                                    className="flex items-center gap-2 px-6 h-12 bg-[#FFF1F0] border border-[#FFA39E] text-[#CF1322] font-black rounded-xl shadow-sm hover:bg-[#FFCCC7] transition-all active:scale-95"
+                                    className="flex items-center gap-2 px-5 h-11 bg-rose-50 border border-rose-200 text-rose-600 font-bold rounded-xl shadow-2xs hover:bg-rose-100 transition-all active:scale-95 text-[14px]"
                                 >
                                     <Square size={16} fill="currentColor" />
-                                    <span className="text-[16px]">终止校正</span>
+                                    <span>终止校正</span>
                                 </button>
                             </div>
                         </div>
@@ -345,35 +444,35 @@ const AirCalibrationScreen = () => {
 
                 {/* 5. Abort Confirmation Modal */}
                 {showAbortConfirm && (
-                    <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] z-[60] flex items-center justify-center animate-in fade-in duration-200">
-                        <div className="bg-white w-[560px] rounded-[32px] shadow-2xl border border-white p-12 animate-in zoom-in-95 duration-200">
-                            <div className="flex items-start gap-6 mb-8 text-[24px]">
-                                <div className="w-14 h-14 rounded-full bg-[#FFF3E0] flex items-center justify-center shrink-0">
-                                    <AlertTriangle size={32} className="text-[#FF9800]" />
+                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs z-[60] flex items-center justify-center animate-in fade-in duration-200">
+                        <div className="bg-white w-[520px] rounded-3xl shadow-2xl border border-slate-100 p-8 animate-in zoom-in-95 duration-200">
+                            <div className="flex items-start gap-5 mb-6">
+                                <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-500 flex items-center justify-center shrink-0">
+                                    <AlertTriangle size={24} />
                                 </div>
                                 <div>
-                                    <h3 className="font-black text-[#37474F] mb-3">确认要终止空气校正吗？</h3>
-                                    <p className="text-[16px] text-[#546E7A] font-bold leading-relaxed">
-                                        终止将停止后续由于采集，但已校正的部分将保留。
+                                    <h3 className="text-[20px] font-black text-slate-800 mb-2">确认要终止空气校正吗？</h3>
+                                    <p className="text-[14px] text-slate-600 font-medium leading-relaxed">
+                                        终止将停止后续采集，但已校正的部分将保留。
                                     </p>
-                                    <p className="text-[16px] text-[#4D94FF] font-black mt-2">
+                                    <div className="mt-3 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-[13px] font-bold text-blue-700 inline-block">
                                         已完成进度: {calibrationProgress.toFixed(2)}%
-                                    </p>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="flex gap-4">
+                            <div className="flex gap-3 pt-4 border-t border-slate-100">
                                 <button
                                     onClick={() => setShowAbortConfirm(false)}
-                                    className="flex-1 h-14 bg-white border-2 border-[#B0C4DE] text-[#546E7A] font-black rounded-2xl text-[18px] hover:bg-gray-50 transition-all active:scale-95 shadow-sm"
+                                    className="flex-1 h-12 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl text-[15px] hover:bg-slate-50 transition-all active:scale-95 shadow-2xs"
                                 >
                                     取消
                                 </button>
                                 <button
                                     onClick={confirmAbort}
-                                    className="flex-1 h-14 bg-[#4D94FF] text-white font-black rounded-2xl text-[18px] hover:bg-blue-600 transition-all active:scale-95 shadow-lg"
+                                    className="flex-1 h-12 bg-rose-600 text-white font-bold rounded-xl text-[15px] hover:bg-rose-700 transition-all active:scale-95 shadow-md"
                                 >
-                                    确认
+                                    确认终止
                                 </button>
                             </div>
                         </div>
@@ -384,3 +483,4 @@ const AirCalibrationScreen = () => {
 };
 
 export default AirCalibrationScreen;
+
