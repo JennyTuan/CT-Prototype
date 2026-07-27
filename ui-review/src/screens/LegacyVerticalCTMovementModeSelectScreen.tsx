@@ -17,8 +17,7 @@ const modeContent: Record<MoveMode, { title: string; description: string }> = {
 
 function ModeOption({ mode, selected, onClick }: { mode: MoveMode; selected: boolean; onClick: () => void }) {
     const { title, description } = modeContent[mode];
-    const isParallel = mode === "horizontal";
-    const iconSrc = isParallel ? "/movement-mode-parallel.png" : "/movement-mode-vertical.png";
+    const iconSrc = mode === "horizontal" ? "/movement-mode-device.png" : "/movement-mode-vertical-device.png";
 
     return (
         <button
