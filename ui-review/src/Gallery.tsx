@@ -38,8 +38,7 @@ import LegacyVerticalCTPatientPositioningScreen from "./screens/LegacyVerticalCT
 import LegacyVerticalCTPatientPositioningVerticalScreen from "./screens/LegacyVerticalCTPatientPositioningVerticalScreen";
 import LegacyVerticalCTScoutConfirmScreen from "./screens/LegacyVerticalCTScoutConfirmScreen";
 import LegacyVerticalCTIntegrationConfigScreen from "./screens/LegacyVerticalCTIntegrationConfigScreen";
-import LegacyVerticalCTMovementModeSelectScreen from "./screens/LegacyVerticalCTMovementModeSelectScreen";
-import LegacyVerticalCTMovementModeSelectEnglishScreen from "./screens/LegacyVerticalCTMovementModeSelectEnglishScreen";
+import LegacyHorizontalMovementFlowScreen from "./screens/LegacyHorizontalMovementFlowScreen";
 
 type ScreenItem = {
     key: string;
@@ -105,11 +104,23 @@ export default function Gallery() {
                 id: "legacy-vertical-ct",
                 name: "旧版垂直CT平台",
                 screens: [
-                    { key: "legacy-vertical-ct-home", name: "首页", component: <LegacyVerticalCTHomeScreen /> },
-                    { key: "legacy-vertical-ct-movement-mode-select", name: "行走模式选择（水平／垂直）", component: <LegacyVerticalCTMovementModeSelectScreen /> },
-                    { key: "legacy-vertical-ct-movement-mode-select-en", name: "Movement Mode Selection (English)", component: <LegacyVerticalCTMovementModeSelectEnglishScreen /> },
+                    { key: "legacy-vertical-ct-home", name: "首页", component: <LegacyVerticalCTHomeScreen onOpenMovement={() => setActiveKey("movement-disconnect")} /> },
+                    { key: "movement-flow", name: "移动模式·完整流程（中文）", component: <LegacyHorizontalMovementFlowScreen /> },
+                    { key: "movement-flow-en", name: "Movement Flow (English)", component: <LegacyHorizontalMovementFlowScreen language="en" /> },
+                    { key: "movement-disconnect", name: "水平移动·01 断开电源", component: <LegacyHorizontalMovementFlowScreen initialStep={0} /> },
+                    { key: "movement-rotate", name: "水平移动·02 旋转扫描环", component: <LegacyHorizontalMovementFlowScreen initialStep={1} /> },
+                    { key: "movement-cable", name: "水平移动·03 收线绕线", component: <LegacyHorizontalMovementFlowScreen initialStep={2} /> },
+                    { key: "movement-raise", name: "水平移动·04 抬起机架", component: <LegacyHorizontalMovementFlowScreen initialStep={3} /> },
+                    { key: "movement-drive", name: "水平移动·05 移动", component: <LegacyHorizontalMovementFlowScreen initialStep={4} /> },
+                    { key: "movement-lower", name: "水平移动·06 机架落地", component: <LegacyHorizontalMovementFlowScreen initialStep={5} /> },
+                    { key: "movement-continue", name: "落地前·继续移动提示（中文）", component: <LegacyHorizontalMovementFlowScreen initialStep={4} initialDialog="continue" /> },
+                    { key: "movement-continue-en", name: "Before Lowering · Continue Moving (English)", component: <LegacyHorizontalMovementFlowScreen initialStep={4} initialDialog="continue" language="en" /> },
+                    { key: "legacy-vertical-ct-movement-mode-select", name: "行走模式选择（水平／垂直）", component: <LegacyHorizontalMovementFlowScreen initialStep={0} initialDialog="mode" /> },
+                    { key: "legacy-vertical-ct-movement-mode-select-en", name: "Movement Mode Selection (English)", component: <LegacyHorizontalMovementFlowScreen initialStep={0} initialDialog="mode" language="en" /> },
                     { key: "legacy-vertical-ct-mechanical-verification", name: "机械校验（配置4·双模式·已选水平）", component: <LegacyVerticalCTMechanicalVerificationScreen defaultSelectedMode="horizontal" /> },
                     { key: "legacy-vertical-ct-mechanical-verification-vertical-target", name: "机械校验（配置4·双模式·已选垂直）", component: <LegacyVerticalCTMechanicalVerificationScreen defaultSelectedMode="vertical" /> },
+                    { key: "legacy-vertical-ct-mechanical-verification-config5", name: "机械校验（配置5·第三方座椅·已选水平）", component: <LegacyVerticalCTMechanicalVerificationScreen defaultSelectedMode="horizontal" chairControl="third-party" /> },
+                    { key: "legacy-vertical-ct-mechanical-verification-config5-vertical", name: "机械校验（配置5·第三方座椅·已选垂直）", component: <LegacyVerticalCTMechanicalVerificationScreen defaultSelectedMode="vertical" chairControl="third-party" /> },
                     { key: "legacy-vertical-ct-mechanical-verification-single", name: "机械校验（配置1/3·单模式·垂直）", component: <LegacyVerticalCTMechanicalVerificationSingleModeScreen mode="vertical" /> },
                     { key: "legacy-vertical-ct-mechanical-verification-single-horizontal", name: "机械校验（配置2·单模式·水平）", component: <LegacyVerticalCTMechanicalVerificationSingleModeScreen mode="horizontal" /> },
                 //    { key: "legacy-vertical-ct-mode-confirm-correct", name: "模式确认-模式正确", component: <LegacyVerticalCTModeConfirmCorrectScreen /> },
@@ -284,10 +295,10 @@ export default function Gallery() {
                     </button>
                 </header>
 
-                <div className="flex-1 overflow-auto p-8 flex justify-center items-start">
+                <div className="flex-1 overflow-auto p-8 flex items-start">
                     <div
                         ref={previewRef}
-                        className={`rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-[#E2E8F0] overflow-hidden ${useWt32Preview ? "wt32-preview" : ""}`}
+                        className={`mx-auto shrink-0 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-[#E2E8F0] overflow-hidden ${useWt32Preview ? "wt32-preview" : ""}`}
                     >
                         {useWt32Stage ? <div key={activeKey} className="wt32-stage">{active?.component}</div> : <div key={activeKey}>{active?.component}</div>}
                     </div>

@@ -15,18 +15,23 @@ import LegacyVerticalCTModeSwitchContent from "./LegacyVerticalCTModeSwitchConte
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
 type ModeKey = "horizontal" | "vertical";
+type ChairControl = "integrated" | "third-party";
 
 type LegacyVerticalCTMechanicalVerificationScreenProps = {
     defaultSelectedMode?: ModeKey;
+    chairControl?: ChairControl;
 };
 
 export default function LegacyVerticalCTMechanicalVerificationScreen({
     defaultSelectedMode = "horizontal",
+    chairControl = "integrated",
 }: LegacyVerticalCTMechanicalVerificationScreenProps = {}) {
     const configSupportsModeSwitch = true;
+    const usesThirdPartyChair = chairControl === "third-party";
 
     const [modeMatched, setModeMatched] = useState(false);
     const [standbyReady, setStandbyReady] = useState(false);
+    const [thirdPartyChairConfirmed, setThirdPartyChairConfirmed] = useState(!usesThirdPartyChair);
     const [isSwitching, setIsSwitching] = useState(false);
     const [colorPressed, setColorPressed] = useState(false);
     const selectedMode: ModeKey = defaultSelectedMode;
@@ -53,16 +58,26 @@ export default function LegacyVerticalCTMechanicalVerificationScreen({
         }
     };
 
+    const chairReady = usesThirdPartyChair ? thirdPartyChairConfirmed : standbyReady;
+    const allStandbyReady = standbyReady && chairReady;
+
     const standbyDetails = useMemo(
         () => [
-            { id: "bed", name: "扫描床", status: standbyReady, image: "/medical_table_transparent.png" },
-            { id: "chair", name: "座椅", status: standbyReady, image: "/seat_transparent.png" },
-            { id: "ring", name: "扫描环", status: true, image: "/ceiling_device_transparent.png" },
+            { id: "bed", name: "扫描床", status: standbyReady, image: "/medical_table_transparent.png", readyLabel: "已在待机位", pendingLabel: "偏离待机位" },
+            {
+                id: "chair",
+                name: usesThirdPartyChair ? "第三方座椅" : "座椅",
+                status: chairReady,
+                image: "/seat_transparent.png",
+                readyLabel: usesThirdPartyChair ? "已人工确认" : "已在待机位",
+                pendingLabel: usesThirdPartyChair ? "待人工确认" : "偏离待机位",
+            },
+            { id: "ring", name: "扫描环", status: true, image: "/ceiling_device_transparent.png", readyLabel: "已在待机位", pendingLabel: "偏离待机位" },
         ],
-        [standbyReady]
+        [chairReady, standbyReady, usesThirdPartyChair]
     );
 
-    const canProceed = configSupportsModeSwitch ? modeMatched && standbyReady : standbyReady;
+    const canProceed = configSupportsModeSwitch ? modeMatched && allStandbyReady : allStandbyReady;
 
     const currentPhysicalMode: ModeKey = modeMatched
         ? selectedMode
@@ -73,8 +88,17 @@ export default function LegacyVerticalCTMechanicalVerificationScreen({
 
     const failedItems = [
         configSupportsModeSwitch && !modeMatched && `切换机械至${selectedModeLabel}`,
-        !standbyReady && "移动各部件至待机位",
+        !standbyReady && (usesThirdPartyChair ? "移动本厂扫描床至待机位" : "移动各部件至待机位"),
+        usesThirdPartyChair && !thirdPartyChairConfirmed && `人工确认第三方座椅已到达${selectedModeLabel}待机位`,
     ].filter(Boolean) as string[];
+
+    const handlePrimaryAction = () => {
+        if (!modeMatched || !standbyReady) {
+            setIsSwitching(true);
+            return;
+        }
+        setThirdPartyChairConfirmed(true);
+    };
 
     return (
         <div
@@ -109,7 +133,7 @@ export default function LegacyVerticalCTMechanicalVerificationScreen({
                 {/* Left column — fills full height */}
                 <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
 
-                    {/* Check 01: Mode match — fixed height, config4 only */}
+                    {/* Check 01: Mode match — fixed height, dual-mode configurations */}
                     {configSupportsModeSwitch && (
                         <div
                             className={`shrink-0 rounded-[16px] border bg-white p-4 shadow-sm ${
@@ -182,7 +206,7 @@ export default function LegacyVerticalCTMechanicalVerificationScreen({
                     {/* Check 02: Standby — flex-1, fills remaining height */}
                     <div
                         className={`flex min-h-0 flex-1 flex-col rounded-[16px] border bg-white p-4 shadow-sm ${
-                            standbyReady ? "border-emerald-100" : "border-orange-100"
+                            allStandbyReady ? "border-emerald-100" : "border-orange-100"
                         }`}
                     >
                         <div className="mb-3 flex shrink-0 items-center justify-between">
@@ -194,13 +218,13 @@ export default function LegacyVerticalCTMechanicalVerificationScreen({
                             </div>
                             <div
                                 className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12px] font-bold ${
-                                    standbyReady
+                                    allStandbyReady
                                         ? "bg-emerald-50 text-emerald-600"
                                         : "bg-orange-50 text-orange-600"
                                 }`}
                             >
-                                {standbyReady ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
-                                <span>{standbyReady ? "全部就绪" : "位置未就绪"}</span>
+                                {allStandbyReady ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
+                                <span>{allStandbyReady ? "全部就绪" : usesThirdPartyChair && standbyReady ? "待人工确认" : "位置未就绪"}</span>
                             </div>
                         </div>
 
@@ -242,7 +266,7 @@ export default function LegacyVerticalCTMechanicalVerificationScreen({
                                             ) : (
                                                 <Move size={12} className="animate-pulse" />
                                             )}
-                                            <span>{item.status ? "已在待机位" : "偏离待机位"}</span>
+                                            <span>{item.status ? item.readyLabel : item.pendingLabel}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -323,12 +347,16 @@ export default function LegacyVerticalCTMechanicalVerificationScreen({
                                 {!canProceed ? (
                                     <button
                                         type="button"
-                                        onClick={() => setIsSwitching(true)}
+                                        onClick={handlePrimaryAction}
                                         className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#10b981] text-white shadow-md shadow-emerald-100 transition-all hover:bg-[#059669] active:scale-95"
                                     >
                                         <RefreshCw size={18} />
                                         <span className="text-[15px] font-bold">
-                                            {modeMatched ? "一键就位" : "一键模式切换"}
+                                            {!modeMatched
+                                                ? "一键模式切换"
+                                                : !standbyReady
+                                                ? "一键就位"
+                                                : "确认第三方座椅待机位"}
                                         </span>
                                     </button>
                                 ) : (

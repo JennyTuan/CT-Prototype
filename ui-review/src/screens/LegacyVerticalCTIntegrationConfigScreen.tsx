@@ -4,7 +4,7 @@ import { LegacyPatientAvatar, LegacyToolbarIcon } from "./legacyVerticalCtVisual
 
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
-type ConfigId = 1 | 2 | 3 | 4;
+type ConfigId = 1 | 2 | 3 | 4 | 5;
 type ChairPresetId = 0 | 1;
 
 const CHAIR_AXIS_KEYS = [
@@ -37,21 +37,25 @@ const CONFIGS: {
     { id: 2, hardware: "CT主机 + 扫描床", modeH: true, modeV: false, note: "仅卧姿扫描" },
     { id: 3, hardware: "CT主机 + 座椅", modeH: false, modeV: true, note: "仅坐姿扫描" },
     { id: 4, hardware: "CT主机 + 扫描床 + 座椅", modeH: true, modeV: true, note: "双模式，支持水平/垂直切换" },
+    { id: 5, hardware: "CT主机/床+第三方座椅", modeH: true, modeV: true, note: "双模式；第三方座椅仅维护待机位/扫描位参数" },
 ];
 
 type IntegrationParams = {
-    // CT 立柱 — 垂直模式 (configs 1, 3, 4-vertical)
+    // CT 立柱 — 垂直模式 (configs 1, 3, 4/5-vertical)
     columnStrokeStandby: string;    // 立柱行程（待机） mm
     columnStrokeScan: string;       // 立柱行程（扫描） mm
     columnTiltStandby: string;      // 立柱倾角（待机） °
     ringTiltStandby: string;        // 扫描环倾角（待机） °
     horizontalTravel: string;       // 水平行程 mm
-    // CT 立柱 — 水平模式 (config 2 standalone; config 4 horizontal)
+    // CT 立柱 — 水平模式 (config 2 standalone; configs 4/5 horizontal)
     columnStrokeHorizontal: string; // 立柱行程（水平待机） mm
     ringTiltHorizontal: string;     // 扫描环倾角（水平待机） °
-    // 扫描床 (configs 2, 4)
+    // 扫描床 (configs 2, 4, 5)
     bedHeight: string;              // 床高度 mm
-    bedBoardAngle: string;          // 床板角度 ° (config 4 垂直扫描位可配置)
+    bedBoardAngle: string;          // 床板角度 ° (configs 4/5 垂直扫描位可配置)
+    // 第三方座椅 (config 5)
+    thirdPartyChairStandby: string; // 待机位参数
+    thirdPartyChairScan: string;    // 扫描位参数
 } & Record<ChairPresetAxisKey, string>;
 
 const CHAIR_PRESET_AXIS_DEFAULTS = Object.fromEntries(
@@ -62,6 +66,11 @@ const CHAIR_PRESET_AXIS_DEFAULTS = Object.fromEntries(
         ]),
     ),
 ) as Record<ChairPresetAxisKey, string>;
+
+const THIRD_PARTY_CHAIR_DEFAULTS = {
+    thirdPartyChairStandby: "",
+    thirdPartyChairScan: "",
+};
 
 // 每个配置独立默认值，严格对照联调说明文档
 const CONFIG_DEFAULTS: Record<ConfigId, IntegrationParams> = {
@@ -77,6 +86,7 @@ const CONFIG_DEFAULTS: Record<ConfigId, IntegrationParams> = {
         bedHeight: "800",
         bedBoardAngle: "0",
         ...CHAIR_PRESET_AXIS_DEFAULTS,
+        ...THIRD_PARTY_CHAIR_DEFAULTS,
     },
     // 配置2：CT主机+扫描床，仅水平
     // 文档：CT待机位 立柱行程1250mm，立柱倾角0°，扫描环倾角90°，水平行程1200mm，床高度800mm
@@ -91,6 +101,7 @@ const CONFIG_DEFAULTS: Record<ConfigId, IntegrationParams> = {
         bedHeight: "800",
         bedBoardAngle: "0",
         ...CHAIR_PRESET_AXIS_DEFAULTS,
+        ...THIRD_PARTY_CHAIR_DEFAULTS,
     },
     // 配置3：CT主机+座椅，仅垂直坐姿
     // 文档：垂直待机位 立柱行程0mm，立柱倾角0°，扫描环倾角90°，水平行程1200mm
@@ -106,6 +117,7 @@ const CONFIG_DEFAULTS: Record<ConfigId, IntegrationParams> = {
         bedHeight: "800",
         bedBoardAngle: "0",
         ...CHAIR_PRESET_AXIS_DEFAULTS,
+        ...THIRD_PARTY_CHAIR_DEFAULTS,
     },
     // 配置4：CT主机+扫描床+座椅，双模式
     // 垂直待机：立柱行程0mm，立柱倾角0°，扫描环倾角0°（区别于配置3的90°）
@@ -122,6 +134,22 @@ const CONFIG_DEFAULTS: Record<ConfigId, IntegrationParams> = {
         bedHeight: "800",
         bedBoardAngle: "0",
         ...CHAIR_PRESET_AXIS_DEFAULTS,
+        ...THIRD_PARTY_CHAIR_DEFAULTS,
+    },
+    // 配置5：CT主机+扫描床（本厂自研）+第三方座椅，双模式
+    // CT主机与扫描床沿用本厂已联调的配置4机械参数；第三方座椅仅记录两个预设参数。
+    5: {
+        columnStrokeStandby: "0",
+        columnStrokeScan: "300",
+        columnTiltStandby: "0",
+        ringTiltStandby: "0",
+        horizontalTravel: "1200",
+        columnStrokeHorizontal: "1250",
+        ringTiltHorizontal: "90",
+        bedHeight: "800",
+        bedBoardAngle: "0",
+        ...CHAIR_PRESET_AXIS_DEFAULTS,
+        ...THIRD_PARTY_CHAIR_DEFAULTS,
     },
 };
 
@@ -371,11 +399,48 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
         );
     }
 
+    /** 配置5：双模式，本厂主机+扫描床，第三方座椅 */
+    function renderConfig5() {
+        return (
+            <>
+                <SectionLabel>垂直扫描模式 — CT姿态 / 扫描环（本厂自研）</SectionLabel>
+                <div className="flex flex-col gap-2.5">
+                    <ParamRow label="立柱行程（待机）" value={integrationParams.columnStrokeStandby} unit="mm" onChange={(v) => setParam("columnStrokeStandby", v)} />
+                    <ParamRow label="立柱行程（扫描）" value={integrationParams.columnStrokeScan} unit="mm" onChange={(v) => setParam("columnStrokeScan", v)} />
+                    <ParamRow label="立柱倾角（待机）" value={integrationParams.columnTiltStandby} unit="°" onChange={(v) => setParam("columnTiltStandby", v)} />
+                    <ParamRow label="扫描环倾角（垂直待机）" value={integrationParams.ringTiltStandby} unit="°" onChange={(v) => setParam("ringTiltStandby", v)} />
+                    <ParamRow label="水平行程" value={integrationParams.horizontalTravel} unit="mm" onChange={(v) => setParam("horizontalTravel", v)} />
+                    <ParamRow label="床板角度（扫描位）" value={integrationParams.bedBoardAngle} unit="°" onChange={(v) => setParam("bedBoardAngle", v)} />
+                    <InfoRow text="扫描时立柱倾角与座椅靠背联动；扫描环倾角随立柱自动垂直。" />
+                </div>
+
+                <SectionLabel>水平扫描模式 — CT姿态 / 扫描环（本厂自研）</SectionLabel>
+                <div className="flex flex-col gap-2.5">
+                    <ParamRow label="立柱行程（水平待机）" value={integrationParams.columnStrokeHorizontal} unit="mm" onChange={(v) => setParam("columnStrokeHorizontal", v)} />
+                    <ParamRow label="扫描环倾角（水平待机）" value={integrationParams.ringTiltHorizontal} unit="°" onChange={(v) => setParam("ringTiltHorizontal", v)} />
+                </div>
+
+                <SectionLabel>扫描床（双模式共用 · 本厂自研）</SectionLabel>
+                <div className="flex flex-col gap-2.5">
+                    <ParamRow label="床高度" value={integrationParams.bedHeight} unit="mm" onChange={(v) => setParam("bedHeight", v)} />
+                </div>
+
+                <SectionLabel>第三方座椅</SectionLabel>
+                <div className="flex flex-col gap-2.5">
+                    <ParamRow label="待机位参数" value={integrationParams.thirdPartyChairStandby} onChange={(v) => setParam("thirdPartyChairStandby", v)} />
+                    <ParamRow label="扫描位参数" value={integrationParams.thirdPartyChairScan} onChange={(v) => setParam("thirdPartyChairScan", v)} />
+                    <InfoRow text="第三方座椅不由本系统执行移动；扫描前需由操作人员确认其已到达相应位置。" />
+                </div>
+            </>
+        );
+    }
+
     const renderParams = () => {
         if (selectedConfig === 1) return renderConfig1();
         if (selectedConfig === 2) return renderConfig2();
         if (selectedConfig === 3) return renderConfig3();
-        return renderConfig4();
+        if (selectedConfig === 4) return renderConfig4();
+        return renderConfig5();
     };
 
     const renderChairAxisSection = () => {
@@ -450,11 +515,11 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
                                     {c.id}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-2">
-                                        <span className={`text-[13px] font-bold leading-snug ${selected ? "text-[#2A63BE]" : "text-slate-600"}`}>{c.hardware}</span>
+                                    <div className="flex min-w-0 items-center gap-2">
+                                        <span className={`min-w-0 text-[13px] font-bold leading-snug ${selected ? "text-[#2A63BE]" : "text-slate-600"}`}>{c.hardware}</span>
                                         {live && (
-                                            <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-[1px] text-[10px] font-bold text-emerald-600">
-                                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                            <span className="flex shrink-0 whitespace-nowrap items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-[1px] text-[10px] font-bold text-emerald-600">
+                                                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
                                                 生效中
                                             </span>
                                         )}
