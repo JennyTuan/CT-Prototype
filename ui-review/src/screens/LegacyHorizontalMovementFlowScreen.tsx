@@ -12,7 +12,8 @@ import { MovementLanguageContext } from "../lib/movementPrototype";
 import type { MovementLanguage } from "../lib/movementPrototype";
 
 const pages = [LegacyHorizontalMovementDisconnectScreen, LegacyHorizontalMovementRotateScreen, LegacyHorizontalMovementCableScreen, LegacyHorizontalMovementRaiseScreen, LegacyHorizontalMovementDriveScreen, LegacyHorizontalMovementLowerScreen];
-const verticalSteps = [1, 4, 5];
+const initialVerticalSteps = [2, 3, 4, 5];
+const continuedVerticalSteps = [1, 4, 5];
 const secondaryButton = "min-w-[86px] rounded-[3px] border border-[#A8B0BC] bg-[linear-gradient(#F8F9FB,#DDE1E7)] px-5 py-2 text-[14px] text-[#4E5662]";
 const primaryButton = "min-w-[86px] rounded-[3px] border border-[#75AA61] bg-[linear-gradient(#A5D78A,#82BA69)] px-5 py-2 text-[14px] font-semibold text-white";
 type Props = { initialStep?: number; initialDialog?: "mode" | "continue"; language?: MovementLanguage; onHome?: () => void };
@@ -34,15 +35,17 @@ export default function LegacyHorizontalMovementFlowScreen({ initialStep = -1, i
     const [step, setStep] = useState(initialDialog === "continue" ? 4 : initialStep);
     const [dialog, setDialog] = useState<"mode" | "continue" | "complete" | null>(initialDialog ?? null);
     const [mode, setMode] = useState<"horizontal" | "vertical">("horizontal");
-    const [verticalMovement, setVerticalMovement] = useState(false);
+    const [verticalRoute, setVerticalRoute] = useState<"initial" | "continued" | null>(null);
+    const verticalMovement = verticalRoute !== null;
+    const verticalSteps = verticalRoute === "initial" ? initialVerticalSteps : continuedVerticalSteps;
     const t = (zh: string, en: string) => language === "en" ? en : zh;
     const Page = pages[step];
-    const returnHome = () => { setDialog(null); setVerticalMovement(false); setMode("horizontal"); if (onHome) onHome(); else setStep(-1); };
+    const returnHome = () => { setDialog(null); setVerticalRoute(null); setMode("horizontal"); if (onHome) onHome(); else setStep(-1); };
     const goBack = () => {
-        if (verticalMovement && step === 1) {
-            setVerticalMovement(false);
-            setStep(4);
-            setDialog("continue");
+        if (verticalMovement && step === verticalSteps[0]) {
+            setVerticalRoute(null);
+            setStep(verticalRoute === "initial" ? 0 : 4);
+            setDialog(verticalRoute === "initial" ? "mode" : "continue");
         } else if (verticalMovement) {
             setStep(verticalSteps[verticalSteps.indexOf(step) - 1]);
         } else if (step === 5) {
@@ -52,7 +55,7 @@ export default function LegacyHorizontalMovementFlowScreen({ initialStep = -1, i
         else setStep(step - 1);
     };
     const goNext = () => {
-        if (step === 0) { setMode("horizontal"); setDialog("mode"); }
+        if (step === 0) setDialog("mode");
         else if (step === 4 && !verticalMovement) setDialog("continue");
         else if (step === 5) setDialog("complete");
         else if (verticalMovement) setStep(verticalSteps[verticalSteps.indexOf(step) + 1]);
@@ -61,7 +64,7 @@ export default function LegacyHorizontalMovementFlowScreen({ initialStep = -1, i
 
     return <MovementLanguageContext.Provider value={language}>
         <div className="relative h-[768px] w-[1024px]" lang={language === "en" ? "en" : "zh-CN"}>
-            {step === -1 ? <LegacyVerticalCTHomeScreen language={language} onOpenMovement={() => setStep(0)} /> : <Page verticalMovement={verticalMovement} sequenceStep={verticalMovement ? verticalSteps.indexOf(step) + 1 : undefined} onBack={goBack} onNext={goNext} />}
+            {step === -1 ? <LegacyVerticalCTHomeScreen useVerticalHeader={false} language={language} onOpenMovement={() => setStep(0)} /> : <Page verticalMovement={verticalMovement} sequenceStep={verticalRoute === "continued" ? verticalSteps.indexOf(step) + 1 : undefined} sequenceTotal={verticalRoute === "continued" ? 3 : 6} onBack={goBack} onNext={goNext} />}
             {dialog === "continue" && <MovementDialog title={t("选择下一步", "Choose next action")} onClose={() => setDialog(null)}>
                 <div className="grid grid-cols-2 gap-5">
                     {(["lower", "vertical"] as const).map((action) => <button
@@ -70,7 +73,7 @@ export default function LegacyHorizontalMovementFlowScreen({ initialStep = -1, i
                         onClick={() => {
                             setDialog(null);
                             if (action === "lower") setStep(5);
-                            else { setVerticalMovement(true); setStep(1); }
+                            else { setVerticalRoute("continued"); setStep(1); }
                         }}
                         className="flex h-[280px] flex-col items-center justify-center gap-4 rounded-[6px] border border-[#ACBCD1] bg-[linear-gradient(#FFFFFF,#F1F4F8)] px-3 py-4 text-[#384F70] shadow-[inset_0_1px_0_#FFFFFF] transition-colors hover:border-[#668FCC] hover:bg-[linear-gradient(#FFFFFF,#E4EDF9)] focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[#4778B9] active:bg-[#D9E6F7]"
                     >
@@ -105,8 +108,7 @@ export default function LegacyHorizontalMovementFlowScreen({ initialStep = -1, i
                         </button>;
                     })}
                 </div>
-                {mode === "vertical" && <p className="mt-3 text-[12px] text-[#737F91]">{t("仅演示模式选择，确认后返回首页。", "Mode selection preview only. Confirm to return home.")}</p>}
-                <div className="mt-5 flex justify-end gap-2"><button type="button" className={secondaryButton} onClick={() => setDialog(step === 5 ? "continue" : null)}>{t("取消", "Cancel")}</button><button type="button" className={primaryButton} onClick={() => { if (mode === "vertical") returnHome(); else { setDialog(null); setStep(1); } }}>{t("确认", "Confirm")}</button></div>
+                <div className="mt-5 flex justify-end gap-2"><button type="button" className={secondaryButton} onClick={() => setDialog(step === 5 ? "continue" : null)}>{t("取消", "Cancel")}</button><button type="button" className={primaryButton} onClick={() => { setDialog(null); setVerticalRoute(mode === "vertical" ? "initial" : null); setStep(mode === "vertical" ? 2 : 1); }}>{t("确认", "Confirm")}</button></div>
             </MovementDialog>}
         </div>
     </MovementLanguageContext.Provider>;

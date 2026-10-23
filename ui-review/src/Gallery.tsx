@@ -39,6 +39,7 @@ import LegacyVerticalCTPatientPositioningVerticalScreen from "./screens/LegacyVe
 import LegacyVerticalCTScoutConfirmScreen from "./screens/LegacyVerticalCTScoutConfirmScreen";
 import LegacyVerticalCTIntegrationConfigScreen from "./screens/LegacyVerticalCTIntegrationConfigScreen";
 import LegacyHorizontalMovementFlowScreen from "./screens/LegacyHorizontalMovementFlowScreen";
+import VerticalCTModelDiscussionScreen from "./screens/VerticalCTModelDiscussionScreen";
 
 type ScreenItem = {
     key: string;
@@ -65,6 +66,13 @@ export default function Gallery() {
 
     const categories = useMemo<Category[]>(
         () => [
+            {
+                id: "vertical-ct",
+                name: "垂直CT模型讨论",
+                screens: [
+                    { key: "vertical-ct-model-discussion", name: "坐标、运动与限位", component: <VerticalCTModelDiscussionScreen /> },
+                ],
+            },
             {
                 id: "wt32",
                 name: "WT32 平台",
@@ -98,13 +106,6 @@ export default function Gallery() {
                     { key: "performance-evaluation", name: "性能评估", component: <PerformanceEvaluationScreen /> },
                     { key: "manual-scan", name: "手动扫描", component: <ManualScanScreen /> },
                     { key: "component-library", name: "组件库", component: <ComponentLibraryScreen /> },
-                ],
-            },
-            {
-                id: "legacy-vertical-ct",
-                name: "旧版垂直CT平台",
-                screens: [
-                    { key: "legacy-vertical-ct-home", name: "首页", component: <LegacyVerticalCTHomeScreen onOpenMovement={() => setActiveKey("movement-disconnect")} /> },
                     { key: "movement-flow", name: "移动模式·完整流程（中文）", component: <LegacyHorizontalMovementFlowScreen /> },
                     { key: "movement-flow-en", name: "Movement Flow (English)", component: <LegacyHorizontalMovementFlowScreen language="en" /> },
                     { key: "movement-disconnect", name: "水平移动·01 断开电源", component: <LegacyHorizontalMovementFlowScreen initialStep={0} /> },
@@ -117,6 +118,13 @@ export default function Gallery() {
                     { key: "movement-continue-en", name: "Before Lowering · Continue Moving (English)", component: <LegacyHorizontalMovementFlowScreen initialStep={4} initialDialog="continue" language="en" /> },
                     { key: "legacy-vertical-ct-movement-mode-select", name: "行走模式选择（水平／垂直）", component: <LegacyHorizontalMovementFlowScreen initialStep={0} initialDialog="mode" /> },
                     { key: "legacy-vertical-ct-movement-mode-select-en", name: "Movement Mode Selection (English)", component: <LegacyHorizontalMovementFlowScreen initialStep={0} initialDialog="mode" language="en" /> },
+                ],
+            },
+            {
+                id: "legacy-vertical-ct",
+                name: "旧版垂直CT平台",
+                screens: [
+                    { key: "legacy-vertical-ct-home", name: "首页", component: <LegacyVerticalCTHomeScreen onOpenMovement={() => setActiveKey("movement-disconnect")} /> },
                     { key: "legacy-vertical-ct-mechanical-verification", name: "机械校验（配置4·双模式·已选水平）", component: <LegacyVerticalCTMechanicalVerificationScreen defaultSelectedMode="horizontal" /> },
                     { key: "legacy-vertical-ct-mechanical-verification-vertical-target", name: "机械校验（配置4·双模式·已选垂直）", component: <LegacyVerticalCTMechanicalVerificationScreen defaultSelectedMode="vertical" /> },
                     { key: "legacy-vertical-ct-mechanical-verification-config5", name: "机械校验（配置5·第三方座椅·已选水平）", component: <LegacyVerticalCTMechanicalVerificationScreen defaultSelectedMode="horizontal" chairControl="third-party" /> },
@@ -147,6 +155,7 @@ export default function Gallery() {
         [categories]
     );
     const active = allScreens.find((screen) => screen.key === activeKey) ?? allScreens[0];
+    const isModelDiscussion = activeKey === "vertical-ct-model-discussion";
     const useWt32Preview = false;
     const useWt32Stage = false;
 
@@ -197,10 +206,34 @@ export default function Gallery() {
                 scale: 3,
                 useCORS: true,
                 backgroundColor: null,
-                width: 1366,
-                height: 768,
-                windowWidth: 1366,
-                windowHeight: 768,
+                width: isModelDiscussion ? targetElement.scrollWidth : 1366,
+                height: isModelDiscussion ? targetElement.scrollHeight : 768,
+                windowWidth: isModelDiscussion ? window.innerWidth : 1366,
+                windowHeight: isModelDiscussion ? window.innerHeight : 768,
+                onclone: (document, element) => {
+                    if (!isModelDiscussion) return;
+                    // Capture the normal document layout, regardless of the live sticky preview's scroll position.
+                    element.querySelectorAll<HTMLElement>("[data-export-static]").forEach(node => {
+                        node.style.position = "static";
+                    });
+                    // html2canvas treats native ranges as text fields; paint their current state in the export copy.
+                    element.querySelectorAll<HTMLInputElement>('input[type="range"]').forEach(input => {
+                        const progress = (Number(input.value) - Number(input.min)) / (Number(input.max) - Number(input.min)) * 100;
+                        const container = document.createElement("div");
+                        container.style.cssText = "position:relative;display:block;width:100%;height:20px";
+                        const rail = document.createElement("div");
+                        rail.style.cssText = `position:absolute;left:0;right:0;top:7px;height:6px;border-radius:3px;background:linear-gradient(to right,#4D94FF ${progress}%,#E5EDF8 ${progress}%)`;
+                        const thumb = document.createElement("div");
+                        thumb.style.cssText = `position:absolute;top:3px;left:calc(${progress}% + ${7 - progress * 0.14}px);width:14px;height:14px;transform:translateX(-50%);border-radius:50%;background:#4D94FF`;
+                        container.append(rail, thumb);
+                        input.replaceWith(container);
+                    });
+                    element.querySelectorAll<HTMLDetailsElement>("details:not([open])").forEach(detail => {
+                        Array.from(detail.children).forEach(child => {
+                            if (child.tagName !== "SUMMARY") (child as HTMLElement).style.display = "none";
+                        });
+                    });
+                },
             });
 
             const link = document.createElement("a");
@@ -295,12 +328,12 @@ export default function Gallery() {
                     </button>
                 </header>
 
-                <div className="flex-1 overflow-auto p-8 flex items-start">
+                <div className={`flex-1 min-h-0 flex items-start ${isModelDiscussion ? "overflow-hidden p-2 lg:p-3" : "overflow-auto p-8"}`}>
                     <div
                         ref={previewRef}
-                        className={`mx-auto shrink-0 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-[#E2E8F0] overflow-hidden ${useWt32Preview ? "wt32-preview" : ""}`}
+                        className={isModelDiscussion ? "mx-auto h-full min-h-0 w-full min-w-0" : `mx-auto shrink-0 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-[#E2E8F0] overflow-hidden ${useWt32Preview ? "wt32-preview" : ""}`}
                     >
-                        {useWt32Stage ? <div key={activeKey} className="wt32-stage">{active?.component}</div> : <div key={activeKey}>{active?.component}</div>}
+                        {useWt32Stage ? <div key={activeKey} className="wt32-stage">{active?.component}</div> : <div key={activeKey} className={isModelDiscussion ? "h-full min-h-0" : undefined}>{active?.component}</div>}
                     </div>
                 </div>
             </main>

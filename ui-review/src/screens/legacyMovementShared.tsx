@@ -4,17 +4,17 @@ import { ArrowBigDown, ArrowBigLeft, ArrowBigRight, ArrowBigUp, BatteryFull, Cir
 import { useMovementText } from "../lib/movementPrototype";
 import type { MovementDirection } from "../lib/movementPrototype";
 
-export type MovementPageProps = { onBack?: () => void; onNext?: () => void; initialProgress?: number; verticalMovement?: boolean; sequenceStep?: number };
+export type MovementPageProps = { onBack?: () => void; onNext?: () => void; initialProgress?: number; verticalMovement?: boolean; sequenceStep?: number; sequenceTotal?: number };
 const arrows = { up: ArrowBigUp, down: ArrowBigDown, left: ArrowBigLeft, right: ArrowBigRight };
 const directionLabels = { up: ["前进", "Forward"], down: ["后退", "Backward"], left: ["向左", "Left"], right: ["向右", "Right"] };
 
-export function MovementShell({ step, instruction, children, onBack, onNext, nextDisabled = false, nextLabel, verticalMovement = false, sequenceStep, showStepIndicator = true }: MovementPageProps & {
+export function MovementShell({ step, instruction, children, onBack, onNext, nextDisabled = false, nextLabel, verticalMovement = false, sequenceStep, sequenceTotal, showStepIndicator = true }: MovementPageProps & {
     step: number; instruction: string; children: ReactNode; nextDisabled?: boolean; nextLabel?: string; showStepIndicator?: boolean;
 }) {
     const t = useMovementText();
     return (
         <div className="relative h-[768px] w-[1024px] overflow-hidden bg-[#DCE0ED] text-[#18242D]" style={{ fontFamily: 'Arial, "Microsoft YaHei", sans-serif' }}>
-            <div className="absolute left-0 top-0 h-[450px] w-[600px] origin-top-left" style={{ transform: "scale(1.7066666667)" }}>
+            <div className="absolute left-0 top-0 h-[450px] w-[600px] origin-top-left bg-[#DCE0ED]" style={{ transform: "scale(1.7066666667)" }}>
                 <header className="absolute inset-x-0 top-0 flex h-[41px] items-center bg-[#C6CCDA] text-[#626F81]">
                     <div className="ml-[13px] flex h-[34px] w-[89px] items-center gap-1 rounded-[2px] border border-[#9DB7DA] bg-[#D8DEEA] px-1">
                         <UserRound size={23} strokeWidth={1.1} className="text-[#68B6BC]" />
@@ -30,7 +30,7 @@ export function MovementShell({ step, instruction, children, onBack, onNext, nex
                 {children}
                 <NavigationArrow direction="left" label={t("上一步", "Previous step")} onClick={onBack} left={8} disabled={!onBack} />
                 <NavigationArrow direction="right" label={nextLabel ?? t("下一步", "Next step")} onClick={onNext} left={549} disabled={nextDisabled || !onNext} />
-                {showStepIndicator && <div className="absolute inset-x-[65px] bottom-[8px] text-center text-[9px] text-[#66768E]" aria-live="polite">{verticalMovement ? t("垂直移动", "Vertical movement") : t("水平移动", "Parallel movement")} · {sequenceStep ?? step} / {verticalMovement ? 3 : 6} · {t("模拟演示", "Simulation")}</div>}
+                {showStepIndicator && <div className="absolute inset-x-[65px] bottom-[8px] text-center text-[9px] text-[#66768E]" aria-live="polite">{verticalMovement ? t("垂直移动", "Vertical movement") : t("水平移动", "Parallel movement")} · {sequenceStep ?? step} / {sequenceTotal ?? (verticalMovement ? 3 : 6)} · {t("模拟演示", "Simulation")}</div>}
             </div>
         </div>
     );

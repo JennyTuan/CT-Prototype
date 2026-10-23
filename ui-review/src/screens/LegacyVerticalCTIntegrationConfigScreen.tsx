@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, RotateCcw, Save, ChevronRight, Check, Info } from "lucide-react";
-import { LegacyPatientAvatar, LegacyToolbarIcon } from "./legacyVerticalCtVisuals";
+import LegacyVerticalCTHeader from "./LegacyVerticalCTHeader";
 
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
@@ -465,30 +465,7 @@ export default function LegacyVerticalCTIntegrationConfigScreen() {
     return (
         <div className="flex h-[768px] w-[1024px] select-none flex-col overflow-hidden bg-[#DCE0ED]" style={{ fontFamily: pingFang }}>
             {/* 顶栏 */}
-            <header className="relative h-[80px] shrink-0">
-                <div className="absolute inset-0 bg-[#C1C5D5] opacity-50" />
-                <div className="relative z-10 flex h-full items-center px-5">
-                    <div className="relative h-[52px] w-[115px] rounded-[5px] border border-[#95B0E2] bg-[#D2D7E6]">
-                        <LegacyPatientAvatar alt="工程师" />
-                        <div className="absolute left-[44px] top-[10px] w-16 text-[12px] font-bold leading-tight text-slate-600">
-                            <div>admin</div>
-                            <div className="font-mono text-[10px] opacity-60">服务工程师</div>
-                        </div>
-                    </div>
-
-                    <div className="absolute left-1/2 -translate-x-1/2 text-center text-[#717579]">
-                        <div className="text-[32px] font-black leading-none">
-                            {time.getHours().toString().padStart(2, "0")}:{time.getMinutes().toString().padStart(2, "0")}
-                        </div>
-                        <div className="mt-[9px] text-[15px] font-black leading-none">{time.getMonth() + 1}月{time.getDate()}日</div>
-                    </div>
-
-                    <LegacyToolbarIcon kind="emergency" alt="急停" left={756} />
-                    <LegacyToolbarIcon kind="laser" alt="激光" left={820} />
-                    <LegacyToolbarIcon kind="machine" alt="机器状态" left={884} />
-                    <LegacyToolbarIcon kind="system" alt="系统管理" left={948} />
-                </div>
-            </header>
+            <LegacyVerticalCTHeader time={time} />
 
             {/* 主体 */}
             <main className="flex min-h-0 flex-1 gap-4 px-5 py-4">

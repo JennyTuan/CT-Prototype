@@ -6,7 +6,12 @@ export default function LegacyHorizontalMovementLowerScreen(props: MovementPageP
     const { progress, direction, setDirection } = useMovementProgress(props.initialProgress);
     const t = useMovementText();
     return <MovementShell {...props} step={6} instruction={progress === 100 ? t("机架落地模拟完成，行走轮已收起（模拟）。", "Lowering simulation complete. Travel wheels retracted.") : t("请按住高亮的按钮，使机架落地。", "Press and hold the highlighted button to lower the gantry.")} nextDisabled={progress < 100}>
-        <MovementArtwork source="lower" x={79} y={117} width={324} height={284} label={t("液压下降及行走轮收起的引导图", "Gantry lowering and travel wheel retraction illustration")} />
+        {props.verticalMovement ? <img
+            src="/movement/vertical-lower-reference.jpg"
+            alt={t("垂直模式机架落地示意图，绿色箭头向下", "Vertical mode gantry lowering illustration with downward green arrows")}
+            draggable={false}
+            className="pointer-events-none absolute left-[79px] top-[85px] h-[285px] w-[324px] object-contain mix-blend-multiply"
+        /> : <MovementArtwork source="lower" x={79} y={117} width={324} height={284} label={t("液压下降及行走轮收起的引导图", "Gantry lowering and travel wheel retraction illustration")} />}
         <MovementProgress value={progress} down />
         <MovementRemote mode="lower" activeDirection={direction} onDirectionChange={setDirection} complete={progress === 100} />
     </MovementShell>;

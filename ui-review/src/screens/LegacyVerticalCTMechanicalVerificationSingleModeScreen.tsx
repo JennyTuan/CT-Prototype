@@ -10,7 +10,7 @@ import {
     Share2,
     Lock,
 } from "lucide-react";
-import { LegacyPatientAvatar, LegacyToolbarIcon } from "./legacyVerticalCtVisuals";
+import LegacyVerticalCTHeader from "./LegacyVerticalCTHeader";
 import LegacyVerticalCTModeSwitchContent from "./LegacyVerticalCTModeSwitchContent";
 
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
@@ -60,26 +60,7 @@ export default function LegacyVerticalCTMechanicalVerificationSingleModeScreen({
             style={{ fontFamily: pingFang }}
         >
             {/* ── Header ── */}
-            <header className="relative h-[80px] shrink-0">
-                <div className="absolute inset-0 bg-[#C1C5D5] opacity-50" />
-                <div className="relative z-10 flex h-full items-center px-5">
-                    <div className="relative h-[52px] w-[115px] rounded-[5px] border border-[#95B0E2] bg-[#D2D7E6]">
-                        <LegacyPatientAvatar alt="患者头像" />
-                        <div className="absolute left-[44px] top-[10px] w-16 text-[12px] font-bold leading-tight text-slate-600">
-                            <div>欧阳祖华</div>
-                            <div className="font-mono text-[10px] opacity-60">000001</div>
-                        </div>
-                    </div>
-                    <div className="absolute left-1/2 -translate-x-1/2 text-center text-[#717579]">
-                        <div className="text-[32px] font-black leading-none">12:24</div>
-                        <div className="mt-[9px] text-[15px] font-black leading-none">3月31日</div>
-                    </div>
-                    <LegacyToolbarIcon kind="emergency" alt="急停" left={756} />
-                    <LegacyToolbarIcon kind="laser" alt="激光" left={820} />
-                    <LegacyToolbarIcon kind="machine" alt="机器状态" left={884} />
-                    <LegacyToolbarIcon kind="system" alt="系统管理" left={948} />
-                </div>
-            </header>
+            <LegacyVerticalCTHeader mode={mode} />
 
             {/* ── Main ── */}
             <main className="flex min-h-0 flex-1 gap-4 px-5 py-5">

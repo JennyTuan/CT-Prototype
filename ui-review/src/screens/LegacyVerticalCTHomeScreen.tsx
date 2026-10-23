@@ -6,6 +6,7 @@ import {
 } from "./legacyVerticalCtVisuals";
 import { CircleGauge } from "lucide-react";
 import type { MovementLanguage } from "../lib/movementPrototype";
+import LegacyVerticalCTHeader from "./LegacyVerticalCTHeader";
 
 const pingFang = '"PingFang SC", "Microsoft YaHei", sans-serif';
 
@@ -41,10 +42,11 @@ function ModeCard({ active = false, title, left, children, onClick }: ModeCardPr
     );
 }
 
-export default function LegacyVerticalCTHomeScreen({ onOpenMovement, language = "zh" }: { onOpenMovement?: () => void; language?: MovementLanguage } = {}) {
+export default function LegacyVerticalCTHomeScreen({ onOpenMovement, language = "zh", useVerticalHeader = true }: { onOpenMovement?: () => void; language?: MovementLanguage; useVerticalHeader?: boolean } = {}) {
     const english = language === "en";
     return (
         <div className="relative h-[768px] w-[1024px] overflow-hidden bg-[#DCE0ED] text-[#535353]" style={{ fontFamily: pingFang }}>
+            {useVerticalHeader ? <LegacyVerticalCTHeader className="absolute left-0 top-0" /> : <>
             <div className="absolute left-0 top-0 h-[73px] w-full bg-[#C1C5D5] opacity-50" />
 
             <div className="absolute left-0 top-0 h-[73px] w-full">
@@ -67,6 +69,7 @@ export default function LegacyVerticalCTHomeScreen({ onOpenMovement, language = 
                 <LegacyToolbarIcon kind="system" alt="系统管理" left={948} />
             </div>
 
+            </>}
             <div className="absolute inset-x-0 top-[130px] text-center text-[64px] font-bold leading-none text-[#2A6DE5]">{english ? "Welcome" : "欢迎"}</div>
 
             <div className="absolute left-[14px] top-[280px] h-[208px] w-[996px]">

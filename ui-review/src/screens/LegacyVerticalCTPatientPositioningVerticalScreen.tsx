@@ -9,7 +9,7 @@ import {
     Telescope,
     View,
 } from "lucide-react";
-import { LegacyPatientAvatar, LegacyToolbarIcon } from "./legacyVerticalCtVisuals";
+import LegacyVerticalCTHeader from "./LegacyVerticalCTHeader";
 
 const directionHeadToFeetImg = "/scan-direction-head-to-feet.png";
 const directionFeetToHeadImg = "/scan-direction-feet-to-head.png";
@@ -163,24 +163,7 @@ export default function LegacyVerticalCTPatientPositioningVerticalScreen() {
 
     return (
         <div className="relative h-[768px] w-[1024px] overflow-hidden bg-[#DCE0ED] text-[#535353]" style={{ fontFamily: pingFang }}>
-            <div className="absolute left-0 top-0 h-[80px] w-full bg-[#C1C5D5] opacity-50" />
-            <div className="absolute left-0 top-0 z-10 h-[80px] w-full">
-                <div className="absolute left-[20px] top-[12px] h-[50px] w-[100px] rounded-[5px] border border-[#95B0E2] bg-[#D2D7E6]">
-                    <LegacyPatientAvatar alt="患者" />
-                    <div className="absolute left-[38px] top-[4px] w-[56px] whitespace-nowrap text-center text-[14px] font-medium leading-[1.15] text-[#717579]">
-                        <div>欧阳祖华</div>
-                        <div>000001</div>
-                    </div>
-                </div>
-                <div className="absolute left-1/2 top-[12px] -translate-x-1/2 text-center text-[#717579]">
-                    <div className="text-[32px] font-black leading-none">13:06</div>
-                    <div className="mt-[9px] text-[15px] font-black leading-none">3月9日 星期日</div>
-                </div>
-                <LegacyToolbarIcon kind="emergency" alt="急停" left={756} />
-                <LegacyToolbarIcon kind="laser" alt="激光" left={820} />
-                <LegacyToolbarIcon kind="machine" alt="机器状态" left={884} />
-                <LegacyToolbarIcon kind="system" alt="系统管理" left={948} />
-            </div>
+            <LegacyVerticalCTHeader mode="vertical" className="absolute left-0 top-0 z-10" />
 
             <div className="absolute left-[20px] right-[20px] top-[92px] h-[588px]">
                 <div className="flex h-full">
